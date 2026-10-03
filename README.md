@@ -13,6 +13,17 @@
 - **Android / ColorOS 17 适配**：沉浸式状态栏与导航栏、安全区预留（`pt-safe` / `pb-safe`）、深色主题、自绘终末地黄黑应用图标
 - **离线可用**：Web 端与 APK 均不依赖云端服务
 
+## 下载
+
+| 版本 | 说明 | 下载 |
+| --- | --- | --- |
+| v1.0.0 (release) | 正式签名版，适用于日常安装 | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
+| v1.0.0 (debug) | 调试签名版，仅用于体验 | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
+
+> ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
+
+![Build APK](https://github.com/TATHPE/endfield-music-terminal/actions/workflows/build-apk.yml/badge.svg)
+
 ## 技术栈
 
 | 层 | 技术 |
@@ -62,14 +73,19 @@ cd android
 gradle assembleDebug
 ```
 
-## 下载
+### GitHub Actions 自动构建
 
-| 版本 | 说明 | 下载 |
-| --- | --- | --- |
-| v1.0.0 (release) | 正式签名版，适用于日常安装 | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
-| v1.0.0 (debug) | 调试签名版，仅用于体验 | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
+每次 push 到 `main` 会自动构建 debug APK，产物上传为 Actions Artifact（仓库 Actions 页面可下载最新版）。
 
-> ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
+如需自动构建**正式签名版**，在仓库 Settings → Secrets and variables → Actions 新增：
+
+| Secret | 值 |
+| --- | --- |
+| `KEYSTORE_BASE64` | 密钥库文件 base64 编码（`base64 -w0 release.keystore` 或 `certutil -encode` 输出） |
+| `KEYSTORE_PASSWORD` | 密钥库密码（storePassword = keyPassword） |
+| `KEYSTORE_ALIAS` | 密钥别名（本项目为 `endfield`） |
+
+配置后，每次 push 的 `release` job 会自动用该密钥构建并上传正式签名 APK。
 
 ## 应用信息
 
