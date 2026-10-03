@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">终末地音乐终端</string>
+    <string name="title_activity_main">终末地音乐终端</string>
+    <string name="package_name">com.endfield.audio.terminal</string>
+    <string name="custom_url_scheme">com.endfield.audio.terminal</string>
+</resources>

@@ -1,0 +1,158 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./tailwind-theme.css";
+@import "./typography.css";
+
+@layer base {
+  html {
+    background: #050506;
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #2A2A2F;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #F2C200;
+  }
+
+  /* Range inputs used by volume / progress fallbacks */
+  input[type='range'] {
+    accent-color: #F2C200;
+  }
+}
+
+@utility clip-corner {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%);
+}
+
+@utility clip-corner-sm {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%);
+}
+
+@utility clip-corner-lg {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%);
+}
+
+@utility clip-tag {
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 8px 100%);
+}
+
+/* Endfield hazard stripe — signature yellow/black cutting stripe */
+@utility hazard-stripe {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #F2C200 0px,
+    #F2C200 10px,
+    #0A0A0C 10px,
+    #0A0A0C 20px
+  );
+}
+
+/* Faint engineering grid, used as page backdrop */
+@utility engineering-grid {
+  background-image:
+    linear-gradient(to right, rgba(241, 240, 234, 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(241, 240, 234, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Terminal scanlines overlay */
+@utility scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(241, 240, 234, 0.022) 0px,
+    rgba(241, 240, 234, 0.022) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+/* Notched segmented progress fill (Endfield readout style) */
+@utility segment-track {
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(241, 240, 234, 0.12) 0px,
+    rgba(241, 240, 234, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Now-playing equalizer bars */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    height: 22%;
+  }
+  50% {
+    height: 100%;
+  }
+}
+.eq-bar {
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+/* Slow blinking status dot */
+@keyframes blink-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.blink-dot {
+  animation: blink-dot 1.6s ease-in-out infinite;
+}
+
+/* Safe-area helpers for Android WebView (ColorOS 17) */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Splash boot sequence */
+@keyframes splash-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 0.75;
+  }
+}
+.splash-pulse {
+  animation: splash-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes splash-sweep {
+  0% {
+    transform: translateX(-110%);
+  }
+  100% {
+    transform: translateX(110%);
+  }
+}
+.splash-sweep {
+  animation: splash-sweep 1.3s ease-in-out infinite;
+}

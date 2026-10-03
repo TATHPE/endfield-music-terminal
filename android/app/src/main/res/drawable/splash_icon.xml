@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Endfield hex emblem shown on the Android 12+ system splash screen -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#F2C200"
+        android:pathData="M54,34 L74,44 L74,64 L54,74 L34,64 L34,44 Z" />
+    <path
+        android:fillColor="#0A0A0C"
+        android:pathData="M54,41 L67,48 L67,60 L54,67 L41,60 L41,48 Z" />
+</vector>
