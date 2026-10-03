@@ -53,56 +53,80 @@ jobs:
 
   release:
     needs: build
-    if: github.ref == 'refs/heads/main' && secrets.KEYSTORE_BASE64 != ''
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
     steps:
+      - name: Check signing secrets
+        id: check
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "No KEYSTORE_BASE64 secret configured; release build skipped."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout
+        if: steps.check.outputs.skip != 'true'
         uses: actions/checkout@v4
 
       - name: Setup Node.js
+        if: steps.check.outputs.skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
 
       - name: Install dependencies
+        if: steps.check.outputs.skip != 'true'
         run: npm ci
 
       - name: Setup JDK 21
+        if: steps.check.outputs.skip != 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 21
 
       - name: Accept Android SDK licenses
+        if: steps.check.outputs.skip != 'true'
         run: |
           mkdir -p "$ANDROID_SDK_ROOT/licenses"
           echo "8933bad161af4178b1185d1a37fbf41ea5269c55" > "$ANDROID_SDK_ROOT/licenses/android-sdk-license"
           echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_SDK_ROOT/licenses/android-sdk-preview-license"
 
       - name: Restore signing keystore from secrets
+        if: steps.check.outputs.skip != 'true'
         run: |
           mkdir -p keystore
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/release.keystore
+          echo "$KEYSTORE_BASE64" | base64 -d > keystore/release.keystore
           printf 'storeFile=%s\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
             "$PWD/keystore/release.keystore" \
-            "${{ secrets.KEYSTORE_PASSWORD }}" \
-            "${{ secrets.KEYSTORE_ALIAS }}" \
-            "${{ secrets.KEYSTORE_PASSWORD }}" > android/keystore.properties
+            "$KEYSTORE_PASSWORD" \
+            "$KEYSTORE_ALIAS" \
+            "$KEYSTORE_PASSWORD" > android/keystore.properties
 
       - name: Build web assets (APK build config)
+        if: steps.check.outputs.skip != 'true'
         run: npx vite build --config vite.capacitor.config.ts
 
       - name: Sync Capacitor
+        if: steps.check.outputs.skip != 'true'
         run: npx cap sync android
 
       - name: Build release APK
+        if: steps.check.outputs.skip != 'true'
         working-directory: android
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease
 
       - name: Upload release APK
+        if: steps.check.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
