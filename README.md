@@ -62,6 +62,15 @@ cd android
 gradle assembleDebug
 ```
 
+## 下载
+
+| 版本 | 说明 | 下载 |
+| --- | --- | --- |
+| v1.0.0 (release) | 正式签名版，适用于日常安装 | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
+| v1.0.0 (debug) | 调试签名版，仅用于体验 | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
+
+> ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
+
 ## 应用信息
 
 - 应用名：终末地音乐终端
