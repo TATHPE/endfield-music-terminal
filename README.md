@@ -2,15 +2,15 @@
 
 一款以《明日方舟：终末地》为视觉灵感、可打包为 Android APK 的**本地音乐播放器**。整体采用黄 / 黑 / 暖白三色，密集使用终末地风格的系统 UI 元素（警戒条纹、角括号面板、切角按钮、六边形徽章、BOOT 日志式启动动画）。
 
-![UI 配色](https://img.shields.io/badge/配色-黄%20%23F2C200%20%2F%20黑%20%230A0A0C%20%2F%20暖白%20%23F1F0EA-0A0A0C)
+![配色](https://img.shields.io/badge/配色-黄%20F2C200%20%2F%20黑%200A0A0C%20%2F%20暖白%20F1F0EA-F2C200?style=for-the-badge&labelColor=0A0A0C)
 
-[![Release](https://img.shields.io/github/v/release/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal/releases)
-[![Downloads](https://img.shields.io/github/downloads/TATHPE/endfield-music-terminal/total)](https://github.com/TATHPE/endfield-music-terminal/releases)
-[![License](https://img.shields.io/github/license/TATHPE/endfield-music-terminal)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal)
-[![Last Commit](https://img.shields.io/github/last-commit/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal)
-[![Build APK](https://github.com/TATHPE/endfield-music-terminal/actions/workflows/build-apk.yml/badge.svg)](https://github.com/TATHPE/endfield-music-terminal/actions)
-[![Top Language](https://img.shields.io/github/languages/top/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal)
+[![Release](https://img.shields.io/github/v/release/TATHPE/endfield-music-terminal?style=for-the-badge&label=RELEASE&labelColor=0A0A0C&color=F2C200)](https://github.com/TATHPE/endfield-music-terminal/releases)
+[![Downloads](https://img.shields.io/github/downloads/TATHPE/endfield-music-terminal/total?style=for-the-badge&label=DOWNLOADS&labelColor=0A0A0C&color=F2C200)](https://github.com/TATHPE/endfield-music-terminal/releases)
+[![License](https://img.shields.io/github/license/TATHPE/endfield-music-terminal?style=for-the-badge&label=LICENSE&labelColor=0A0A0C&color=F2C200)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/TATHPE/endfield-music-terminal?style=for-the-badge&label=STARS&labelColor=0A0A0C&color=F2C200)](https://github.com/TATHPE/endfield-music-terminal)
+[![Last Commit](https://img.shields.io/github/last-commit/TATHPE/endfield-music-terminal?style=for-the-badge&label=LAST%20COMMIT&labelColor=0A0A0C&color=F2C200)](https://github.com/TATHPE/endfield-music-terminal)
+[![CI](https://github.com/TATHPE/endfield-music-terminal/actions/workflows/build-apk.yml/badge.svg?style=for-the-badge&label=CI&labelColor=0A0A0C&color=F2C200)](https://github.com/TATHPE/endfield-music-terminal/actions)
+[![Lang](https://img.shields.io/github/languages/top/TATHPE/endfield-music-terminal?style=for-the-badge&label=LANG&labelColor=0A0A0C&color=F2C200)](https://github.com/TATHPE/endfield-music-terminal)
 
 ## 功能特性
 
@@ -32,12 +32,12 @@
 
 ## 技术栈
 
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss)
-![Capacitor](https://img.shields.io/badge/Capacitor-8-119EFF?logo=capacitor)
-![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite)
-![music-metadata](https://img.shields.io/badge/music--metadata-11-4FC08D)
+![React](https://img.shields.io/badge/REACT-19-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![TypeScript](https://img.shields.io/badge/TS-5-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![Tailwind](https://img.shields.io/badge/TAILWIND-4-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![Capacitor](https://img.shields.io/badge/CAPACITOR-8-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![Vite](https://img.shields.io/badge/VITE-6-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![music-metadata](https://img.shields.io/badge/MUSIC--METADATA-11-F2C200?style=for-the-badge&labelColor=0A0A0C)
 
 | 层 | 技术 |
 | --- | --- |
