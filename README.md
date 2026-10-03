@@ -4,6 +4,14 @@
 
 ![UI 配色](https://img.shields.io/badge/配色-黄%20%23F2C200%20%2F%20黑%20%230A0A0C%20%2F%20暖白%20%23F1F0EA-0A0A0C)
 
+[![Release](https://img.shields.io/github/v/release/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal/releases)
+[![Downloads](https://img.shields.io/github/downloads/TATHPE/endfield-music-terminal/total)](https://github.com/TATHPE/endfield-music-terminal/releases)
+[![License](https://img.shields.io/github/license/TATHPE/endfield-music-terminal)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal)
+[![Last Commit](https://img.shields.io/github/last-commit/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal)
+[![Build APK](https://github.com/TATHPE/endfield-music-terminal/actions/workflows/build-apk.yml/badge.svg)](https://github.com/TATHPE/endfield-music-terminal/actions)
+[![Top Language](https://img.shields.io/github/languages/top/TATHPE/endfield-music-terminal)](https://github.com/TATHPE/endfield-music-terminal)
+
 ## 功能特性
 
 - **本地歌曲导入**：从设备文件系统批量导入音频，曲库持久化存储在浏览器 IndexedDB
@@ -22,9 +30,14 @@
 
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
-![Build APK](https://github.com/TATHPE/endfield-music-terminal/actions/workflows/build-apk.yml/badge.svg)
-
 ## 技术栈
+
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss)
+![Capacitor](https://img.shields.io/badge/Capacitor-8-119EFF?logo=capacitor)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite)
+![music-metadata](https://img.shields.io/badge/music--metadata-11-4FC08D)
 
 | 层 | 技术 |
 | --- | --- |
@@ -93,6 +106,10 @@ gradle assembleDebug
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
 - Android 版本：v1.0
+
+## License
+
+本项目以 [MIT License](LICENSE) 开源，可自由使用、修改与分发（含商用），须保留版权声明。
 
 ## 免责声明
 
