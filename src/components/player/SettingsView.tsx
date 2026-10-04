@@ -41,22 +41,23 @@ function ThemeCard({
       type="button"
       onClick={onSelect}
       aria-pressed={active}
+      title={desc}
       className={cn(
-        'group relative flex w-full flex-col gap-2.5 border p-3 text-left transition-all duration-200',
+        'group relative flex min-w-0 flex-col gap-1.5 border p-2 text-left transition-all duration-200',
         active
-          ? 'border-accent bg-accent/10 shadow-[0_0_18px_-4px] shadow-accent/40'
+          ? 'border-accent bg-accent/10 shadow-[0_0_14px_-4px] shadow-accent/40'
           : 'border-border bg-card hover:border-accent/40 hover:bg-card/80',
       )}
-      style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}
+      style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
     >
-      <div className="flex items-center justify-between">
-        <span className="font-mono text-[9px] tracking-[0.3em] text-muted-foreground">{code}</span>
+      <div className="flex items-center justify-between gap-1">
+        <span className="truncate font-mono text-[8px] tracking-[0.2em] text-muted-foreground">{code}</span>
         {active && (
-          <span className="blink-dot font-mono text-[9px] tracking-[0.24em] text-accent">● ACTIVE</span>
+          <span className="blink-dot shrink-0 font-mono text-[8px] tracking-[0.18em] text-accent">●</span>
         )}
       </div>
       {/* Three equal swatches, evenly distributed */}
-      <div className="grid grid-cols-3 gap-2" aria-hidden>
+      <div className="grid grid-cols-3 gap-1" aria-hidden>
         {colors.map((c) => (
           <span
             key={c}
@@ -65,10 +66,7 @@ function ThemeCard({
           />
         ))}
       </div>
-      <div>
-        <div className="text-sm font-bold tracking-widest text-foreground">{name}</div>
-        <div className="mt-0.5 font-mono text-[10px] tracking-wider text-muted-foreground">{desc}</div>
-      </div>
+      <div className="truncate text-[11px] font-bold tracking-wide text-foreground">{name}</div>
     </button>
   );
 }
@@ -81,7 +79,7 @@ const CHANNELS: ReadonlyArray<{ key: Channel; label: string }> = [
   { key: 'tertiary', label: '点缀色 TERTIARY' },
 ];
 
-/** Custom theme editor: channel rows + preset swatches only. */
+/** Custom theme editor: single channel row + title + 12 preset swatches. */
 function CustomEditor() {
   const [custom, setCustom] = useState<CustomColors>(() => getCustomTheme());
   const [channel, setChannel] = useState<Channel>('primary');
@@ -92,51 +90,48 @@ function CustomEditor() {
   };
 
   return (
-    <div className="flex flex-col gap-3 border border-accent/50 bg-accent/5 p-3" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}>
+    <div className="flex flex-col gap-2 border border-accent/50 bg-accent/5 p-2.5" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}>
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] tracking-[0.26em] text-accent">CUSTOMIZE // 自定义配色</span>
+        <span className="font-mono text-[9px] tracking-[0.24em] text-accent">CUSTOMIZE // 自定义配色</span>
         <button
           type="button"
           onClick={() => apply({ ...DEFAULT_CUSTOM })}
-          className="flex items-center gap-1 font-mono text-[9px] tracking-widest text-muted-foreground hover:text-accent"
+          className="flex items-center gap-1 font-mono text-[8px] tracking-widest text-muted-foreground hover:text-accent"
         >
           <RotateCcw className="h-3 w-3" /> 恢复默认
         </button>
       </div>
 
-      {/* channel rows */}
-      {CHANNELS.map(({ key, label }) => {
-        const active = channel === key;
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setChannel(key)}
-            aria-pressed={active}
-            className={cn(
-              'flex items-center gap-2.5 border px-2.5 py-2 text-left transition-colors',
-              active ? 'border-accent/60 bg-accent/10' : 'border-border bg-card/70',
-            )}
-          >
-            <span
-              aria-hidden
-              className="h-7 w-7 shrink-0 rounded border border-white/15"
-              style={{ backgroundColor: custom[key] }}
-            />
-            <span className="min-w-0 flex-1">
-              <span className="block text-xs font-semibold tracking-wider text-foreground">{label}</span>
-              <span className="block font-mono text-[9px] tracking-widest text-muted-foreground">
-                {custom[key].toUpperCase()}
-              </span>
-            </span>
-            {active && <span className="font-mono text-[8px] tracking-widest text-accent">PICK ▼</span>}
-          </button>
-        );
-      })}
+      {/* channels in one uniform row */}
+      <div className="grid grid-cols-3 gap-1.5">
+        {CHANNELS.map(({ key, label }) => {
+          const active = channel === key;
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setChannel(key)}
+              aria-pressed={active}
+              title={label}
+              className={cn(
+                'flex min-w-0 items-center justify-center gap-1.5 border px-1 py-1.5 transition-colors',
+                active ? 'border-accent/60 bg-accent/10' : 'border-border bg-card/70',
+              )}
+            >
+              <span
+                aria-hidden
+                className="h-4 w-4 shrink-0 rounded border border-white/15"
+                style={{ backgroundColor: custom[key] }}
+              />
+              <span className="truncate font-mono text-[8px] tracking-wider text-foreground">{label}</span>
+            </button>
+          );
+        })}
+      </div>
 
       {/* preset palette: title + the 12 quick-pick swatches only */}
       <div className="flex flex-col gap-1.5">
-        <span className="font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
+        <span className="font-mono text-[9px] tracking-[0.2em] text-muted-foreground">
           预设色板 → 应用到 {CHANNELS.find((c) => c.key === channel)?.label ?? '主色'}
         </span>
         <div className="grid grid-cols-6 gap-1.5">
@@ -176,11 +171,11 @@ function BgModePicker() {
   ];
 
   return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.26em] text-muted-foreground">
+    <section className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
         <span className="text-accent">▸</span> 背景 BACKGROUND
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2">
         {options.map((o) => (
           <button
             key={o.id}
@@ -188,25 +183,22 @@ function BgModePicker() {
             onClick={() => pick(o.id)}
             aria-pressed={mode === o.id}
             className={cn(
-              'flex items-center gap-2.5 border p-2.5 text-left transition-all duration-200',
+              'flex items-center gap-2 border px-2 py-1.5 text-left transition-all duration-200',
               mode === o.id
-                ? 'border-accent bg-accent/10 shadow-[0_0_14px_-4px] shadow-accent/40'
+                ? 'border-accent bg-accent/10 shadow-[0_0_12px_-4px] shadow-accent/40'
                 : 'border-border bg-card hover:border-accent/40',
             )}
-            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
+            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
           >
             <span
               aria-hidden
-              className="h-7 w-7 shrink-0 border border-white/15"
+              className="h-5 w-5 shrink-0 border border-white/15"
               style={{ backgroundColor: o.swatch }}
             />
-            <span className="font-mono text-[11px] tracking-wider text-foreground">{o.label}</span>
+            <span className="font-mono text-[10px] tracking-wide text-foreground">{o.label}</span>
           </button>
         ))}
       </div>
-      <p className="font-mono text-[9px] leading-relaxed tracking-wider text-muted-foreground/80">
-        纯色外壳：深色（黑色基底）或浅色（白色基底）整体切换，玻璃 Dock 与播放条自动跟随明暗。
-      </p>
     </section>
   );
 }
@@ -229,9 +221,11 @@ export default function SettingsView() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4 px-4 pb-6 pt-4">
+    /* Fixed layout: the page never scrolls; content lives strictly above
+       the dock (outer bottom padding), nothing is ever covered. */
+    <div className="flex h-full flex-col gap-2.5 overflow-hidden px-4 pb-4 pt-2">
       <header className="flex items-center justify-between">
-        <h2 className="font-mono text-xs tracking-[0.34em] text-foreground">
+        <h2 className="font-mono text-[11px] tracking-[0.3em] text-foreground">
           SETTINGS <span className="text-muted-foreground">// 参数配置</span>
         </h2>
         <span className="font-mono text-[9px] tracking-widest text-muted-foreground">CFG-04</span>
@@ -240,11 +234,11 @@ export default function SettingsView() {
 
       <BgModePicker />
 
-      <section className="flex flex-col gap-2.5">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.26em] text-muted-foreground">
+      <section className="flex min-h-0 flex-1 flex-col gap-2">
+        <div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
           <span className="text-accent">▸</span> 主题 THEME
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           {THEMES.map((t) => (
             <ThemeCard
               key={t.id}
@@ -258,9 +252,6 @@ export default function SettingsView() {
             />
           ))}
         </div>
-        <p className="mt-0.5 font-mono text-[9px] leading-relaxed tracking-wider text-muted-foreground/80">
-          T-01 标准终端：柠檬黄警戒配色，默认出厂。T-02 棱镜频谱：亮粉 / 青绿 / 明黄三色覆盖全部界面。T-03 自定义：自由调配三色，实时生效并保存。
-        </p>
 
         {theme === 'custom' && <CustomEditor />}
       </section>

@@ -89,10 +89,9 @@ export default function HomePage() {
                          control lives strictly above the floating dock */
                       'h-full overflow-hidden pb-[124px]'
                     : view === 'settings'
-                      ? /* keep the whole custom-color editor above the dock:
-                           bottom padding >= dock + mini player so the palette
-                           can never be blocked by the frosted layer */
-                        'h-full overflow-y-auto pb-[280px]'
+                      ? /* fixed page like now-playing: content never scrolls
+                           and lives strictly above the floating dock */
+                        'h-full overflow-hidden pb-[124px]'
                       : /* browse pages: content scrolls behind the frosted
                            dock and shows through it blurred; bottom padding
                            still lets the last row rest above the dock buttons */
