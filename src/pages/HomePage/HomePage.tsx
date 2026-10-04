@@ -72,7 +72,7 @@ export default function HomePage() {
             className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[38%] bg-[radial-gradient(130%_100%_at_50%_-18%,var(--bg-glow),transparent_70%)]"
           />
           <main
-            className="scanlines relative z-[1] flex-1 overflow-hidden"
+            className="scanlines relative z-[1] min-h-0 flex-1 overflow-hidden"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -86,7 +86,7 @@ export default function HomePage() {
                 className={
                   view === 'nowplaying'
                     ? 'h-full overflow-hidden'
-                    : 'h-full overflow-y-auto pb-[320px]'
+                    : 'h-full overflow-y-auto'
                 }
               >
                 {view === 'library' ? (
@@ -103,12 +103,13 @@ export default function HomePage() {
               </motion.div>
             </AnimatePresence>
           </main>
-          {/* floating frosted bottom layer: dock always visible; mini player
-              only outside the now-playing view */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1.5">
+          {/* bottom layer in normal flow: the content area above shrinks by
+              exactly this height, so nothing ever scrolls behind / is blocked
+              by the dock — mini player only outside the now-playing view */}
+          <div className="relative z-20 shrink-0">
             <AnimatePresence>
               {view !== 'nowplaying' && (
-                <div className="pointer-events-auto">
+                <div>
                   <MiniPlayer onOpen={() => go('nowplaying')} />
                 </div>
               )}

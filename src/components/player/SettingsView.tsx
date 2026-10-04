@@ -234,6 +234,30 @@ function CustomEditor() {
         );
       })}
 
+      {/* preset palette first: high in the page, always clear of the dock */}
+      <div className="flex flex-col gap-1.5">
+        <span className="font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
+          预设色板 → 应用到 {CHANNELS.find((c) => c.key === channel)?.label ?? '主色'}
+        </span>
+        <div className="grid grid-cols-6 gap-1.5">
+          {PRESET_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={`预设色 ${c}`}
+              onClick={() => apply({ ...custom, [channel]: c })}
+              className={cn(
+                'aspect-square border transition-transform hover:scale-110',
+                custom[channel].toLowerCase() === c.toLowerCase()
+                  ? 'border-foreground ring-1 ring-foreground'
+                  : 'border-white/15',
+              )}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* self-drawn picker for the active channel */}
       <div className="flex flex-col gap-2 rounded border border-accent/30 bg-background/60 p-2.5">
         <SvPad
@@ -262,29 +286,6 @@ function CustomEditor() {
             className="w-24 border border-border bg-card px-2 py-1 font-mono text-[11px] tracking-widest text-foreground outline-none focus:border-accent/60"
           />
           <span className="font-mono text-[8px] tracking-widest text-muted-foreground">HEX 直输</span>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <span className="font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
-          预设色板 → 应用到 {CHANNELS.find((c) => c.key === channel)?.label ?? '主色'}
-        </span>
-        <div className="grid grid-cols-6 gap-1.5">
-          {PRESET_COLORS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              aria-label={`预设色 ${c}`}
-              onClick={() => apply({ ...custom, [channel]: c })}
-              className={cn(
-                'aspect-square border transition-transform hover:scale-110',
-                custom[channel].toLowerCase() === c.toLowerCase()
-                  ? 'border-foreground ring-1 ring-foreground'
-                  : 'border-white/15',
-              )}
-              style={{ backgroundColor: c }}
-            />
-          ))}
         </div>
       </div>
     </div>

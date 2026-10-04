@@ -73,9 +73,9 @@ export default function NowPlayingView() {
   const mutedShown = muted || volume <= 0.005;
 
   return (
-    /* Fixed layout: every block lives above the frosted dock; the page never
-       scrolls and no control is ever covered by the dock. */
-    <div className="flex h-full flex-col overflow-hidden px-4 pb-[168px] pt-3">
+    /* Fixed layout: the page never scrolls; the dock sits below in normal
+       flow, so every control is fully visible and tappable. */
+    <div className="flex h-full flex-col overflow-hidden px-4 pb-4 pt-3">
       {/* Header */}
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
