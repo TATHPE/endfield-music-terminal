@@ -16,11 +16,11 @@
 
 - **本地歌曲导入**：从设备文件系统批量导入音频，曲库持久化存储在浏览器 IndexedDB
 - **专辑封面解析**：用 `music-metadata` 解析 ID3 / FLAC / MP4 / OGG / WAV / APE 等标签与内嵌封面；无内嵌封面时以 iTunes Search 兜底搜索
-- **三 Tab 界面 + 手势滑动切换**：曲库 / 歌单 / 正在播放，支持底部导航点击或左右滑动切换
+- **五视图界面 + 手势滑动切换**：曲库 / 歌单 / 搜索 / 正在播放 / 设置，支持底部 Dock 点击或左右滑动切换
 - **正在播放面板**：ARTWORK（封面 + 播放扫描动画）/ LYRICS 双面板，分段刻度进度条、循环 / 随机 / 单曲三种播放模式
 - **播放队列**：底部上滑队列面板，可查看队列、移除曲目；支持收藏与自定义歌单（IndexedDB 持久化）
 - **同步歌词**：内置 LRC 解析器（时间戳 / offset 标签），播放时逐行高亮并自动滚动居中
-- **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / 拖动进度）
+- **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / **拖动进度即时同步**）
 - **终末地风格启动动画**：六边形徽章脉冲 + 扫描光带 + 逐行 BOOT 日志 + 24 段进度条，约 2.6 秒，可点击跳过
 - **终末地风格应用图标**：自绘黄黑六边形徽章 + 双八分音符 + 频谱条 + 警戒条纹，全套 Android 自适应图标
 - **Android / ColorOS 17 适配**：沉浸式状态栏与导航栏、安全区预留（`pt-safe` / `pb-safe`）、深色主题、通知权限运行时请求
@@ -28,13 +28,14 @@
 
 ## 界面预览
 
-> 截图取自 Android 同构的 Web 预览（430px 手机布局），与实际 APK 界面一致。
+> 截图取自 Android 同构的 Web 预览（手机竖屏布局），与实际 APK 界面一致；均为标准终端黄黑主题。
 
 | | |
 | --- | --- |
-| **① 启动动画** —— 六边形徽章脉冲、BOOT 逐行自检日志、24 段进度条，点击可跳过。<br><br><img src="docs/screenshots/cropped/01-boot.png" width="220" alt="启动动画" /> | **② 曲库** —— 本地曲库列表与曲目信息，右上角「导入曲目」批量导入音频。<br><br><img src="docs/screenshots/cropped/03-library.png" width="220" alt="曲库页" /> |
-| **③ 歌单** —— 收藏清单与自定义歌单，支持新建、展开、播放、移除。<br><br><img src="docs/screenshots/cropped/04-playlists.png" width="220" alt="歌单页" /> | **④ 正在播放（ARTWORK）** —— 封面 / 格式参数 / 分段进度条 / 传输控制；播放时封面带扫描线与旋转工程环。<br><br><img src="docs/screenshots/cropped/05-nowplaying.png" width="220" alt="正在播放页" /> |
-| **⑤ 播放队列** —— 从正在播放页右上角 QUEUE 上滑呼出，查看与移除队列曲目。<br><br><img src="docs/screenshots/cropped/06-queue.png" width="220" alt="队列面板" /> | **⑥ 歌词面板（LYRICS）** —— ARTWORK / LYRICS 切换，LRC 歌词逐行高亮同步滚动；无歌词时提示。<br><br><img src="docs/screenshots/cropped/07-lyrics.png" width="220" alt="歌词面板" /> |
+| **① 启动动画** —— 六边形徽章脉冲、BOOT 逐行自检日志、24 段进度条，点击可跳过。<br><br><img src="docs/screenshots/cropped/01-boot.png" width="220" alt="启动动画" /> | **② 曲库** —— 本地曲库列表与曲目信息，右上角「导入曲目」批量导入音频；底部毛玻璃 Dock 常驻。<br><br><img src="docs/screenshots/cropped/03-library.png" width="220" alt="曲库页" /> |
+| **③ 歌单** —— 收藏清单与自定义歌单，支持新建、展开、播放、移除。<br><br><img src="docs/screenshots/cropped/04-playlists.png" width="220" alt="歌单页" /> | **④ 搜索** —— Dock 中央搜索按钮进入全域检索，按歌曲 / 艺术家 / 专辑 / 歌单过滤，点击才唤起键盘。<br><br><img src="docs/screenshots/cropped/08-search.png" width="220" alt="搜索页" /> |
+| **⑤ 正在播放（ARTWORK）** —— 封面 / 格式参数 / 分段进度条 / 传输控制；播放时封面带扫描线与旋转工程环，页面固定在 Dock 之上。<br><br><img src="docs/screenshots/cropped/05-nowplaying.png" width="220" alt="正在播放页" /> | **⑥ 歌词面板（LYRICS）** —— ARTWORK / LYRICS 切换，LRC 歌词逐行高亮同步滚动；无歌词时提示。<br><br><img src="docs/screenshots/cropped/07-lyrics.png" width="220" alt="歌词面板" /> |
+| **⑦ 播放队列** —— 从正在播放页右上角 QUEUE 上滑呼出，查看与移除队列曲目。<br><br><img src="docs/screenshots/cropped/06-queue.png" width="220" alt="队列面板" /> | **⑧ 设置 · 自定义配色** —— 标准终端 / 棱镜频谱 / 自定义三主题；自绘 HSV 调色器（饱和度亮度板 + 色相条 + HEX 直输）+ 12 预设色板，实时生效并持久化。<br><br><img src="docs/screenshots/cropped/09-settings.png" width="220" alt="设置页" /> |
 
 ## 使用方式
 
@@ -48,9 +49,9 @@
 4. **收藏与歌单**：曲库行内可点 **收藏**（加入「收藏」清单）或 **加入歌单**（可即时新建）；「歌单」Tab 内管理清单。
 5. **滑动切换界面**：在主体区域**左右滑动**即可在 曲库 ↔ 歌单 ↔ 搜索 ↔ 正在播放 ↔ 设置 之间切换（底部导航点击同样可用）；滑入搜索页时**不会自动弹出键盘**，点击搜索框才唤起。
 6. **搜索**：底部 Dock 中央的搜索按钮进入全域检索，按关键词过滤本地曲库（歌曲 / 艺术家 / 专辑）与歌单，结果可直接播放或加入队列。
-7. **主题设置**：「设置」Tab 内可在 **标准终端**（柠檬黄/黑/暖白，默认）、**棱镜频谱**（亮粉/青绿/明黄）与 **自定义** 之间切换；自定义主题通过取色器 / 预设色板自由调配主色、辅助色、点缀色，实时生效并持久化保存；主题覆盖全部界面——含启动动画、警戒条纹、歌词高亮、滚动条、进度控件与底部 Dock。
+7. **主题设置**：「设置」Tab 内可在 **标准终端**（柠檬黄/黑/暖白，默认）、**棱镜频谱**（亮粉/青绿/明黄）与 **自定义** 之间切换；自定义主题通过自绘 HSV 调色器（饱和度/亮度板 + 色相条 + HEX 直输）与 12 预设色板自由调配主色、辅助色、点缀色，实时生效并持久化保存；主题覆盖全部界面——含启动动画、警戒条纹、歌词高亮、滚动条、进度控件与底部 Dock。
 8. **纯色背景切换**：设置页可切换 **黑色 / 白色** 纯色外壳；浅色模式下前景、卡片、网格、玻璃 Dock 与播放条自动适配明暗。
-9. **底部 Dock（ColorOS 17 规范）**：毛玻璃悬浮胶囊（图标 + 文字说明），中央搜索按钮；Dock 悬浮于安卓系统手势条（安全区）之上，内容滚动到 Dock 下方时透出毛玻璃模糊；播放中的 **MiniPlayer 为毛玻璃悬浮胶囊**，位于 Dock 上方，与参考布局一致。
+9. **底部 Dock（ColorOS 17 规范）**：毛玻璃胶囊（图标 + 文字说明），中央搜索按钮；Dock 位于系统手势条（安全区）之上且为**底部固定层**——内容滚动区域自动收缩在 Dock 上方，任何控件都不会被 Dock 遮挡或拦截点击；播放中的 **MiniPlayer 为毛玻璃悬浮胶囊**，位于 Dock 上方。
 10. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。修复了锁屏/系统媒体控件调节无效的问题（媒体按键与传输控制标志、seek 回调字段对齐）。首次安装 Android 13+ 会请求通知权限。
 11. **重启恢复**：曲库、歌单、播放模式、音量、主题与背景偏好持久化保存，重新打开应用自动恢复。
 
@@ -58,8 +59,8 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.3.2 (release) | 正式签名版，适用于日常安装；**Dock 改为底部固定层（内容永不遮挡/可点）、锁屏拖动进度条时间即时同步、预设色板移至高区** | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
-| v1.3.2 (debug) | 调试签名版，仅用于体验；**同 v1.3.2 修复内容** | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
+| v1.3.2 (release) | 正式签名版，适用于日常安装；**Dock 改为底部固定层（内容永不遮挡/可点）、锁屏拖动进度条时间即时同步、预设色板移至高区** | [EndfieldMusicTerminal-v1.3.2.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.2.apk) |
+| v1.3.2 (debug) | 调试签名版，仅用于体验；**同 v1.3.2 修复内容** | [EndfieldMusicTerminal-v1.3.2-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.2-debug.apk) |
 
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
