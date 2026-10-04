@@ -83,7 +83,11 @@ export default function HomePage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: dir * -26 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="h-full overflow-y-auto pb-[188px]"
+                className={
+                  view === 'nowplaying'
+                    ? 'h-full overflow-hidden'
+                    : 'h-full overflow-y-auto pb-[320px]'
+                }
               >
                 {view === 'library' ? (
                   <LibraryView />
@@ -99,7 +103,8 @@ export default function HomePage() {
               </motion.div>
             </AnimatePresence>
           </main>
-          {/* floating frosted bottom layer: mini player + dock */}
+          {/* floating frosted bottom layer: dock always visible; mini player
+              only outside the now-playing view */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1.5">
             <AnimatePresence>
               {view !== 'nowplaying' && (

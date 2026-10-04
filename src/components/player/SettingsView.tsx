@@ -81,7 +81,105 @@ const CHANNELS: ReadonlyArray<{ key: Channel; label: string }> = [
   { key: 'tertiary', label: '点缀色 TERTIARY' },
 ];
 
-/** Custom theme editor: three channels + preset palette. */
+// ---- small color math (hsl <-> hex) for the self-drawn picker ----
+
+function hslToHex(h: number, s: number, l: number): string {
+  const sn = s / 100;
+  const ln = l / 100;
+  const k = (n: number) => (n + h / 30) % 12;
+  const a = sn * Math.min(ln, 1 - ln);
+  const f = (n: number) => ln - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  const to255 = (v: number) => Math.round(255 * v);
+  return `#${[f(0), f(8), f(4)].map((v) => to255(v).toString(16).padStart(2, '0')).join('')}`;
+}
+
+function hexToHsl(hex: string): { h: number; s: number; l: number } {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  const raw = m ? m[1] : 'FF01A4';
+  const r = parseInt(raw.slice(0, 2), 16) / 255;
+  const g = parseInt(raw.slice(2, 4), 16) / 255;
+  const b = parseInt(raw.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h: Math.round(h), s: Math.round(s * 100), l: Math.round(l * 100) };
+}
+
+/** Saturation/Lightness 2D pad — click to pick. */
+function SvPad({
+  hue,
+  sat,
+  light,
+  onPick,
+}: {
+  hue: number;
+  sat: number;
+  light: number;
+  onPick: (sat: number, light: number) => void;
+}) {
+  return (
+    <div
+      role="slider"
+      aria-label="饱和度 / 亮度"
+      aria-valuetext={`S${sat} L${light}`}
+      className="relative h-36 w-full cursor-crosshair touch-none select-none rounded border border-white/15"
+      style={{
+        background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${hue} 100% 50%))`,
+      }}
+      onClick={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        const y = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+        onPick(Math.round(x * 100), Math.round((1 - y) * 100));
+      }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1px_rgba(0,0,0,0.5)]"
+        style={{ left: `${sat}%`, top: `${100 - light}%` }}
+      />
+    </div>
+  );
+}
+
+/** Hue bar — click to pick hue. */
+function HueBar({ hue, onChange }: { hue: number; onChange: (h: number) => void }) {
+  return (
+    <div
+      role="slider"
+      aria-label="色相"
+      aria-valuetext={`${hue}°`}
+      className="relative h-5 w-full cursor-pointer touch-none select-none rounded-full border border-white/15"
+      style={{
+        background:
+          'linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)',
+      }}
+      onClick={(e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+        onChange(Math.round(x * 360));
+      }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 h-4 w-[6px] -translate-x-1/2 -translate-y-1/2 rounded-sm border border-black/60 bg-white shadow"
+        style={{ left: `${(hue / 360) * 100}%` }}
+      />
+    </div>
+  );
+}
+
+/** Custom theme editor: channels + self-drawn HSV picker + hex input + presets. */
 function CustomEditor() {
   const [custom, setCustom] = useState<CustomColors>(() => getCustomTheme());
   const [channel, setChannel] = useState<Channel>('primary');
@@ -90,6 +188,8 @@ function CustomEditor() {
     setCustom(next);
     setCustomTheme(next);
   };
+
+  const activeHsl = hexToHsl(custom[channel]);
 
   return (
     <div className="flex flex-col gap-3 border border-accent/50 bg-accent/5 p-3" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}>
@@ -104,28 +204,66 @@ function CustomEditor() {
         </button>
       </div>
 
-      {CHANNELS.map(({ key, label }) => (
-        <label
-          key={key}
-          className={cn(
-            'flex items-center gap-2.5 border px-2.5 py-2 transition-colors',
-            channel === key ? 'border-accent/60 bg-accent/10' : 'border-border bg-card/70',
-          )}
-        >
-          <input
-            type="color"
-            value={custom[key]}
-            onChange={(e) => apply({ ...custom, [key]: e.target.value })}
+      {/* channel rows */}
+      {CHANNELS.map(({ key, label }) => {
+        const active = channel === key;
+        return (
+          <button
+            key={key}
+            type="button"
             onClick={() => setChannel(key)}
-            aria-label={label}
-            className="h-8 w-10 cursor-pointer border-0 bg-transparent p-0"
+            aria-pressed={active}
+            className={cn(
+              'flex items-center gap-2.5 border px-2.5 py-2 text-left transition-colors',
+              active ? 'border-accent/60 bg-accent/10' : 'border-border bg-card/70',
+            )}
+          >
+            <span
+              aria-hidden
+              className="h-7 w-7 shrink-0 rounded border border-white/15"
+              style={{ backgroundColor: custom[key] }}
+            />
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-semibold tracking-wider text-foreground">{label}</span>
+              <span className="block font-mono text-[9px] tracking-widest text-muted-foreground">
+                {custom[key].toUpperCase()}
+              </span>
+            </span>
+            {active && <span className="font-mono text-[8px] tracking-widest text-accent">PICK ▼</span>}
+          </button>
+        );
+      })}
+
+      {/* self-drawn picker for the active channel */}
+      <div className="flex flex-col gap-2 rounded border border-accent/30 bg-background/60 p-2.5">
+        <SvPad
+          hue={activeHsl.h}
+          sat={activeHsl.s}
+          light={activeHsl.l}
+          onPick={(s, l) => apply({ ...custom, [channel]: hslToHex(activeHsl.h, s, l) })}
+        />
+        <HueBar hue={activeHsl.h} onChange={(h) => apply({ ...custom, [channel]: hslToHex(h, activeHsl.s, activeHsl.l) })} />
+        <div className="flex items-center gap-2">
+          <span
+            aria-hidden
+            className="h-6 w-9 shrink-0 rounded border border-white/15"
+            style={{ backgroundColor: custom[channel] }}
           />
-          <span className="min-w-0 flex-1">
-            <span className="block text-xs font-semibold tracking-wider text-foreground">{label}</span>
-            <span className="block font-mono text-[9px] tracking-widest text-muted-foreground">{custom[key].toUpperCase()}</span>
-          </span>
-        </label>
-      ))}
+          <input
+            type="text"
+            value={custom[channel].toUpperCase()}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              if (/^#?[0-9a-fA-F]{6}$/.test(v)) {
+                apply({ ...custom, [channel]: v.startsWith('#') ? v : `#${v}` });
+              }
+            }}
+            spellCheck={false}
+            className="w-24 border border-border bg-card px-2 py-1 font-mono text-[11px] tracking-widest text-foreground outline-none focus:border-accent/60"
+          />
+          <span className="font-mono text-[8px] tracking-widest text-muted-foreground">HEX 直输</span>
+        </div>
+      </div>
 
       <div className="flex flex-col gap-1.5">
         <span className="font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
