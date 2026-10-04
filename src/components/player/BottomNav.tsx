@@ -18,18 +18,20 @@ interface BottomNavProps {
 }
 
 /**
- * ColorOS 17-style floating dock: frosted-glass capsule, icon-only items,
- * content beneath the dock is blurred through the glass. The center search
- * item shares the same size as every other icon.
+ * ColorOS 17-style floating dock: frosted-glass capsule with icon + label.
+ * The dock floats above the Android system gesture bar (safe-area inset),
+ * never touching the screen edge; glass adapts to dark/light backgrounds.
  */
 export default function BottomNav({ view, onChange }: BottomNavProps) {
   return (
-    <nav className="pointer-events-auto shrink-0 px-3 pb-2.5 pt-1">
+    <nav className="pointer-events-auto shrink-0 px-3 pb-[calc(max(env(safe-area-inset-bottom),20px)+16px)] pt-1">
       <div
-        className="relative mx-auto flex h-[58px] max-w-[430px] items-center justify-between rounded-[26px] border border-white/10 bg-[#141418]/60 px-2 backdrop-blur-2xl"
+        className="relative mx-auto flex h-[64px] max-w-[430px] items-center justify-between rounded-[26px] border px-2 backdrop-blur-2xl"
         style={{
+          background: 'var(--glass-bg)',
+          borderColor: 'var(--glass-border)',
           boxShadow:
-            'inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -14px 28px -18px rgba(255,255,255,0.10), 0 12px 32px -10px rgba(0,0,0,0.7)',
+            'inset 0 1px 0 rgba(255,255,255,0.07), var(--glass-shadow)',
         }}
       >
         {NAV_ITEMS.map((item) => {
@@ -47,11 +49,19 @@ export default function BottomNav({ view, onChange }: BottomNavProps) {
                 active ? 'text-accent' : 'text-muted-foreground hover:text-foreground/90',
               )}
             >
-              <Icon
-                className="h-[22px] w-[22px]"
-                strokeWidth={active ? 2.4 : 1.9}
-                style={active ? { filter: 'drop-shadow(0 0 6px currentColor)' } : undefined}
-              />
+              <span className="flex items-center gap-1">
+                {active && (
+                  <span className="font-mono text-[7px] tracking-widest text-accent/70">
+                    {item.code}
+                  </span>
+                )}
+                <Icon
+                  className="h-[21px] w-[21px]"
+                  strokeWidth={active ? 2.4 : 1.9}
+                  style={active ? { filter: 'drop-shadow(0 0 6px currentColor)' } : undefined}
+                />
+              </span>
+              <span className="text-[9px] font-medium tracking-wider">{item.label}</span>
               <span
                 aria-hidden
                 className={cn(

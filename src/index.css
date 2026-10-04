@@ -11,6 +11,10 @@
     text-size-adjust: 100%;
   }
 
+  html[data-bgmode='light'] {
+    color-scheme: light;
+  }
+
   body {
     overscroll-behavior-y: none;
     touch-action: manipulation;
@@ -75,8 +79,8 @@
 /* Faint engineering grid, used as page backdrop */
 @utility engineering-grid {
   background-image:
-    linear-gradient(to right, rgba(241, 240, 234, 0.035) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(241, 240, 234, 0.035) 1px, transparent 1px);
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
   background-size: 24px 24px;
 }
 
@@ -84,8 +88,8 @@
 @utility scanlines {
   background-image: repeating-linear-gradient(
     to bottom,
-    rgba(241, 240, 234, 0.022) 0px,
-    rgba(241, 240, 234, 0.022) 1px,
+    var(--scan-line) 0px,
+    var(--scan-line) 1px,
     transparent 1px,
     transparent 4px
   );
@@ -95,8 +99,8 @@
 @utility segment-track {
   background-image: repeating-linear-gradient(
     to right,
-    rgba(241, 240, 234, 0.12) 0px,
-    rgba(241, 240, 234, 0.12) 1px,
+    var(--segment-line) 0px,
+    var(--segment-line) 1px,
     transparent 1px,
     transparent 3px
   );

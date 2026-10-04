@@ -161,3 +161,31 @@ export function setCustomTheme(c: CustomColors) {
   localStorage.setItem(THEME_KEY, 'custom');
   applyCustomTheme(c);
 }
+
+// ---- Background mode: solid black / solid white shell ----
+
+export type BgMode = 'dark' | 'light';
+export const BG_MODE_KEY = 'endfield-player:bgmode';
+
+export function getBgMode(): BgMode {
+  try {
+    return localStorage.getItem(BG_MODE_KEY) === 'light' ? 'light' : 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+export function applyBgMode(mode: BgMode) {
+  const el = document.documentElement;
+  if (mode === 'light') el.dataset.bgmode = 'light';
+  else delete el.dataset.bgmode;
+}
+
+export function setBgMode(mode: BgMode) {
+  try {
+    localStorage.setItem(BG_MODE_KEY, mode);
+  } catch {
+    /* storage unavailable */
+  }
+  applyBgMode(mode);
+}

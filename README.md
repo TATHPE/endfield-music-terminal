@@ -46,19 +46,20 @@
    - **播放模式**：点击循环图标在「顺序 → 随机 → 单曲循环」之间切换，图标带切换动画。
    - **进度与音量**：分段刻度进度条可拖动跳转；VOL 滑块调节音量。
 4. **收藏与歌单**：曲库行内可点 **收藏**（加入「收藏」清单）或 **加入歌单**（可即时新建）；「歌单」Tab 内管理清单。
-5. **滑动切换界面**：在主体区域**左右滑动**即可在 曲库 ↔ 歌单 ↔ 搜索 ↔ 正在播放 ↔ 设置 之间切换（底部导航点击同样可用）。
+5. **滑动切换界面**：在主体区域**左右滑动**即可在 曲库 ↔ 歌单 ↔ 搜索 ↔ 正在播放 ↔ 设置 之间切换（底部导航点击同样可用）；滑入搜索页时**不会自动弹出键盘**，点击搜索框才唤起。
 6. **搜索**：底部 Dock 中央的搜索按钮进入全域检索，按关键词过滤本地曲库（歌曲 / 艺术家 / 专辑）与歌单，结果可直接播放或加入队列。
 7. **主题设置**：「设置」Tab 内可在 **标准终端**（柠檬黄/黑/暖白，默认）、**棱镜频谱**（亮粉/青绿/明黄）与 **自定义** 之间切换；自定义主题通过取色器 / 预设色板自由调配主色、辅助色、点缀色，实时生效并持久化保存；主题覆盖全部界面——含启动动画、警戒条纹、歌词高亮、滚动条、进度控件与底部 Dock。
-8. **底部 Dock（ColorOS 17 规范）**：毛玻璃悬浮胶囊，纯图标导航，中心搜索按钮；内容滚动到 Dock 下方时透出毛玻璃模糊；播放器背景为明暗双层（暗色基底 + 顶部主题色光晕）。
-9. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。修复了锁屏/系统媒体控件调节无效的问题（媒体按键与传输控制标志、seek 回调字段对齐）。首次安装 Android 13+ 会请求通知权限。
-10. **重启恢复**：曲库、歌单、播放模式、音量与主题偏好持久化保存，重新打开应用自动恢复。
+8. **纯色背景切换**：设置页可切换 **黑色 / 白色** 纯色外壳；浅色模式下前景、卡片、网格、玻璃 Dock 与播放条自动适配明暗。
+9. **底部 Dock（ColorOS 17 规范）**：毛玻璃悬浮胶囊（图标 + 文字说明），中央搜索按钮；Dock 悬浮于安卓系统手势条（安全区）之上，内容滚动到 Dock 下方时透出毛玻璃模糊；播放中的 **MiniPlayer 为毛玻璃悬浮胶囊**，位于 Dock 上方，与参考布局一致。
+10. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。修复了锁屏/系统媒体控件调节无效的问题（媒体按键与传输控制标志、seek 回调字段对齐）。首次安装 Android 13+ 会请求通知权限。
+11. **重启恢复**：曲库、歌单、播放模式、音量、主题与背景偏好持久化保存，重新打开应用自动恢复。
 
 ## 下载
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.2.0 (release) | 正式签名版，适用于日常安装；**ColorOS 17 毛玻璃 Dock + 全域搜索 + 自定义主题（三色自由调配）**；**明暗双层播放器背景** | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
-| v1.2.0 (debug) | 调试签名版，仅用于体验；**ColorOS 17 毛玻璃 Dock + 全域搜索 + 自定义主题** | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
+| v1.3.0 (release) | 正式签名版，适用于日常安装；**毛玻璃 Dock 悬浮于系统手势条之上 + 胶囊播放条 + 纯色背景切换（黑/白）**；搜索不自动弹键盘 | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
+| v1.3.0 (debug) | 调试签名版，仅用于体验；**毛玻璃 Dock + 胶囊播放条 + 纯色背景切换** | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
 
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
@@ -137,7 +138,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.2.0（versionCode 4，ColorOS 17 Dock + 搜索 + 自定义主题）
+- Android 版本：v1.3.0（versionCode 5，玻璃 Dock + 胶囊播放条 + 纯色背景）
 
 ## License
 

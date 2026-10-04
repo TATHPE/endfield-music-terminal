@@ -55,7 +55,6 @@ export default function SearchView() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="搜索歌曲 / 艺术家 / 歌单…"
-          autoFocus
           enterKeyHint="search"
           className="w-full border border-border bg-card py-3 pl-9 pr-9 font-mono text-sm tracking-wider text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-accent/60 focus:shadow-[0_0_0_1px] focus:shadow-accent/30"
           style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}

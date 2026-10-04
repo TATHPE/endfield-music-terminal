@@ -53,7 +53,7 @@ export default function HomePage() {
 
   return (
     <PlayerProvider>
-      <div className="engineering-grid flex min-h-dvh w-full justify-center bg-black">
+      <div className="engineering-grid flex min-h-dvh w-full justify-center bg-background">
         {/* Desktop-side backdrop marks */}
         <div
           aria-hidden
@@ -83,7 +83,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: dir * -26 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="h-full overflow-y-auto pb-[158px]"
+                className="h-full overflow-y-auto pb-[188px]"
               >
                 {view === 'library' ? (
                   <LibraryView />

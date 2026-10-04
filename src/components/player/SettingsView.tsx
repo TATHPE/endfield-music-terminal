@@ -7,10 +7,13 @@ import {
   PRESET_COLORS,
   THEMES,
   applyTheme,
+  getBgMode,
   getCustomTheme,
   getTheme,
+  setBgMode,
   setCustomTheme,
   setTheme,
+  type BgMode,
   type CustomColors,
   type ThemeId,
 } from '@/lib/theme';
@@ -150,6 +153,56 @@ function CustomEditor() {
   );
 }
 
+/** Background mode picker: solid black / solid white shell. */
+function BgModePicker() {
+  const [mode, setLocalMode] = useState<BgMode>(() => getBgMode());
+
+  const pick = (m: BgMode) => {
+    setBgMode(m);
+    setLocalMode(m);
+  };
+
+  const options: Array<{ id: BgMode; label: string; swatch: string }> = [
+    { id: 'dark', label: '黑色 BLACK', swatch: '#0A0A0C' },
+    { id: 'light', label: '白色 WHITE', swatch: '#F4F4F0' },
+  ];
+
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.26em] text-muted-foreground">
+        <span className="text-accent">▸</span> 背景 BACKGROUND
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {options.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => pick(o.id)}
+            aria-pressed={mode === o.id}
+            className={cn(
+              'flex items-center gap-2.5 border p-2.5 text-left transition-all duration-200',
+              mode === o.id
+                ? 'border-accent bg-accent/10 shadow-[0_0_14px_-4px] shadow-accent/40'
+                : 'border-border bg-card hover:border-accent/40',
+            )}
+            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
+          >
+            <span
+              aria-hidden
+              className="h-7 w-7 shrink-0 border border-white/15"
+              style={{ backgroundColor: o.swatch }}
+            />
+            <span className="font-mono text-[11px] tracking-wider text-foreground">{o.label}</span>
+          </button>
+        ))}
+      </div>
+      <p className="font-mono text-[9px] leading-relaxed tracking-wider text-muted-foreground/80">
+        纯色外壳：深色（黑色基底）或浅色（白色基底）整体切换，玻璃 Dock 与播放条自动跟随明暗。
+      </p>
+    </section>
+  );
+}
+
 /** Settings — theme selection + custom theme editor. */
 export default function SettingsView() {
   const [theme, setLocalTheme] = useState<ThemeId>(() => getTheme());
@@ -176,6 +229,8 @@ export default function SettingsView() {
         <span className="font-mono text-[9px] tracking-widest text-muted-foreground">CFG-04</span>
       </header>
       <HazardStrip className="h-[3px] opacity-60" />
+
+      <BgModePicker />
 
       <section className="flex flex-col gap-2.5">
         <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.26em] text-muted-foreground">

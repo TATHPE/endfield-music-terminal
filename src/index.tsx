@@ -11,10 +11,11 @@ import '@fontsource/rajdhani/700.css';
 import '@fontsource/share-tech-mono/400.css';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { applyTheme, getTheme } from '@/lib/theme';
+import { applyTheme, getTheme, applyBgMode, getBgMode } from '@/lib/theme';
 
-// Apply the persisted theme before first paint so the boot screen matches.
+// Apply the persisted theme & background mode before first paint so the boot screen matches.
 applyTheme(getTheme());
+applyBgMode(getBgMode());
 
 // Edge-to-edge immersive status bar (ColorOS 17): the web layer reserves
 // the top inset via env(safe-area-inset-top).

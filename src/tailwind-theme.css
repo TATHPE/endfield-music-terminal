@@ -12,6 +12,14 @@
   --background: #0A0A0C;
   /* ambient glow for the light layer of the dual-tone background */
   --bg-glow: rgba(242, 194, 0, 0.10);
+  /* frosted-glass surfaces (dock / mini player) */
+  --glass-bg: rgba(20, 20, 24, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.65);
+  /* faint decorative lines, adapt to light mode */
+  --grid-line: rgba(241, 240, 234, 0.035);
+  --scan-line: rgba(241, 240, 234, 0.022);
+  --segment-line: rgba(241, 240, 234, 0.12);
   --foreground: #F1F0EA;
   --card: #131316;
   --card-foreground: #F1F0EA;
@@ -123,6 +131,31 @@
   --info-border: color-mix(in oklab, var(--info) 88%, black);
   --warning-border: color-mix(in oklab, var(--warning) 88%, black);
   --bg-glow: rgba(255, 1, 164, 0.13);
+}
+
+/* Pure light background mode — solid white shell with dark ink.
+   Enabled via <html data-bgmode="light"> (see src/lib/theme.ts). */
+[data-bgmode='light'] {
+  --background: #F4F4F0;
+  --foreground: #15151A;
+  --card: #FFFFFF;
+  --card-foreground: #15151A;
+  --muted: #ECECEA;
+  --muted-foreground: #6B6B72;
+  --border: #D8D8D4;
+  --input: #D8D8D4;
+  --sidebar: #EDEDEA;
+  --sidebar-foreground: #15151A;
+  --sidebar-border: #D8D8D4;
+  --sidebar-accent: #E2E2DE;
+  --sidebar-accent-foreground: #15151A;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(20, 20, 26, 0.14);
+  --glass-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.22);
+  --grid-line: rgba(10, 10, 12, 0.06);
+  --scan-line: rgba(10, 10, 12, 0.035);
+  --segment-line: rgba(10, 10, 12, 0.12);
+  --bg-glow: rgba(242, 194, 0, 0.14);
 }
 
 @theme inline {
