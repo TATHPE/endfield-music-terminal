@@ -59,8 +59,8 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.3.2 (release) | 正式签名版，适用于日常安装；**Dock 改为底部固定层（内容永不遮挡/可点）、锁屏拖动进度条时间即时同步、预设色板移至高区** | [EndfieldMusicTerminal-v1.3.2.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.2.apk) |
-| v1.3.2 (debug) | 调试签名版，仅用于体验；**同 v1.3.2 修复内容** | [EndfieldMusicTerminal-v1.3.2-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.2-debug.apk) |
+| v1.3.3 (release) | 正式签名版，适用于日常安装；**播放页重设计（封面自适应纯正方形、44/56 控件统一、内容固定 Dock 上方）、曲库/歌单/搜索内容滚动到 Dock 下方透出毛玻璃模糊** | [EndfieldMusicTerminal-v1.3.3.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.3.apk) |
+| v1.3.3 (debug) | 调试签名版，仅用于体验；**同 v1.3.3 内容** | [EndfieldMusicTerminal-v1.3.3-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.3-debug.apk) |
 
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
@@ -139,7 +139,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.3.2（versionCode 7，Dock 固定层 + 锁屏拖动同步修复）
+- Android 版本：v1.3.3（versionCode 8，播放页重设计 + 毛玻璃透出）
 
 ## License
 

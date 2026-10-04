@@ -85,8 +85,18 @@ export default function HomePage() {
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 className={
                   view === 'nowplaying'
-                    ? 'h-full overflow-hidden'
-                    : 'h-full overflow-y-auto'
+                    ? /* fixed page: bottom padding = dock height, so every
+                         control lives strictly above the floating dock */
+                      'h-full overflow-hidden pb-[124px]'
+                    : view === 'settings'
+                      ? /* keep the whole custom-color editor above the dock:
+                           bottom padding >= dock + mini player so the palette
+                           can never be blocked by the frosted layer */
+                        'h-full overflow-y-auto pb-[280px]'
+                      : /* browse pages: content scrolls behind the frosted
+                           dock and shows through it blurred; bottom padding
+                           still lets the last row rest above the dock buttons */
+                        'h-full overflow-y-auto pb-[160px]'
                 }
               >
                 {view === 'library' ? (
@@ -103,13 +113,13 @@ export default function HomePage() {
               </motion.div>
             </AnimatePresence>
           </main>
-          {/* bottom layer in normal flow: the content area above shrinks by
-              exactly this height, so nothing ever scrolls behind / is blocked
-              by the dock — mini player only outside the now-playing view */}
-          <div className="relative z-20 shrink-0">
+          {/* floating frosted bottom layer: browse content scrolls behind it
+              and shows through blurred; mini player only outside the
+              now-playing view */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1.5">
             <AnimatePresence>
               {view !== 'nowplaying' && (
-                <div>
+                <div className="pointer-events-auto">
                   <MiniPlayer onOpen={() => go('nowplaying')} />
                 </div>
               )}

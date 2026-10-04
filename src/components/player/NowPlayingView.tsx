@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ListOrdered,
@@ -52,6 +52,24 @@ export default function NowPlayingView() {
   } = usePlayer();
   const [panel, setPanel] = useState<Panel>('artwork');
   const [queueOpen, setQueueOpen] = useState(false);
+  const coverWrapRef = useRef<HTMLDivElement>(null);
+  const [coverSize, setCoverSize] = useState(0);
+
+  /* Square artwork: measure the flex area and clamp to min(width, height),
+     so the artwork is always a perfect square and never cropped by the
+     layout no matter what height is available above the dock. */
+  useEffect(() => {
+    const el = coverWrapRef.current;
+    if (!el) return;
+    const update = () => {
+      const r = el.getBoundingClientRect();
+      setCoverSize(Math.max(0, Math.floor(Math.min(r.width, r.height))));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   if (!currentSong) {
     return (
@@ -73,8 +91,8 @@ export default function NowPlayingView() {
   const mutedShown = muted || volume <= 0.005;
 
   return (
-    /* Fixed layout: the page never scrolls; the dock sits below in normal
-       flow, so every control is fully visible and tappable. */
+    /* Fixed layout: the page never scrolls; content lives strictly above
+       the dock (outer bottom padding), nothing is ever covered. */
     <div className="flex h-full flex-col overflow-hidden px-4 pb-4 pt-3">
       {/* Header */}
       <header className="flex items-center justify-between gap-3">
@@ -119,8 +137,8 @@ export default function NowPlayingView() {
         ))}
       </div>
 
-      {/* Artwork / lyrics: square artwork always fully visible */}
-      <div className="relative mt-2 min-h-0 flex-1 overflow-hidden">
+      {/* Artwork / lyrics: square artwork fully visible, sized to the area */}
+      <div ref={coverWrapRef} className="relative mt-2 min-h-0 flex-1 overflow-hidden">
         <AnimatePresence mode="wait" initial={false}>
           {panel === 'artwork' ? (
             <motion.div
@@ -129,21 +147,26 @@ export default function NowPlayingView() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 14 }}
               transition={{ duration: 0.22, ease: 'easeOut' }}
-              className="relative mx-auto flex h-full min-h-0 w-full items-center justify-center"
+              className="relative flex h-full w-full items-center justify-center"
             >
-              <div className="relative aspect-square h-full max-h-[230px] max-w-[230px]">
-                <CornerFrame size="h-5 w-5" className="opacity-90" />
-                <CoverArt
-                  cover={song.cover}
-                  title={song.title}
-                  framed
-                  playing={isPlaying}
-                  className="aspect-square w-full"
-                />
-                <div aria-hidden className="absolute inset-x-1 bottom-1">
-                  <HazardStrip className="h-[4px] opacity-80" />
+              {coverSize > 0 && (
+                <div
+                  className="relative shrink-0"
+                  style={{ width: coverSize, height: coverSize }}
+                >
+                  <CornerFrame size="h-5 w-5" className="opacity-90" />
+                  <CoverArt
+                    cover={song.cover}
+                    title={song.title}
+                    framed
+                    playing={isPlaying}
+                    className="aspect-square w-full"
+                  />
+                  <div aria-hidden className="absolute inset-x-1 bottom-1">
+                    <HazardStrip className="h-[4px] opacity-80" />
+                  </div>
                 </div>
-              </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -173,14 +196,14 @@ export default function NowPlayingView() {
 
       {/* Title */}
       <div className="mt-1.5 text-center">
-        <h2 className="truncate text-lg font-bold tracking-wide text-foreground">{song.title}</h2>
-        <p className="mt-0.5 truncate font-mono text-[11px] tracking-widest text-muted-foreground">
+        <h2 className="truncate text-[15px] font-bold leading-tight tracking-wide text-foreground">{song.title}</h2>
+        <p className="mt-0.5 truncate font-mono text-[10px] tracking-widest text-muted-foreground">
           {song.artist} · {song.album}
         </p>
       </div>
 
       {/* Progress */}
-      <div className="mt-1.5">
+      <div className="mt-1">
         <ProgressBar value={currentTime} max={duration} onSeek={seek} disabled={duration <= 0} playing={isPlaying} />
         <div className="mt-1 flex items-center justify-between font-mono text-[10px] tracking-widest">
           <span className="text-primary">{formatTime(currentTime)}</span>
@@ -213,7 +236,7 @@ export default function NowPlayingView() {
               transition={{ duration: 0.18, ease: 'easeOut' }}
               className="flex items-center justify-center"
             >
-              <ModeIcon className="h-5 w-5" strokeWidth={2.2} />
+              <ModeIcon className="h-[22px] w-[22px]" strokeWidth={2.2} />
             </motion.span>
           </AnimatePresence>
         </motion.button>
@@ -224,7 +247,7 @@ export default function NowPlayingView() {
           aria-label="上一首"
           className="clip-corner-sm flex h-11 w-11 items-center justify-center border border-border bg-card/60 text-foreground transition-colors hover:text-primary active:scale-90"
         >
-          <SkipBack className="h-6 w-6" />
+          <SkipBack className="h-[22px] w-[22px]" />
         </button>
 
         <motion.button
@@ -255,7 +278,7 @@ export default function NowPlayingView() {
           aria-label="下一首"
           className="clip-corner-sm flex h-11 w-11 items-center justify-center border border-border bg-card/60 text-foreground transition-colors hover:text-primary active:scale-90"
         >
-          <SkipForward className="h-6 w-6" />
+          <SkipForward className="h-[22px] w-[22px]" />
         </button>
 
         <button
@@ -269,12 +292,12 @@ export default function NowPlayingView() {
               : 'border-border bg-card/60 text-muted-foreground hover:text-primary',
           )}
         >
-          {mutedShown ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+          {mutedShown ? <VolumeX className="h-[22px] w-[22px]" /> : <Volume2 className="h-[22px] w-[22px]" />}
         </button>
       </div>
 
       {/* Volume */}
-      <div className="mt-1.5 flex items-center gap-3 px-1">
+      <div className="mt-1 flex items-center gap-3 px-1">
         <span className="font-mono text-[9px] tracking-[0.2em] text-muted-foreground">VOL</span>
         <input
           type="range"
