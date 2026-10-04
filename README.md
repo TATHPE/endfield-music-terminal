@@ -16,10 +16,39 @@
 
 - **本地歌曲导入**：从设备文件系统批量导入音频，曲库持久化存储在浏览器 IndexedDB
 - **专辑封面解析**：用 `music-metadata` 解析 ID3 / FLAC / MP4 / OGG / WAV / APE 等标签与内嵌封面；无内嵌封面时以 iTunes Search 兜底搜索
-- **双 Tab 界面**：曲库列表 + 正在播放（频谱动画、分段刻度进度条、循环 / 随机 / 单曲模式）
+- **三 Tab 界面 + 手势滑动切换**：曲库 / 歌单 / 正在播放，支持底部导航点击或左右滑动切换
+- **正在播放面板**：ARTWORK（封面 + 播放扫描动画）/ LYRICS 双面板，分段刻度进度条、循环 / 随机 / 单曲三种播放模式
+- **播放队列**：底部上滑队列面板，可查看队列、移除曲目；支持收藏与自定义歌单（IndexedDB 持久化）
+- **同步歌词**：内置 LRC 解析器（时间戳 / offset 标签），播放时逐行高亮并自动滚动居中
+- **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / 拖动进度）
 - **终末地风格启动动画**：六边形徽章脉冲 + 扫描光带 + 逐行 BOOT 日志 + 24 段进度条，约 2.6 秒，可点击跳过
-- **Android / ColorOS 17 适配**：沉浸式状态栏与导航栏、安全区预留（`pt-safe` / `pb-safe`）、深色主题、自绘终末地黄黑应用图标
+- **终末地风格应用图标**：自绘黄黑六边形徽章 + 双八分音符 + 频谱条 + 警戒条纹，全套 Android 自适应图标
+- **Android / ColorOS 17 适配**：沉浸式状态栏与导航栏、安全区预留（`pt-safe` / `pb-safe`）、深色主题、通知权限运行时请求
 - **离线可用**：Web 端与 APK 均不依赖云端服务
+
+## 界面预览
+
+> 截图取自 Android 同构的 Web 预览（430px 手机布局），与实际 APK 界面一致。
+
+| | |
+| --- | --- |
+| **① 启动动画** —— 六边形徽章脉冲、BOOT 逐行自检日志、24 段进度条，点击可跳过。<br><br><img src="docs/screenshots/cropped/01-boot.png" width="220" alt="启动动画" /> | **② 曲库** —— 本地曲库列表与曲目信息，右上角「导入曲目」批量导入音频。<br><br><img src="docs/screenshots/cropped/03-library.png" width="220" alt="曲库页" /> |
+| **③ 歌单** —— 收藏清单与自定义歌单，支持新建、展开、播放、移除。<br><br><img src="docs/screenshots/cropped/04-playlists.png" width="220" alt="歌单页" /> | **④ 正在播放（ARTWORK）** —— 封面 / 格式参数 / 分段进度条 / 传输控制；播放时封面带扫描线与旋转工程环。<br><br><img src="docs/screenshots/cropped/05-nowplaying.png" width="220" alt="正在播放页" /> |
+| **⑤ 播放队列** —— 从正在播放页右上角 QUEUE 上滑呼出，查看与移除队列曲目。<br><br><img src="docs/screenshots/cropped/06-queue.png" width="220" alt="队列面板" /> | **⑥ 歌词面板（LYRICS）** —— ARTWORK / LYRICS 切换，LRC 歌词逐行高亮同步滚动；无歌词时提示。<br><br><img src="docs/screenshots/cropped/07-lyrics.png" width="220" alt="歌词面板" /> |
+
+## 使用方式
+
+1. **导入歌曲**：进入「曲库」页，点击右上角 **+ 导入曲目**，选择音频文件（mp3 / flac / wav / m4a / ogg / ape 等）。导入后曲库显示曲目、艺术家、专辑与时长；歌曲无内嵌封面时会自动向 iTunes 搜索兜底。
+2. **开始播放**：点击曲库中的曲目即开始播放并进入「正在播放」页。底部 **MiniPlayer** 常驻显示当前播放进度，点击可回到正在播放页。
+3. **正在播放页**：
+   - **ARTWORK / LYRICS**：切换封面视图与同步歌词视图；歌词随播放逐行高亮、自动滚动居中。
+   - **QUEUE**：打开底部队列面板，查看全部队列曲目，可移除任意曲目。
+   - **播放模式**：点击循环图标在「顺序 → 随机 → 单曲循环」之间切换，图标带切换动画。
+   - **进度与音量**：分段刻度进度条可拖动跳转；VOL 滑块调节音量。
+4. **收藏与歌单**：曲库行内可点 **收藏**（加入「收藏」清单）或 **加入歌单**（可即时新建）；「歌单」Tab 内管理清单。
+5. **滑动切换界面**：在主体区域**左右滑动**即可在 曲库 ↔ 歌单 ↔ 正在播放 之间切换（底部导航点击同样可用）。
+6. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。首次安装 Android 13+ 会请求通知权限。
+7. **重启恢复**：曲库、歌单、播放模式与音量偏好持久化保存，重新打开应用自动恢复。
 
 ## 下载
 
@@ -53,10 +82,10 @@
 ```
 endfield-player/
 ├── src/                    # Web 源码
-│   ├── pages/HomePage/     # 主页面（曲库 + 正在播放）
-│   ├── components/player/  # 播放器组件（SplashScreen / BottomNav / NowPlayingView ...）
-│   └── lib/                # 数据层（db.ts / parser.ts / player-context.ts）
-├── android/                # Capacitor Android 原生工程
+│   ├── pages/HomePage/     # 主页面（曲库 / 歌单 / 正在播放 + 滑动切换）
+│   ├── components/player/  # 播放器组件（SplashScreen / BottomNav / NowPlayingView / QueuePanel ...）
+│   └── lib/                # 数据层（db.ts / parser.ts / lyrics.ts / playlists.ts / player-context.ts）
+├── android/                # Capacitor Android 原生工程（含自绘应用图标）
 ├── public/
 ├── capacitor.config.ts     # Capacitor 配置（appId: com.endfield.audio.terminal）
 ├── vite.config.ts          # Web 构建配置

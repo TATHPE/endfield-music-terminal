@@ -1,10 +1,20 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { ISong, PlayMode } from '@/lib/music';
 import { PLAY_MODES, makeId } from '@/lib/music';
-import { deleteSong, getAllSongs, putSong } from '@/lib/db';
+import type { Playlist } from '@/lib/playlists';
+import { FAVORITES_ID, makePlaylistId, normalizePlaylistName } from '@/lib/playlists';
+import {
+  deleteSong,
+  getAllPlaylists,
+  getAllSongs,
+  putPlaylist,
+  putSong,
+  deletePlaylist as dbDeletePlaylist,
+} from '@/lib/db';
 import { fetchItunesCover, parseAudioFile, toSong } from '@/lib/parser';
 import { PlayerContext, type PlayerContextState } from '@/lib/player-context';
+import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 
 const VOLUME_KEY = 'endfield-player:volume';
 const MODE_KEY = 'endfield-player:mode';
@@ -20,6 +30,8 @@ function readStored<T>(key: string, fallback: T): T {
 
 export default function PlayerProvider({ children }: { children: ReactNode }) {
   const [songs, setSongs] = useState<ISong[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [activeQueueId, setActiveQueueId] = useState<string | null>(null);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [mode, setMode] = useState<PlayMode>(() => readStored<PlayMode>(MODE_KEY, 'sequence'));
@@ -33,11 +45,39 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
 
   const currentSong = songs.find((s) => s.id === currentId) || null;
 
-  // Restore the library from IndexedDB once on mount.
+  /** Resolved queue for the active context: playlist songs or the whole library. */
+  const queue = useMemo(() => {
+    if (activeQueueId === null) return songs;
+    const pl = playlists.find((p) => p.id === activeQueueId);
+    if (!pl) return songs;
+    return pl.songIds
+      .map((id) => songs.find((s) => s.id === id))
+      .filter((s): s is ISong => Boolean(s));
+  }, [activeQueueId, playlists, songs]);
+
+  // Restore the library + playlists from IndexedDB once on mount.
   useEffect(() => {
     void getAllSongs().then((list) => {
       const sorted = [...list].sort((a, b) => a.addedAt - b.addedAt);
       setSongs(sorted);
+    });
+    void getAllPlaylists().then((list) => {
+      const sorted = [...list].sort((a, b) => a.createdAt - b.createdAt);
+      setPlaylists(() => {
+        const merged = [...sorted];
+        // Guarantee the built-in favorites playlist exists.
+        if (!merged.some((p) => p.id === FAVORITES_ID)) {
+          const fav: Playlist = {
+            id: FAVORITES_ID,
+            name: '收藏',
+            songIds: [],
+            createdAt: 0,
+          };
+          merged.unshift(fav);
+          void putPlaylist(fav);
+        }
+        return merged;
+      });
     });
   }, []);
 
@@ -46,6 +86,12 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       const song = songs.find((s) => s.id === id);
       const audio = audioRef.current;
       if (!song || !audio) return;
+      // If the song is not part of the active playlist context, fall back to the whole library.
+      setActiveQueueId((cur) => {
+        if (cur === null) return cur;
+        const pl = playlists.find((p) => p.id === cur);
+        return pl && pl.songIds.includes(id) ? cur : null;
+      });
       if (urlRef.current) {
         URL.revokeObjectURL(urlRef.current);
         urlRef.current = null;
@@ -59,7 +105,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       setDuration(song.duration || 0);
       void audio.play();
     },
-    [songs, volume, muted],
+    [songs, playlists, volume, muted],
   );
 
   const togglePlay = useCallback(() => {
@@ -77,28 +123,28 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   }, [currentId, songs, playSong]);
 
   const playNext = useCallback(() => {
-    if (songs.length === 0) return;
+    if (queue.length === 0) return;
     if (mode === 'shuffle') {
-      const next = songs[Math.floor(Math.random() * songs.length)];
+      const next = queue[Math.floor(Math.random() * queue.length)];
       playSong(next.id);
       return;
     }
-    const idx = songs.findIndex((s) => s.id === currentId);
-    const nextIdx = idx === -1 ? 0 : (idx + 1) % songs.length;
-    playSong(songs[nextIdx].id);
-  }, [songs, currentId, mode, playSong]);
+    const idx = queue.findIndex((s) => s.id === currentId);
+    const nextIdx = idx === -1 ? 0 : (idx + 1) % queue.length;
+    playSong(queue[nextIdx].id);
+  }, [queue, currentId, mode, playSong]);
 
   const playPrev = useCallback(() => {
-    if (songs.length === 0) return;
+    if (queue.length === 0) return;
     if (mode === 'shuffle') {
-      const next = songs[Math.floor(Math.random() * songs.length)];
+      const next = queue[Math.floor(Math.random() * queue.length)];
       playSong(next.id);
       return;
     }
-    const idx = songs.findIndex((s) => s.id === currentId);
-    const nextIdx = idx <= 0 ? songs.length - 1 : idx - 1;
-    playSong(songs[nextIdx].id);
-  }, [songs, currentId, mode, playSong]);
+    const idx = queue.findIndex((s) => s.id === currentId);
+    const nextIdx = idx <= 0 ? queue.length - 1 : idx - 1;
+    playSong(queue[nextIdx].id);
+  }, [queue, currentId, mode, playSong]);
 
   const handleEnded = useCallback(() => {
     const audio = audioRef.current;
@@ -194,6 +240,20 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     (id: string) => {
       void deleteSong(id);
       setSongs((prev) => prev.filter((s) => s.id !== id));
+      // Drop the id from every playlist too.
+      setPlaylists((prev) => {
+        const changed: Playlist[] = [];
+        for (const pl of prev) {
+          if (pl.songIds.includes(id)) {
+            const next = { ...pl, songIds: pl.songIds.filter((sid) => sid !== id) };
+            void putPlaylist(next);
+            changed.push(next);
+          } else {
+            changed.push(pl);
+          }
+        }
+        return changed;
+      });
       if (currentId === id) {
         const audio = audioRef.current;
         if (audio) {
@@ -214,6 +274,113 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     [currentId],
   );
 
+  // ---- Favorites ---------------------------------------------------------
+  const toggleFavorite = useCallback((id: string) => {
+    setSongs((prev) => {
+      const target = prev.find((s) => s.id === id);
+      if (!target) return prev;
+      const next = { ...target, favorited: !target.favorited };
+      void putSong(next);
+      return prev.map((s) => (s.id === id ? next : s));
+    });
+    setPlaylists((prev) =>
+      prev.map((pl) => {
+        if (pl.id !== FAVORITES_ID) return pl;
+        const has = pl.songIds.includes(id);
+        const songIds = has ? pl.songIds.filter((sid) => sid !== id) : [...pl.songIds, id];
+        const next = { ...pl, songIds };
+        void putPlaylist(next);
+        return next;
+      }),
+    );
+  }, []);
+
+  // ---- Playlists ---------------------------------------------------------
+  const createPlaylist = useCallback((name: string) => {
+    const pl: Playlist = {
+      id: makePlaylistId(),
+      name: normalizePlaylistName(name),
+      songIds: [],
+      createdAt: Date.now(),
+    };
+    void putPlaylist(pl);
+    setPlaylists((prev) => [...prev, pl]);
+    return pl.id;
+  }, []);
+
+  const renamePlaylist = useCallback((id: string, name: string) => {
+    setPlaylists((prev) =>
+      prev.map((pl) => {
+        if (pl.id !== id) return pl;
+        const next = { ...pl, name: normalizePlaylistName(name) };
+        void putPlaylist(next);
+        return next;
+      }),
+    );
+  }, []);
+
+  const deletePlaylist = useCallback(
+    (id: string) => {
+      if (id === FAVORITES_ID) return;
+      void dbDeletePlaylist(id);
+      setPlaylists((prev) => prev.filter((pl) => pl.id !== id));
+      setActiveQueueId((cur) => (cur === id ? null : cur));
+    },
+    [],
+  );
+
+  const addToPlaylist = useCallback((playlistId: string, songId: string) => {
+    setPlaylists((prev) =>
+      prev.map((pl) => {
+        if (pl.id !== playlistId || pl.songIds.includes(songId)) return pl;
+        const next = { ...pl, songIds: [...pl.songIds, songId] };
+        void putPlaylist(next);
+        return next;
+      }),
+    );
+  }, []);
+
+  const removeFromPlaylist = useCallback((playlistId: string, songId: string) => {
+    setPlaylists((prev) =>
+      prev.map((pl) => {
+        if (pl.id !== playlistId || !pl.songIds.includes(songId)) return pl;
+        const next = { ...pl, songIds: pl.songIds.filter((sid) => sid !== songId) };
+        void putPlaylist(next);
+        return next;
+      }),
+    );
+  }, []);
+
+  const playPlaylist = useCallback(
+    (id: string | null) => {
+      setActiveQueueId(id);
+      if (id === null) {
+        if (songs.length > 0) playSong(songs[0].id);
+        return;
+      }
+      const pl = playlists.find((p) => p.id === id);
+      const first = pl?.songIds.map((sid) => songs.find((s) => s.id === sid)).find(Boolean);
+      if (first) playSong(first.id);
+      else if (songs.length > 0) playSong(songs[0].id);
+    },
+    [songs, playlists, playSong],
+  );
+
+  const setActiveQueue = useCallback((id: string | null) => {
+    setActiveQueueId(id);
+  }, []);
+
+  const removeFromQueue = useCallback(
+    (id: string) => {
+      if (activeQueueId === null) {
+        removeSong(id);
+        return;
+      }
+      removeFromPlaylist(activeQueueId, id);
+    },
+    [activeQueueId, removeSong, removeFromPlaylist],
+  );
+
   const value: PlayerContextState = {
     songs,
     currentId,
@@ -224,6 +391,9 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     muted,
     currentTime,
     duration,
+    activeQueueId,
+    queue,
+    playlists,
     importFiles,
     removeSong,
     playSong,
@@ -234,11 +404,21 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     cycleMode,
     setVolume,
     toggleMute,
+    toggleFavorite,
+    createPlaylist,
+    renamePlaylist,
+    deletePlaylist,
+    addToPlaylist,
+    removeFromPlaylist,
+    playPlaylist,
+    setActiveQueue,
+    removeFromQueue,
   };
 
   return (
     <PlayerContext.Provider value={value}>
       {children}
+      <MediaSessionBridge />
       <audio
         ref={audioRef}
         className="hidden"

@@ -1,20 +1,53 @@
-import { useState } from 'react';
+import { useRef, useState, type TouchEvent } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { ViewId } from '@/lib/nav';
 import PlayerProvider from '@/components/player/PlayerProvider';
 import StatusBar from '@/components/player/StatusBar';
 import BottomNav from '@/components/player/BottomNav';
 import MiniPlayer from '@/components/player/MiniPlayer';
 import LibraryView from '@/components/player/LibraryView';
+import PlaylistsView from '@/components/player/PlaylistsView';
 import NowPlayingView from '@/components/player/NowPlayingView';
 import SplashScreen from '@/components/player/SplashScreen';
+
+const VIEW_ORDER: ViewId[] = ['library', 'playlists', 'nowplaying'];
 
 /**
  * Mobile-first Endfield-style music terminal.
  * The app shell is phone-sized (max 430px) and centered on larger screens.
+ * Swipe left/right on the main area to switch between the three tabs.
  */
 export default function HomePage() {
   const [view, setView] = useState<ViewId>('library');
+  const [dir, setDir] = useState<1 | -1>(1);
   const [booted, setBooted] = useState(false);
+  const swipeStart = useRef<{ x: number; y: number } | null>(null);
+
+  const go = (v: ViewId) => {
+    const cur = VIEW_ORDER.indexOf(view);
+    const nxt = VIEW_ORDER.indexOf(v);
+    if (cur !== nxt) setDir(nxt > cur ? 1 : -1);
+    setView(v);
+  };
+
+  const handleTouchStart = (e: TouchEvent) => {
+    const t = e.touches[0];
+    swipeStart.current = { x: t.clientX, y: t.clientY };
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    // horizontal-dominant swipe past threshold; ignore vertical scrolls
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    const idx = VIEW_ORDER.indexOf(view);
+    if (dx < 0 && idx < VIEW_ORDER.length - 1) go(VIEW_ORDER[idx + 1]);
+    else if (dx > 0 && idx > 0) go(VIEW_ORDER[idx - 1]);
+  };
 
   return (
     <PlayerProvider>
@@ -31,11 +64,34 @@ export default function HomePage() {
 
         <div className="relative flex h-dvh w-full max-w-[430px] flex-col overflow-hidden border-x border-border/70 bg-background">
           <StatusBar />
-          <main className="scanlines relative flex-1 overflow-y-auto">
-            {view === 'library' ? <LibraryView /> : <NowPlayingView />}
+          <main
+            className="scanlines relative flex-1 overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={view}
+                initial={{ opacity: 0, x: dir * 26 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: dir * -26 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="h-full overflow-y-auto"
+              >
+                {view === 'library' ? (
+                  <LibraryView />
+                ) : view === 'playlists' ? (
+                  <PlaylistsView />
+                ) : (
+                  <NowPlayingView />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </main>
-          {view !== 'nowplaying' && <MiniPlayer onOpen={() => setView('nowplaying')} />}
-          <BottomNav view={view} onChange={setView} />
+          <AnimatePresence>
+            {view !== 'nowplaying' && <MiniPlayer onOpen={() => go('nowplaying')} />}
+          </AnimatePresence>
+          <BottomNav view={view} onChange={go} />
           {!booted && <SplashScreen onDone={() => setBooted(true)} />}
         </div>
       </div>

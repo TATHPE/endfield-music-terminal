@@ -52,6 +52,15 @@
   clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 100%, 8px 100%);
 }
 
+/* Hide scrollbars while keeping scrollability (lyrics / sheets) */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Endfield hazard stripe — signature yellow/black cutting stripe */
 @utility hazard-stripe {
   background-image: repeating-linear-gradient(
@@ -155,4 +164,51 @@
 }
 .splash-sweep {
   animation: splash-sweep 1.3s ease-in-out infinite;
+}
+
+/* Now-playing artwork: slow scan line sweeping top -> bottom while playing */
+@keyframes art-scan {
+  0% {
+    top: -2%;
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+.art-scan {
+  animation: art-scan 3.2s linear infinite;
+}
+
+/* Now-playing artwork: outer engineering ring, slow rotation */
+@keyframes art-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.art-ring {
+  animation: art-ring 18s linear infinite;
+}
+
+/* Progress bar: flowing highlight inside the filled segments while playing */
+@keyframes progress-flow {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+.progress-flow {
+  animation: progress-flow 2.4s linear infinite;
 }

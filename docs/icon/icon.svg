@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <pattern id="grid" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#F1F0EA" stroke-opacity="0.045" stroke-width="1.5"/>
+    </pattern>
+    <pattern id="hazard" width="56" height="28" patternTransform="rotate(-45)" patternUnits="userSpaceOnUse">
+      <rect width="28" height="28" fill="#F2C200"/>
+      <rect x="28" width="28" height="28" fill="#0A0A0C"/>
+    </pattern>
+    <clipPath id="hexClip">
+      <polygon points="693.9,617 512,722 330.1,617 330.1,407 512,302 693.9,407"/>
+    </clipPath>
+  </defs>
+
+  <!-- base -->
+  <rect width="1024" height="1024" fill="#0A0A0C"/>
+  <rect width="1024" height="1024" fill="url(#grid)"/>
+
+  <!-- corner brackets (terminal cut corners) -->
+  <g stroke="#F2C200" stroke-width="12" fill="none" opacity="0.85" stroke-linecap="square">
+    <path d="M112 200 V112 H200"/>
+    <path d="M824 112 H912 V200"/>
+    <path d="M912 824 V912 H824"/>
+    <path d="M200 912 H112 V824"/>
+  </g>
+
+  <!-- top hex tag -->
+  <polygon points="512,142 536,156 536,184 512,198 488,184 488,156" fill="#F2C200" opacity="0.9"/>
+
+  <!-- main hexagon -->
+  <polygon points="693.9,617 512,722 330.1,617 330.1,407 512,302 693.9,407"
+           fill="#0A0A0C" stroke="#F2C200" stroke-width="26" stroke-linejoin="miter"/>
+
+  <!-- double eighth note (white) -->
+  <g fill="#F1F0EA">
+    <circle cx="428" cy="472" r="58"/>
+    <circle cx="546" cy="472" r="58"/>
+    <rect x="592" y="298" width="16" height="176" rx="2"/>
+    <path d="M608 298 C 688 318 700 402 668 464 C 656 428 636 362 616 348 Z"/>
+  </g>
+
+  <!-- spectrum bars (yellow) -->
+  <g fill="#F2C200">
+    <rect x="492" y="560" width="24" height="64" rx="3"/>
+    <rect x="524" y="506" width="24" height="118" rx="3"/>
+    <rect x="556" y="452" width="24" height="172" rx="3"/>
+    <rect x="588" y="536" width="24" height="88" rx="3"/>
+  </g>
+
+  <!-- hazard strip pinned inside hex bottom -->
+  <g clip-path="url(#hexClip)">
+    <rect x="300" y="666" width="424" height="60" fill="url(#hazard)" opacity="0.92"/>
+  </g>
+</svg>

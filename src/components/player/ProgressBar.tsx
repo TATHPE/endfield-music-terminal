@@ -8,6 +8,8 @@ interface ProgressBarProps {
   max: number;
   onSeek: (t: number) => void;
   disabled?: boolean;
+  /** animate a flowing highlight across filled segments while playing */
+  playing?: boolean;
   className?: string;
 }
 
@@ -17,7 +19,7 @@ const SEGMENTS = 26;
  * Endfield-style segmented progress readout.
  * Draggable via pointer events; segments fill from the left.
  */
-export default function ProgressBar({ value, max, onSeek, disabled = false, className = '' }: ProgressBarProps) {
+export default function ProgressBar({ value, max, onSeek, disabled = false, playing = false, className = '' }: ProgressBarProps) {
   const trackRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef(false);
 
@@ -69,6 +71,16 @@ export default function ProgressBar({ value, max, onSeek, disabled = false, clas
             className={cn('flex-1', i < filled ? 'bg-primary' : 'bg-foreground/12')}
           />
         ))}
+        {/* flowing highlight over filled segments while playing */}
+        {playing && filled > 0 && (
+          <span
+            aria-hidden
+            className="progress-flow pointer-events-none absolute inset-y-0 left-0 w-1/4 overflow-hidden"
+            style={{ clipPath: `inset(0 ${100 - (filled / SEGMENTS) * 100}% 0 0)` }}
+          >
+            <span className="block h-full w-full bg-gradient-to-r from-transparent via-foreground/60 to-transparent" />
+          </span>
+        )}
         {/* drag handle */}
         <span
           className={cn(

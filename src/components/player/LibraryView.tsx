@@ -1,15 +1,27 @@
 import { useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 import { FileAudio, Upload } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
 import { formatClock } from '@/lib/music';
 import ImportButton from '@/components/player/ImportButton';
 import TrackRow from '@/components/player/TrackRow';
+import PlaylistAddSheet from '@/components/player/PlaylistAddSheet';
+
+const listVariants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.035 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.24, ease: 'easeOut' as const } },
+};
 
 /** Library view: import, statistics readout and track list. */
 export default function LibraryView() {
-  const { songs, currentId, playSong, removeSong, importFiles } = usePlayer();
+  const { songs, currentId, playSong, removeSong, importFiles, toggleFavorite } = usePlayer();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [addTarget, setAddTarget] = useState<string | null>(null);
 
   const total = songs.reduce((acc, s) => acc + (s.duration || 0), 0);
 
@@ -77,18 +89,26 @@ export default function LibraryView() {
           <ImportButton large onClick={() => fileRef.current?.click()} />
         </div>
       ) : (
-        <ul className="flex flex-col gap-1">
+        <motion.ul
+          variants={listVariants}
+          initial="hidden"
+          animate="show"
+          className="flex flex-col gap-1"
+        >
           {songs.map((song, i) => (
-            <TrackRow
-              key={song.id}
-              song={song}
-              index={i}
-              isCurrent={song.id === currentId}
-              onPlay={() => playSong(song.id)}
-              onRemove={() => removeSong(song.id)}
-            />
+            <motion.li key={song.id} variants={itemVariants} layout="position">
+              <TrackRow
+                song={song}
+                index={i}
+                isCurrent={song.id === currentId}
+                onPlay={() => playSong(song.id)}
+                onRemove={() => removeSong(song.id)}
+                onToggleFavorite={() => toggleFavorite(song.id)}
+                onAddToPlaylist={() => setAddTarget(song.id)}
+              />
+            </motion.li>
           ))}
-        </ul>
+        </motion.ul>
       )}
 
       {/* Drag-over overlay */}
@@ -101,6 +121,9 @@ export default function LibraryView() {
           </div>
         </div>
       )}
+
+      {/* Add-to-playlist sheet */}
+      <PlaylistAddSheet open={addTarget !== null} songId={addTarget} onClose={() => setAddTarget(null)} />
 
       {/* Shared hidden file input */}
       <input

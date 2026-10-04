@@ -1,5 +1,5 @@
 // EXPORTS: ParsedMeta, parseAudioFile, fetchItunesCover
-import { parseBlob } from 'music-metadata';
+import { parseBlob, type ILyricsTag } from 'music-metadata';
 import type { ISong } from '@/lib/music';
 
 export interface ParsedMeta {
@@ -11,6 +11,7 @@ export interface ParsedMeta {
   sampleRate: number;
   bitrate: number;
   cover: Blob | null;
+  lyrics?: string;
 }
 
 function cleanName(value: string | undefined, fallback: string): string {
@@ -22,7 +23,35 @@ function stripExt(name: string): string {
   return name.replace(/\.[^.]+$/, '');
 }
 
-/** Parse a local audio file: tags, duration, embedded album art. */
+/** Format a sync timestamp (ms) as an LRC tag [mm:ss.xx]. */
+function fmtSyncTime(ms: number): string {
+  const safe = Math.max(0, ms);
+  const m = Math.floor(safe / 60000);
+  const s = Math.floor((safe % 60000) / 1000);
+  const cs = Math.floor((safe % 1000) / 10);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
+}
+
+/** Flatten music-metadata lyrics tags into a single LRC-ish text blob. */
+function extractLyrics(tags: ILyricsTag[] | undefined): string | undefined {
+  if (!tags || tags.length === 0) return undefined;
+  const blocks: string[] = [];
+  for (const tag of tags) {
+    if (tag.syncText && tag.syncText.length > 0) {
+      // Synchronized lyrics → rebuild LRC lines from timestamps (ms).
+      const lines = tag.syncText
+        .map((t) => `[${fmtSyncTime(t.timestamp ?? 0)}]${t.text}`)
+        .join('\n');
+      blocks.push(lines);
+    } else if (tag.text && tag.text.trim()) {
+      blocks.push(tag.text.trim());
+    }
+  }
+  const out = blocks.join('\n\n').trim();
+  return out || undefined;
+}
+
+/** Parse a local audio file: tags, duration, embedded album art, lyrics. */
 export async function parseAudioFile(file: File): Promise<ParsedMeta> {
   const md = await parseBlob(file, { duration: true });
   const common = md.common;
@@ -43,6 +72,7 @@ export async function parseAudioFile(file: File): Promise<ParsedMeta> {
     sampleRate: fmt.sampleRate || 0,
     bitrate: fmt.bitrate ? Math.round(fmt.bitrate / 1000) : 0,
     cover,
+    lyrics: extractLyrics(common.lyrics),
   };
 }
 
@@ -92,6 +122,7 @@ export function toSong(
     bitrate: meta.bitrate,
     fileName: file.name,
     cover: meta.cover,
+    lyrics: meta.lyrics,
     audio: file,
     addedAt,
   };

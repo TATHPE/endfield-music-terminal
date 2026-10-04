@@ -15,6 +15,10 @@ export interface ISong {
   fileName: string;
   /** embedded or fetched artwork; null when unavailable */
   cover: Blob | null;
+  /** raw lyrics from embedded tag (LRC text or plain lines); undefined when none */
+  lyrics?: string;
+  /** user favorite flag, persisted with the song */
+  favorited?: boolean;
   audio: Blob;
   addedAt: number;
 }

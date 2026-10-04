@@ -1,5 +1,5 @@
 // EXPORTS: ViewId, NAV_ITEMS
-export type ViewId = 'library' | 'nowplaying';
+export type ViewId = 'library' | 'playlists' | 'nowplaying';
 
 export interface NavItem {
   id: ViewId;
@@ -9,5 +9,6 @@ export interface NavItem {
 
 export const NAV_ITEMS: NavItem[] = [
   { id: 'library', label: '曲库', code: '[01]' },
-  { id: 'nowplaying', label: '正在播放', code: '[02]' },
+  { id: 'playlists', label: '歌单', code: '[02]' },
+  { id: 'nowplaying', label: '正在播放', code: '[03]' },
 ];

@@ -1,6 +1,7 @@
-// EXPORTS: getAllSongs, putSong, deleteSong
+// EXPORTS: getAllSongs, putSong, deleteSong, getAllPlaylists, putPlaylist, deletePlaylist
 import { openDB, type DBSchema } from 'idb';
 import type { ISong } from '@/lib/music';
+import type { Playlist } from '@/lib/playlists';
 
 interface MusicDB extends DBSchema {
   songs: {
@@ -8,20 +9,29 @@ interface MusicDB extends DBSchema {
     value: ISong;
     indexes: { addedAt: number };
   };
+  playlists: {
+    key: string;
+    value: Playlist;
+    indexes: { createdAt: number };
+  };
 }
 
 const DB_NAME = 'endfield-player-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: ReturnType<typeof openDB<MusicDB>> | null = null;
 
 function getDb() {
   if (!dbPromise) {
     dbPromise = openDB<MusicDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
-        if (!db.objectStoreNames.contains('songs')) {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 1 && !db.objectStoreNames.contains('songs')) {
           const store = db.createObjectStore('songs', { keyPath: 'id' });
           store.createIndex('addedAt', 'addedAt');
+        }
+        if (oldVersion < 2 && !db.objectStoreNames.contains('playlists')) {
+          const store = db.createObjectStore('playlists', { keyPath: 'id' });
+          store.createIndex('createdAt', 'createdAt');
         }
       },
     });
@@ -42,4 +52,19 @@ export async function putSong(song: ISong): Promise<void> {
 export async function deleteSong(id: string): Promise<void> {
   const db = await getDb();
   await db.delete('songs', id);
+}
+
+export async function getAllPlaylists(): Promise<Playlist[]> {
+  const db = await getDb();
+  return db.getAll('playlists');
+}
+
+export async function putPlaylist(playlist: Playlist): Promise<void> {
+  const db = await getDb();
+  await db.put('playlists', playlist);
+}
+
+export async function deletePlaylist(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('playlists', id);
 }

@@ -1,10 +1,11 @@
-import { Disc3, ListMusic } from 'lucide-react';
+import { Disc3, List, ListMusic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ViewId } from '@/lib/nav';
 import { NAV_ITEMS } from '@/lib/nav';
 
 const ICONS: Record<ViewId, typeof ListMusic> = {
   library: ListMusic,
+  playlists: List,
   nowplaying: Disc3,
 };
 
@@ -13,12 +14,12 @@ interface BottomNavProps {
   onChange: (v: ViewId) => void;
 }
 
-/** Bottom tab navigation — two terminal entries. */
+/** Bottom tab navigation — three terminal entries. */
 export default function BottomNav({ view, onChange }: BottomNavProps) {
   return (
     <nav className="pb-safe relative z-30 shrink-0 border-t border-border bg-background/95">
       <div aria-hidden className="h-px w-full bg-primary/30" />
-      <div className="grid grid-cols-2">
+      <div className="grid grid-cols-3">
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.id];
           const active = view === item.id;
@@ -29,9 +30,7 @@ export default function BottomNav({ view, onChange }: BottomNavProps) {
               onClick={() => onChange(item.id)}
               className={cn(
                 'flex flex-col items-center gap-0.5 px-2 py-2.5 font-mono text-[10px] tracking-widest transition-colors',
-                active
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground',
+                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               <span className="flex items-center gap-1.5">

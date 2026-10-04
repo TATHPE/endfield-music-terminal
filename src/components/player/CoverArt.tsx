@@ -8,13 +8,16 @@ interface CoverArtProps {
   className?: string;
   /** show corner brackets overlay */
   framed?: boolean;
+  /** playing: animate scan line + rotating engineering ring */
+  playing?: boolean;
 }
 
 /**
  * Album artwork. Object URL is derived during render (official React pattern)
  * and revoked on cleanup; falls back to an Endfield hazard placeholder.
+ * When playing, a scan line sweeps the artwork and an engineering ring rotates.
  */
-export default function CoverArt({ cover, title, className = '', framed = false }: CoverArtProps) {
+export default function CoverArt({ cover, title, className = '', framed = false, playing = false }: CoverArtProps) {
   const url = useMemo(() => (cover ? URL.createObjectURL(cover) : null), [cover]);
 
   useEffect(() => {
@@ -47,6 +50,29 @@ export default function CoverArt({ cover, title, className = '', framed = false 
           <span aria-hidden className="absolute bottom-0 right-0 h-2 w-2 border-b-2 border-r-2 border-primary/60" />
         </div>
       )}
+
+      {/* Playing feedback: rotating engineering ring */}
+      {playing && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -inset-[7%] rounded-full border border-dashed border-primary/45"
+        >
+          <span className="art-ring absolute inset-0">
+            <span className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 bg-primary shadow-[0_0_6px_rgba(242,194,0,0.9)]" />
+          </span>
+        </div>
+      )}
+
+      {/* Playing feedback: scan line sweeping down the artwork */}
+      {playing && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 h-[3px]"
+        >
+          <div className="art-scan absolute inset-x-0 h-full bg-gradient-to-r from-transparent via-primary/80 to-transparent" />
+        </div>
+      )}
+
       {framed && (
         <div aria-hidden className="pointer-events-none absolute inset-0 shadow-[inset_0_0_0_1px_rgba(10,10,12,0.4)]" />
       )}
