@@ -54,8 +54,8 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.0.0 (release) | 正式签名版，适用于日常安装 | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
-| v1.0.0 (debug) | 调试签名版，仅用于体验 | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
+| v1.0.1 (release) | 正式签名版，适用于日常安装；**修复 ColorOS 17 / Android 14+ 播放音乐闪退** | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
+| v1.0.1 (debug) | 调试签名版，仅用于体验；**修复 ColorOS 17 / Android 14+ 播放音乐闪退** | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
 
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
@@ -134,7 +134,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.0
+- Android 版本：v1.0.1（versionCode 2，修复 ColorOS 17 播放闪退）
 
 ## License
 

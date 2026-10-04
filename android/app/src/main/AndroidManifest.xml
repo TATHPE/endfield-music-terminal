@@ -40,4 +40,10 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Media notification on Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Foreground media session service: required to start a mediaPlayback-type
+         foreground service on Android 14+ (API 34+). Missing these permissions makes
+         playback crash with SecurityException on ColorOS 17 / Android 14-16. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 </manifest>
