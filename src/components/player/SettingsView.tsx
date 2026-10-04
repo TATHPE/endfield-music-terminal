@@ -1,7 +1,19 @@
 // EXPORTS: SettingsView
 import { useState } from 'react';
+import { RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { THEMES, applyTheme, getTheme, setTheme, type ThemeId } from '@/lib/theme';
+import {
+  DEFAULT_CUSTOM,
+  PRESET_COLORS,
+  THEMES,
+  applyTheme,
+  getCustomTheme,
+  getTheme,
+  setCustomTheme,
+  setTheme,
+  type CustomColors,
+  type ThemeId,
+} from '@/lib/theme';
 import HazardStrip from '@/components/player/HazardStrip';
 
 function ThemeCard({
@@ -40,11 +52,12 @@ function ThemeCard({
           <span className="blink-dot font-mono text-[9px] tracking-[0.24em] text-accent">● ACTIVE</span>
         )}
       </div>
-      <div className="flex gap-1.5" aria-hidden>
+      {/* Three equal swatches, evenly distributed */}
+      <div className="grid grid-cols-3 gap-2" aria-hidden>
         {colors.map((c) => (
           <span
             key={c}
-            className="h-6 w-10 border border-white/10 transition-transform group-hover:scale-105"
+            className="aspect-square w-full border border-white/10 transition-transform group-hover:scale-105"
             style={{ backgroundColor: c }}
           />
         ))}
@@ -57,14 +70,101 @@ function ThemeCard({
   );
 }
 
-/** Settings — theme selection (applies instantly, persisted in localStorage). */
+type Channel = keyof CustomColors;
+
+const CHANNELS: ReadonlyArray<{ key: Channel; label: string }> = [
+  { key: 'primary', label: '主色 PRIMARY' },
+  { key: 'secondary', label: '辅助色 SECONDARY' },
+  { key: 'tertiary', label: '点缀色 TERTIARY' },
+];
+
+/** Custom theme editor: three channels + preset palette. */
+function CustomEditor() {
+  const [custom, setCustom] = useState<CustomColors>(() => getCustomTheme());
+  const [channel, setChannel] = useState<Channel>('primary');
+
+  const apply = (next: CustomColors) => {
+    setCustom(next);
+    setCustomTheme(next);
+  };
+
+  return (
+    <div className="flex flex-col gap-3 border border-accent/50 bg-accent/5 p-3" style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%)' }}>
+      <div className="flex items-center justify-between">
+        <span className="font-mono text-[10px] tracking-[0.26em] text-accent">CUSTOMIZE // 自定义配色</span>
+        <button
+          type="button"
+          onClick={() => apply({ ...DEFAULT_CUSTOM })}
+          className="flex items-center gap-1 font-mono text-[9px] tracking-widest text-muted-foreground hover:text-accent"
+        >
+          <RotateCcw className="h-3 w-3" /> 恢复默认
+        </button>
+      </div>
+
+      {CHANNELS.map(({ key, label }) => (
+        <label
+          key={key}
+          className={cn(
+            'flex items-center gap-2.5 border px-2.5 py-2 transition-colors',
+            channel === key ? 'border-accent/60 bg-accent/10' : 'border-border bg-card/70',
+          )}
+        >
+          <input
+            type="color"
+            value={custom[key]}
+            onChange={(e) => apply({ ...custom, [key]: e.target.value })}
+            onClick={() => setChannel(key)}
+            aria-label={label}
+            className="h-8 w-10 cursor-pointer border-0 bg-transparent p-0"
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-semibold tracking-wider text-foreground">{label}</span>
+            <span className="block font-mono text-[9px] tracking-widest text-muted-foreground">{custom[key].toUpperCase()}</span>
+          </span>
+        </label>
+      ))}
+
+      <div className="flex flex-col gap-1.5">
+        <span className="font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
+          预设色板 → 应用到 {CHANNELS.find((c) => c.key === channel)?.label ?? '主色'}
+        </span>
+        <div className="grid grid-cols-6 gap-1.5">
+          {PRESET_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={`预设色 ${c}`}
+              onClick={() => apply({ ...custom, [channel]: c })}
+              className={cn(
+                'aspect-square border transition-transform hover:scale-110',
+                custom[channel].toLowerCase() === c.toLowerCase()
+                  ? 'border-foreground ring-1 ring-foreground'
+                  : 'border-white/15',
+              )}
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Settings — theme selection + custom theme editor. */
 export default function SettingsView() {
   const [theme, setLocalTheme] = useState<ThemeId>(() => getTheme());
+  const [customColors] = useState<CustomColors>(() => getCustomTheme());
 
   const pick = (id: ThemeId) => {
     setTheme(id);
     applyTheme(id);
     setLocalTheme(id);
+  };
+
+  const themeColors: Record<ThemeId, [string, string, string]> = {
+    default: ['#F2C200', '#0A0A0C', '#F1F0EA'],
+    prism: ['#FF01A4', '#00FFC9', '#FEFE1F'],
+    custom: [customColors.primary, customColors.secondary, customColors.tertiary],
   };
 
   return (
@@ -81,7 +181,7 @@ export default function SettingsView() {
         <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.26em] text-muted-foreground">
           <span className="text-accent">▸</span> 主题 THEME
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           {THEMES.map((t) => (
             <ThemeCard
               key={t.id}
@@ -89,16 +189,17 @@ export default function SettingsView() {
               name={t.name}
               code={t.code}
               desc={t.desc}
-              colors={t.colors}
+              colors={themeColors[t.id]}
               active={theme === t.id}
               onSelect={() => pick(t.id)}
             />
           ))}
         </div>
-        <p className="mt-1 font-mono text-[9px] leading-relaxed tracking-wider text-muted-foreground/80">
-          T-01 标准终端：柠檬黄警戒配色，默认出厂。T-02 棱镜频谱：亮粉 / 青绿 / 明黄三色覆盖全部界面，
-          含启动动画、警戒条纹与歌词高亮。
+        <p className="mt-0.5 font-mono text-[9px] leading-relaxed tracking-wider text-muted-foreground/80">
+          T-01 标准终端：柠檬黄警戒配色，默认出厂。T-02 棱镜频谱：亮粉 / 青绿 / 明黄三色覆盖全部界面。T-03 自定义：自由调配三色，实时生效并保存。
         </p>
+
+        {theme === 'custom' && <CustomEditor />}
       </section>
     </div>
   );

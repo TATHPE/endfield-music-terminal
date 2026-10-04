@@ -10,6 +10,8 @@
   --elevate-2: rgba(255,255,255, .09);
 
   --background: #0A0A0C;
+  /* ambient glow for the light layer of the dual-tone background */
+  --bg-glow: rgba(242, 194, 0, 0.10);
   --foreground: #F1F0EA;
   --card: #131316;
   --card-foreground: #F1F0EA;
@@ -49,12 +51,12 @@
   --sidebar-border: #26262B;
   --sidebar-ring: #F2C200;
 
-  /* Computed borders using relative color syntax */
-  --primary-border: hsl(from #F2C200 h s calc(l + var(--opaque-button-border-intensity)));
-  --secondary-border: hsl(from #1C1C20 h s calc(l + var(--opaque-button-border-intensity)));
-  --destructive-border: hsl(from #E5484D h s calc(l + var(--opaque-button-border-intensity)));
-  --accent-border: hsl(from #F2C200 h s calc(l + var(--opaque-button-border-intensity)));
-  --muted-border: hsl(from #16161A h s calc(l + var(--opaque-button-border-intensity)));
+  /* Computed borders — color-mix so they follow the active theme (incl. custom) */
+  --primary-border: color-mix(in oklab, var(--primary) 88%, black);
+  --secondary-border: color-mix(in oklab, var(--secondary) 88%, black);
+  --destructive-border: color-mix(in oklab, var(--destructive) 88%, black);
+  --accent-border: color-mix(in oklab, var(--accent) 88%, black);
+  --muted-border: color-mix(in oklab, var(--muted) 88%, black);
   --font-sans:
     'Rajdhani', 'LarkHackSafariFont', 'LarkEmojiFont', 'LarkChineseQuote',
     '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue', 'Tahoma',
@@ -116,10 +118,11 @@
   --sidebar-accent-foreground: #FF01A4;
   --sidebar-ring: #FF01A4;
 
-  --primary-border: hsl(from #FF01A4 h s calc(l + var(--opaque-button-border-intensity)));
-  --accent-border: hsl(from #FF01A4 h s calc(l + var(--opaque-button-border-intensity)));
-  --info-border: hsl(from #00FFC9 h s calc(l + var(--opaque-button-border-intensity)));
-  --warning-border: hsl(from #FEFE1F h s calc(l + var(--opaque-button-border-intensity)));
+  --primary-border: color-mix(in oklab, var(--primary) 88%, black);
+  --accent-border: color-mix(in oklab, var(--accent) 88%, black);
+  --info-border: color-mix(in oklab, var(--info) 88%, black);
+  --warning-border: color-mix(in oklab, var(--warning) 88%, black);
+  --bg-glow: rgba(255, 1, 164, 0.13);
 }
 
 @theme inline {

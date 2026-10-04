@@ -1,4 +1,5 @@
-import { Disc3, List, ListMusic, Settings } from 'lucide-react';
+// EXPORTS: BottomNav
+import { Disc3, List, ListMusic, Search, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ViewId } from '@/lib/nav';
 import { NAV_ITEMS } from '@/lib/nav';
@@ -6,6 +7,7 @@ import { NAV_ITEMS } from '@/lib/nav';
 const ICONS: Record<ViewId, typeof ListMusic> = {
   library: ListMusic,
   playlists: List,
+  search: Search,
   nowplaying: Disc3,
   settings: Settings,
 };
@@ -15,12 +17,21 @@ interface BottomNavProps {
   onChange: (v: ViewId) => void;
 }
 
-/** Bottom tab navigation — four terminal entries. */
+/**
+ * ColorOS 17-style floating dock: frosted-glass capsule, icon-only items,
+ * content beneath the dock is blurred through the glass. The center search
+ * item shares the same size as every other icon.
+ */
 export default function BottomNav({ view, onChange }: BottomNavProps) {
   return (
-    <nav className="pb-safe relative z-30 shrink-0 border-t border-border bg-background/95">
-      <div aria-hidden className="h-px w-full bg-primary/30" />
-      <div className="grid grid-cols-4">
+    <nav className="pointer-events-auto shrink-0 px-3 pb-2.5 pt-1">
+      <div
+        className="relative mx-auto flex h-[58px] max-w-[430px] items-center justify-between rounded-[26px] border border-white/10 bg-[#141418]/60 px-2 backdrop-blur-2xl"
+        style={{
+          boxShadow:
+            'inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -14px 28px -18px rgba(255,255,255,0.10), 0 12px 32px -10px rgba(0,0,0,0.7)',
+        }}
+      >
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.id];
           const active = view === item.id;
@@ -29,23 +40,24 @@ export default function BottomNav({ view, onChange }: BottomNavProps) {
               key={item.id}
               type="button"
               onClick={() => onChange(item.id)}
+              aria-label={item.label}
+              aria-current={active ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center gap-0.5 px-2 py-2.5 font-mono text-[10px] tracking-widest transition-colors',
-                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+                'relative flex h-full w-1/5 flex-col items-center justify-center gap-[5px] transition-colors duration-200',
+                active ? 'text-accent' : 'text-muted-foreground hover:text-foreground/90',
               )}
             >
-              <span className="flex items-center gap-1.5">
-                <span className={cn('text-[9px]', active ? 'text-primary' : 'text-foreground/35')}>
-                  {item.code}
-                </span>
-                <Icon className="h-4 w-4" strokeWidth={active ? 2.4 : 1.8} />
-              </span>
-              <span className={cn('text-[11px]', active ? 'font-semibold text-foreground' : 'text-muted-foreground')}>
-                {item.label}
-              </span>
+              <Icon
+                className="h-[22px] w-[22px]"
+                strokeWidth={active ? 2.4 : 1.9}
+                style={active ? { filter: 'drop-shadow(0 0 6px currentColor)' } : undefined}
+              />
               <span
                 aria-hidden
-                className={cn('mt-0.5 h-0.5 w-8 transition-colors', active ? 'bg-primary' : 'bg-transparent')}
+                className={cn(
+                  'h-[3px] w-[3px] rounded-full transition-all duration-200',
+                  active ? 'bg-accent shadow-[0_0_6px] shadow-accent/70' : 'bg-transparent',
+                )}
               />
             </button>
           );

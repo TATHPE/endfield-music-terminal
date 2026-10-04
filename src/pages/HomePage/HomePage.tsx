@@ -7,11 +7,12 @@ import BottomNav from '@/components/player/BottomNav';
 import MiniPlayer from '@/components/player/MiniPlayer';
 import LibraryView from '@/components/player/LibraryView';
 import PlaylistsView from '@/components/player/PlaylistsView';
+import SearchView from '@/components/player/SearchView';
 import NowPlayingView from '@/components/player/NowPlayingView';
 import SettingsView from '@/components/player/SettingsView';
 import SplashScreen from '@/components/player/SplashScreen';
 
-const VIEW_ORDER: ViewId[] = ['library', 'playlists', 'nowplaying', 'settings'];
+const VIEW_ORDER: ViewId[] = ['library', 'playlists', 'search', 'nowplaying', 'settings'];
 
 /**
  * Mobile-first Endfield-style music terminal.
@@ -65,8 +66,13 @@ export default function HomePage() {
 
         <div className="relative flex h-dvh w-full max-w-[430px] flex-col overflow-hidden border-x border-border/70 bg-background">
           <StatusBar />
+          {/* light layer of the dual-tone player background */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[38%] bg-[radial-gradient(130%_100%_at_50%_-18%,var(--bg-glow),transparent_70%)]"
+          />
           <main
-            className="scanlines relative flex-1 overflow-hidden"
+            className="scanlines relative z-[1] flex-1 overflow-hidden"
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -77,12 +83,14 @@ export default function HomePage() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: dir * -26 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="h-full overflow-y-auto"
+                className="h-full overflow-y-auto pb-[158px]"
               >
                 {view === 'library' ? (
                   <LibraryView />
                 ) : view === 'playlists' ? (
                   <PlaylistsView />
+                ) : view === 'search' ? (
+                  <SearchView />
                 ) : view === 'nowplaying' ? (
                   <NowPlayingView />
                 ) : (
@@ -91,10 +99,17 @@ export default function HomePage() {
               </motion.div>
             </AnimatePresence>
           </main>
-          <AnimatePresence>
-            {view !== 'nowplaying' && <MiniPlayer onOpen={() => go('nowplaying')} />}
-          </AnimatePresence>
-          <BottomNav view={view} onChange={go} />
+          {/* floating frosted bottom layer: mini player + dock */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1.5">
+            <AnimatePresence>
+              {view !== 'nowplaying' && (
+                <div className="pointer-events-auto">
+                  <MiniPlayer onOpen={() => go('nowplaying')} />
+                </div>
+              )}
+            </AnimatePresence>
+            <BottomNav view={view} onChange={go} />
+          </div>
           {!booted && <SplashScreen onDone={() => setBooted(true)} />}
         </div>
       </div>
