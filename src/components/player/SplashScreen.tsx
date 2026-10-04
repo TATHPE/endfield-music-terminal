@@ -65,17 +65,17 @@ export default function SplashScreen({ onDone }: SplashScreenProps) {
             <polygon
               points="50,4 93,27 93,73 50,96 7,73 7,27"
               fill="none"
-              stroke="#F2C200"
+              stroke="var(--accent)"
               strokeWidth="2"
             />
             <polygon
               points="50,18 82,34 82,66 50,82 18,66 18,34"
               fill="none"
-              stroke="#F2C200"
+              stroke="var(--accent)"
               strokeWidth="1"
               opacity="0.45"
             />
-            <polygon points="50,32 66,40 66,60 50,68 34,60 34,40" fill="#F2C200" opacity="0.9" />
+            <polygon points="50,32 66,40 66,60 50,68 34,60 34,40" fill="var(--accent)" opacity="0.9" />
           </svg>
           <span className="splash-sweep absolute inset-y-0 w-10 bg-gradient-to-r from-transparent via-primary/15 to-transparent" />
         </div>

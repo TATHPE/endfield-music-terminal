@@ -5,7 +5,7 @@
 
 @layer base {
   html {
-    background: #050506;
+    background: var(--background);
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -27,12 +27,12 @@
     background: #2A2A2F;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #F2C200;
+    background: var(--accent);
   }
 
   /* Range inputs used by volume / progress fallbacks */
   input[type='range'] {
-    accent-color: #F2C200;
+    accent-color: var(--accent);
   }
 }
 
@@ -61,14 +61,14 @@
   }
 }
 
-/* Endfield hazard stripe — signature yellow/black cutting stripe */
+/* Endfield hazard stripe — signature cutting stripe, follows the active theme accent */
 @utility hazard-stripe {
   background-image: repeating-linear-gradient(
     -45deg,
-    #F2C200 0px,
-    #F2C200 10px,
-    #0A0A0C 10px,
-    #0A0A0C 20px
+    var(--accent) 0px,
+    var(--accent) 10px,
+    var(--background) 10px,
+    var(--background) 20px
   );
 }
 

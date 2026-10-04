@@ -114,7 +114,7 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
               </span>
               <motion.p
                 animate={{
-                  color: active ? '#F2C200' : 'rgba(241,240,234,0.42)',
+                  color: active ? 'var(--accent)' : 'rgba(241,240,234,0.42)',
                   scale: active ? 1.06 : 1,
                   x: active ? 4 : 0,
                 }}

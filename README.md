@@ -46,16 +46,17 @@
    - **播放模式**：点击循环图标在「顺序 → 随机 → 单曲循环」之间切换，图标带切换动画。
    - **进度与音量**：分段刻度进度条可拖动跳转；VOL 滑块调节音量。
 4. **收藏与歌单**：曲库行内可点 **收藏**（加入「收藏」清单）或 **加入歌单**（可即时新建）；「歌单」Tab 内管理清单。
-5. **滑动切换界面**：在主体区域**左右滑动**即可在 曲库 ↔ 歌单 ↔ 正在播放 之间切换（底部导航点击同样可用）。
-6. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。首次安装 Android 13+ 会请求通知权限。
-7. **重启恢复**：曲库、歌单、播放模式与音量偏好持久化保存，重新打开应用自动恢复。
+5. **滑动切换界面**：在主体区域**左右滑动**即可在 曲库 ↔ 歌单 ↔ 正在播放 ↔ 设置 之间切换（底部导航点击同样可用）。
+6. **主题设置**：「设置」Tab 内可在 **标准终端**（柠檬黄/黑/暖白，默认）与 **棱镜频谱**（亮粉/青绿/明黄）之间切换；主题即时生效并覆盖全部界面——含启动动画、警戒条纹、歌词高亮、滚动条与进度控件，选择后持久化保存。
+7. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。修复了锁屏/系统媒体控件调节无效的问题（媒体按键与传输控制标志、seek 回调字段对齐）。首次安装 Android 13+ 会请求通知权限。
+8. **重启恢复**：曲库、歌单、播放模式、音量与主题偏好持久化保存，重新打开应用自动恢复。
 
 ## 下载
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.0.1 (release) | 正式签名版，适用于日常安装；**修复 ColorOS 17 / Android 14+ 播放音乐闪退** | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
-| v1.0.1 (debug) | 调试签名版，仅用于体验；**修复 ColorOS 17 / Android 14+ 播放音乐闪退** | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
+| v1.1.0 (release) | 正式签名版，适用于日常安装；**新增棱镜频谱主题（粉/青/黄三色）+ 主题设置**；**修复锁屏/系统媒体控件调节无效** | [EndfieldMusicTerminal-v1.0.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0.apk) |
+| v1.1.0 (debug) | 调试签名版，仅用于体验；**新增棱镜频谱主题 + 主题设置**；**修复锁屏/系统媒体控件调节无效** | [EndfieldMusicTerminal-v1.0-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.0-debug.apk) |
 
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
@@ -134,7 +135,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.0.1（versionCode 2，修复 ColorOS 17 播放闪退）
+- Android 版本：v1.1.0（versionCode 3，主题设置 + 锁屏调节修复）
 
 ## License
 

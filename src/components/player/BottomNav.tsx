@@ -1,4 +1,4 @@
-import { Disc3, List, ListMusic } from 'lucide-react';
+import { Disc3, List, ListMusic, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ViewId } from '@/lib/nav';
 import { NAV_ITEMS } from '@/lib/nav';
@@ -7,6 +7,7 @@ const ICONS: Record<ViewId, typeof ListMusic> = {
   library: ListMusic,
   playlists: List,
   nowplaying: Disc3,
+  settings: Settings,
 };
 
 interface BottomNavProps {
@@ -14,12 +15,12 @@ interface BottomNavProps {
   onChange: (v: ViewId) => void;
 }
 
-/** Bottom tab navigation — three terminal entries. */
+/** Bottom tab navigation — four terminal entries. */
 export default function BottomNav({ view, onChange }: BottomNavProps) {
   return (
     <nav className="pb-safe relative z-30 shrink-0 border-t border-border bg-background/95">
       <div aria-hidden className="h-px w-full bg-primary/30" />
-      <div className="grid grid-cols-3">
+      <div className="grid grid-cols-4">
         {NAV_ITEMS.map((item) => {
           const Icon = ICONS[item.id];
           const active = view === item.id;

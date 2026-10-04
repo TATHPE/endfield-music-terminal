@@ -8,9 +8,10 @@ import MiniPlayer from '@/components/player/MiniPlayer';
 import LibraryView from '@/components/player/LibraryView';
 import PlaylistsView from '@/components/player/PlaylistsView';
 import NowPlayingView from '@/components/player/NowPlayingView';
+import SettingsView from '@/components/player/SettingsView';
 import SplashScreen from '@/components/player/SplashScreen';
 
-const VIEW_ORDER: ViewId[] = ['library', 'playlists', 'nowplaying'];
+const VIEW_ORDER: ViewId[] = ['library', 'playlists', 'nowplaying', 'settings'];
 
 /**
  * Mobile-first Endfield-style music terminal.
@@ -82,8 +83,10 @@ export default function HomePage() {
                   <LibraryView />
                 ) : view === 'playlists' ? (
                   <PlaylistsView />
-                ) : (
+                ) : view === 'nowplaying' ? (
                   <NowPlayingView />
+                ) : (
+                  <SettingsView />
                 )}
               </motion.div>
             </AnimatePresence>

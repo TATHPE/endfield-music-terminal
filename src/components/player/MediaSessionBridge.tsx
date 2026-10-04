@@ -47,8 +47,11 @@ export default function MediaSessionBridge() {
     bind('pause', () => actionsRef.current.togglePlay());
     bind('nexttrack', () => actionsRef.current.playNext());
     bind('previoustrack', () => actionsRef.current.playPrev());
-    bind('seekto', (detail?: { position?: number }) => {
-      const pos = detail?.position;
+    bind('seekto', (detail?: { position?: number; seekTime?: number }) => {
+      // The native plugin reports the target as `seekTime` (seconds); older
+      // builds used `position`. Accept both so lock-screen / system transport
+      // seek actually moves playback.
+      const pos = detail?.seekTime ?? detail?.position;
       if (typeof pos === 'number' && Number.isFinite(pos)) actionsRef.current.seek(pos);
     });
     bind('seekforward', () => {

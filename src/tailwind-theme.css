@@ -2,7 +2,6 @@
   /* Endfield terminal — lemon yellow / black / warm white */
   --button-outline: rgba(255,255,255, .12);
   --badge-outline: rgba(255,255,255, .10);
-
   /* Automatic computation of border around primary / danger buttons */
   --opaque-button-border-intensity: -8; /* In terms of percentages */
 
@@ -87,6 +86,40 @@
   --shadow-2xl: 0px 2px 12px 0px hsl(0 0% 0% / 0.05);
   --tracking-normal: 0em;
   --spacing: 0.25rem;
+}
+
+/* Prism spectrum theme — hot pink / cyan / bright yellow over the same dark terminal.
+   Enabled via <html data-theme="prism"> (see src/lib/theme.ts). */
+[data-theme='prism'] {
+  --button-outline: rgba(255, 1, 164, .14);
+  --badge-outline: rgba(255, 1, 164, .12);
+
+  --primary: #FF01A4;
+  --primary-foreground: #0A0A0C;
+  --accent: #FF01A4;
+  --accent-foreground: #0A0A0C;
+  --info: #00FFC9;
+  --info-foreground: #0A0A0C;
+  --success: #00FFC9;
+  --success-foreground: #0A0A0C;
+  --warning: #FEFE1F;
+  --warning-foreground: #0A0A0C;
+  --ring: #FF01A4;
+  --chart-1: #FF01A4;
+  --chart-2: #00FFC9;
+  --chart-3: #FEFE1F;
+  --chart-4: #B80079;
+  --chart-5: #00B896;
+  --sidebar-primary: #FF01A4;
+  --sidebar-primary-foreground: #0A0A0C;
+  --sidebar-accent: #2B141F;
+  --sidebar-accent-foreground: #FF01A4;
+  --sidebar-ring: #FF01A4;
+
+  --primary-border: hsl(from #FF01A4 h s calc(l + var(--opaque-button-border-intensity)));
+  --accent-border: hsl(from #FF01A4 h s calc(l + var(--opaque-button-border-intensity)));
+  --info-border: hsl(from #00FFC9 h s calc(l + var(--opaque-button-border-intensity)));
+  --warning-border: hsl(from #FEFE1F h s calc(l + var(--opaque-button-border-intensity)));
 }
 
 @theme inline {
