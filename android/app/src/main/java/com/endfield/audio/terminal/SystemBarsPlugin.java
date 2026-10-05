@@ -12,7 +12,12 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
- * SystemBars — sync status/navigation bar appearance with the in-app theme.
+ * EndfieldSystemBars — sync status/navigation bar appearance with the in-app theme.
+ *
+ * NOTE: registered under a UNIQUE name ("EndfieldSystemBars") on purpose — Capacitor
+ * ships its own com.getcapacitor.plugin.SystemBars (id "SystemBars", methods
+ * setStyle/show/hide only). A duplicate "SystemBars" id would shadow it and make
+ * setAppearance route nowhere. See Bridge.registerAllPlugins().
  *
  * targetSdk 36 (Android 15/16) enforces edge-to-edge: system bar backgrounds are
  * transparent and ignored, so only icon appearance (light/dark) can be driven.
@@ -20,7 +25,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  *
  * ColorOS / HyperOS / OriginOS / HarmonyOS / One UI all share this behavior.
  */
-@CapacitorPlugin(name = "SystemBars")
+@CapacitorPlugin(name = "EndfieldSystemBars")
 public class SystemBarsPlugin extends Plugin {
 
     private static final int DARK_BAR = 0xFF0A0A0C; // terminal black

@@ -2,13 +2,18 @@
 //          getCustomTheme, applyTheme, setTheme, applyCustomTheme, setCustomTheme,
 //          BgMode, getBgMode, applyBgMode, setBgMode, syncSystemBars
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 
 interface SystemBarsPlugin {
   setAppearance(options: { lightStatus: boolean; lightNav: boolean }): Promise<void>;
 }
 
-/** Thin bridge to the native SystemBarsPlugin (registered in capacitor.plugins.json). */
-const SystemBars = registerPlugin<SystemBarsPlugin>('SystemBars');
+/**
+ * Thin bridge to the native EndfieldSystemBarsPlugin (registered in
+ * capacitor.plugins.json under the unique id "EndfieldSystemBars" — the bare
+ * "SystemBars" id is taken by Capacitor's built-in plugin and would shadow ours).
+ */
+const SystemBars = registerPlugin<SystemBarsPlugin>('EndfieldSystemBars');
 export type ThemeId = 'default' | 'prism' | 'custom';
 
 export interface ThemeMeta {
@@ -208,7 +213,12 @@ export function setBgMode(mode: BgMode) {
 export function syncSystemBars() {
   if (!Capacitor.isNativePlatform()) return;
   const light = getBgMode() === 'light';
+  // Primary path: our native plugin (paints bar backgrounds on Android < 15,
+  // drives icon appearance on all versions).
   void SystemBars.setAppearance({ lightStatus: light, lightNav: light }).catch(() => {
-    /* plugin unavailable on web fallback — ignore */
+    // Fallback: official @capacitor/status-bar. setBackgroundColor is ignored on
+    // Android 15+ (edge-to-edge), setStyle works everywhere.
+    void StatusBar.setStyle({ style: light ? Style.Dark : Style.Light });
+    void StatusBar.setBackgroundColor({ color: light ? '#F4F4F0' : '#0A0A0C' });
   });
 }
