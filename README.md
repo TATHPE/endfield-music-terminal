@@ -59,11 +59,15 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.3.5 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；含 v1.3.4 全部特性与 v1.3.5 主流安卓系统适配 | [EndfieldMusicTerminal-v1.3.5.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.5.apk) |
-| v1.3.5 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.5-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.5-lite.apk) |
-| v1.3.5 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.5-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.5-debug.apk) |
+| v1.3.6 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；**修复浅色模式下顶部系统状态栏仍为深色条的问题**，系统栏明暗联动多重兜底 | [EndfieldMusicTerminal-v1.3.6.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.6.apk) |
+| v1.3.6 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.6-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.6-lite.apk) |
+| v1.3.6 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.6-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.6-debug.apk) |
+| v1.3.4 (release · ColorOS 17 专项版) | **对 ColorOS 17 适配最好、真机验证最稳定的版本**（专项适配）；内置 14 首预置曲库；ColorOS 17 用户优先选择本版，其他系统推荐 v1.3.6 | [EndfieldMusicTerminal-v1.3.4.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4.apk) |
+| v1.3.4 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.4-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-lite.apk) |
+| v1.3.4 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.4-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-debug.apk) |
 
-> v1.3.5 更新内容：**主流安卓系统适配（Android 8–16）**——状态栏 / 导航栏图标深浅随明暗背景联动（Android 15/16 edge-to-edge 下走 `appearance` API，Android 14 及以下自动着色，适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI 等）；启用预测性返回手势（Android 13+）；横屏左右安全区适配刘海 / 挖孔。另含 v1.3.4 全部内容：内置预置曲库；歌词面板隐藏 LRC 元数据行；浅色模式歌词与输入框文字修复；「加入歌单」顶部毛玻璃胶囊弹窗（与 Dock 同款）；封面 blob 在 StrictMode 下失效修复。
+> v1.3.6 更新内容：**修复浅色（白色）背景下顶部系统状态栏区域仍显示深色条**——系统栏明暗联动增加多重触发（启动首帧 / DOM 就绪 / React 挂载后重推），确保 Android 8–14 栏背景着色与 Android 15/16 图标深浅在持久化浅色模式下必定生效；含 v1.3.5 全部适配（主流安卓系统、预测性返回、横屏安全区）。
+> v1.3.4 为 **ColorOS 17 专项适配版本**（真机验证最稳定），ColorOS 17 用户遇到问题可优先回退到该版本。
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
 ## 技术栈
@@ -141,7 +145,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.3.5（versionCode 10，主流安卓系统适配：系统栏明暗联动 + 预测性返回 + 横屏安全区）
+- Android 版本：v1.3.6（versionCode 11；浅色模式系统栏修复 + 主流安卓系统适配）；另提供 ColorOS 17 专项版 v1.3.4
 
 ## License
 

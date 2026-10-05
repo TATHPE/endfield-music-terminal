@@ -11,7 +11,7 @@ import '@fontsource/rajdhani/700.css';
 import '@fontsource/share-tech-mono/400.css';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar } from '@capacitor/status-bar';
-import { applyTheme, getTheme, applyBgMode, getBgMode } from '@/lib/theme';
+import { applyTheme, getTheme, applyBgMode, getBgMode, syncSystemBars } from '@/lib/theme';
 
 // Apply the persisted theme & background mode before first paint so the boot screen matches.
 applyTheme(getTheme());
@@ -22,6 +22,15 @@ applyBgMode(getBgMode()); // also syncs the native system bars via syncSystemBar
 if (Capacitor.isNativePlatform()) {
   void StatusBar.setOverlaysWebView({ overlay: true });
 }
+
+// Re-sync the system bars once the native bridge is guaranteed ready and again
+// after React mounts, so the icon appearance lands even if the module-top call
+// ran before the bridge was up.
+const resync = () => syncSystemBars();
+if (Capacitor.isNativePlatform()) {
+  window.addEventListener('DOMContentLoaded', resync, { once: true });
+}
+window.addEventListener('load', resync, { once: true });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

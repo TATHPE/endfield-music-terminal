@@ -1,6 +1,7 @@
-import { useRef, useState, type TouchEvent } from 'react';
+import { useEffect, useRef, useState, type TouchEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ViewId } from '@/lib/nav';
+import { syncSystemBars } from '@/lib/theme';
 import PlayerProvider from '@/components/player/PlayerProvider';
 import StatusBar from '@/components/player/StatusBar';
 import BottomNav from '@/components/player/BottomNav';
@@ -24,6 +25,12 @@ export default function HomePage() {
   const [dir, setDir] = useState<1 | -1>(1);
   const [booted, setBooted] = useState(false);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+
+  // Final safety net: after React mounts the bridge is definitely ready, so
+  // re-push the system bar appearance to match the active background mode.
+  useEffect(() => {
+    syncSystemBars();
+  }, []);
 
   const go = (v: ViewId) => {
     const cur = VIEW_ORDER.indexOf(view);
