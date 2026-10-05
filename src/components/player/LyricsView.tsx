@@ -114,7 +114,9 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
               </span>
               <motion.p
                 animate={{
-                  color: active ? 'var(--accent)' : 'rgba(241,240,234,0.42)',
+                  color: active
+                    ? 'var(--accent)'
+                    : 'color-mix(in oklab, var(--foreground) 45%, transparent)',
                   scale: active ? 1.06 : 1,
                   x: active ? 4 : 0,
                 }}

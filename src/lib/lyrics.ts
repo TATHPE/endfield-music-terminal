@@ -23,7 +23,7 @@ const META_RE = /^\[(ti|ar|al|by|re|ve|length|offset):/i;
  * Lines whose text starts with one of these labels and a colon are dropped.
  */
 const META_TEXT_RE =
-  /^(作词|作曲|编曲|制作人|录音|混音|歌手|监制|母带|音乐设计\/监制|音乐设计|音乐监制|混音工程师|录音工程师|配唱|和声|出品|企划|统筹|策划|发行|版权|OP|SP)\s*[:：]/;
+  /^(作词|作曲|编曲|制作人|录音师|混音师|录音|混音|歌手|监制|母带|音乐设计\/监制|音乐设计|音乐监制|混音工程师|录音工程师|配唱|和声|出品|企划|统筹|策划|发行|版权|OP|SP)\s*[:：]/;
 
 /**
  * Parse raw LRC text.

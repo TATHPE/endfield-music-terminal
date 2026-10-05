@@ -15,6 +15,7 @@
 ## 功能特性
 
 - **本地歌曲导入**：从设备文件系统批量导入音频，曲库持久化存储在浏览器 IndexedDB
+- **内置预置曲库**：14 首《明日方舟：终末地》官方 Vocal 曲目随 APK 打包（完整版），打开曲库即可直接播放，每首带专辑封面与 LRC 歌词；轻量「无歌曲版」仅保留导入功能
 - **专辑封面解析**：用 `music-metadata` 解析 ID3 / FLAC / MP4 / OGG / WAV / APE 等标签与内嵌封面；无内嵌封面时以 iTunes Search 兜底搜索
 - **五视图界面 + 手势滑动切换**：曲库 / 歌单 / 搜索 / 正在播放 / 设置，支持底部 Dock 点击或左右滑动切换
 - **正在播放面板**：ARTWORK（封面 + 播放扫描动画）/ LYRICS 双面板，分段刻度进度条、循环 / 随机 / 单曲三种播放模式
@@ -59,9 +60,11 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.3.3 (release) | 正式签名版，适用于日常安装；**播放页重设计（封面自适应纯正方形、44/56 控件统一、内容固定 Dock 上方）、曲库/歌单/搜索内容滚动到 Dock 下方透出毛玻璃模糊** | [EndfieldMusicTerminal-v1.3.3.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.3.apk) |
-| v1.3.3 (debug) | 调试签名版，仅用于体验；**同 v1.3.3 内容** | [EndfieldMusicTerminal-v1.3.3-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.3-debug.apk) |
+| v1.3.4 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；含 v1.3.3 全部特性与 v1.3.4 修复 | [EndfieldMusicTerminal-v1.3.4.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4.apk) |
+| v1.3.4 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.4-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-lite.apk) |
+| v1.3.4 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.4-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-debug.apk) |
 
+> v1.3.4 更新内容：内置预置曲库；歌词面板不再显示「作词/作曲/歌手」等 LRC 元数据行；修复浅色模式下歌词文字与输入框文字不可见；「加入歌单」弹窗改为顶部毛玻璃胶囊（与 Dock 同款）；修复封面 blob 在 StrictMode 下失效。
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
 ## 技术栈
@@ -139,7 +142,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.3.3（versionCode 8，播放页重设计 + 毛玻璃透出）
+- Android 版本：v1.3.4（versionCode 9，内置预置曲库 + 歌词/输入框浅色修复 + 顶部毛玻璃歌单弹窗）
 
 ## License
 
