@@ -29,14 +29,13 @@
 
 ## 界面预览
 
-> 截图取自 Android 同构的 Web 预览（手机竖屏布局），与实际 APK 界面一致；均为标准终端黄黑主题。
+> 截图取自 ColorOS 17 真机实拍（竖屏），与实际 APK 界面一致。
 
 | | |
 | --- | --- |
-| **① 启动动画** —— 六边形徽章脉冲、BOOT 逐行自检日志、24 段进度条，点击可跳过。<br><br><img src="docs/screenshots/cropped/01-boot.png" width="220" alt="启动动画" /> | **② 曲库** —— 本地曲库列表与曲目信息，右上角「导入曲目」批量导入音频；底部毛玻璃 Dock 常驻。<br><br><img src="docs/screenshots/cropped/03-library.png" width="220" alt="曲库页" /> |
-| **③ 歌单** —— 收藏清单与自定义歌单，支持新建、展开、播放、移除。<br><br><img src="docs/screenshots/cropped/04-playlists.png" width="220" alt="歌单页" /> | **④ 搜索** —— Dock 中央搜索按钮进入全域检索，按歌曲 / 艺术家 / 专辑 / 歌单过滤，点击才唤起键盘。<br><br><img src="docs/screenshots/cropped/08-search.png" width="220" alt="搜索页" /> |
-| **⑤ 正在播放（ARTWORK）** —— 封面 / 格式参数 / 分段进度条 / 传输控制；播放时封面带扫描线与旋转工程环，页面固定在 Dock 之上。<br><br><img src="docs/screenshots/cropped/05-nowplaying.png" width="220" alt="正在播放页" /> | **⑥ 歌词面板（LYRICS）** —— ARTWORK / LYRICS 切换，LRC 歌词逐行高亮同步滚动；无歌词时提示。<br><br><img src="docs/screenshots/cropped/07-lyrics.png" width="220" alt="歌词面板" /> |
-| **⑦ 播放队列** —— 从正在播放页右上角 QUEUE 上滑呼出，查看与移除队列曲目。<br><br><img src="docs/screenshots/cropped/06-queue.png" width="220" alt="队列面板" /> | **⑧ 设置 · 自定义配色** —— 标准终端 / 棱镜频谱 / 自定义三主题；自绘 HSV 调色器（饱和度亮度板 + 色相条 + HEX 直输）+ 12 预设色板，实时生效并持久化。<br><br><img src="docs/screenshots/cropped/09-settings.png" width="220" alt="设置页" /> |
+| **① 曲库** —— 本地曲库列表：TRACKS / 总时长 / 就绪状态，右上角「+ 导入曲目」；预置曲目带序号、封面与时长；底部毛玻璃 Dock 常驻。<br><br><img src="docs/screenshots/phone/01-library.jpg" width="220" alt="曲库页" /> | **② 歌单** —— QUEUE MANIFESTS 播放队列清单：新建歌单输入框、「收藏」与自定义歌单（终末地 · 14 TRACKS · 49:51）；播放中的 MiniPlayer 为毛玻璃悬浮胶囊。<br><br><img src="docs/screenshots/phone/02-playlists.jpg" width="220" alt="歌单页" /> |
+| **③ 正在播放 · 封面** —— ARTWORK 面板：专辑封面完整正方形显示、TRACK 1/27 · MP3 · 48.0kHz · 265kbps 四列参数、分段刻度进度条、模式/上下曲/暂停/音量控件，页面固定 Dock 上方。<br><br><img src="docs/screenshots/phone/03-nowplaying-artwork.jpg" width="220" alt="正在播放·封面" /> | **④ 正在播放 · 歌词** —— LYRICS 面板：LRC 歌词逐行高亮（时间轴标注），自动滚动居中；浅色背景可正常阅读。<br><br><img src="docs/screenshots/phone/04-nowplaying-lyrics.jpg" width="220" alt="正在播放·歌词" /> |
+| **⑤ 设置** —— SETTINGS // 参数配置：背景黑色/白色切换、T-01 标准终端 / T-02 棱镜频谱 / T-03 自定义主题、自定义配色（主色/辅助色/点缀色）+ 预设色板 + 恢复默认，实时生效并持久化。<br><br><img src="docs/screenshots/phone/05-settings.jpg" width="220" alt="设置页" /> | |
 
 ## 使用方式
 
