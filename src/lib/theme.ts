@@ -1,5 +1,14 @@
 // EXPORTS: ThemeId, ThemeMeta, CustomColors, THEMES, PRESET_COLORS, getTheme,
-//          getCustomTheme, applyTheme, setTheme, applyCustomTheme, setCustomTheme
+//          getCustomTheme, applyTheme, setTheme, applyCustomTheme, setCustomTheme,
+//          BgMode, getBgMode, applyBgMode, setBgMode, syncSystemBars
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+interface SystemBarsPlugin {
+  setAppearance(options: { lightStatus: boolean; lightNav: boolean }): Promise<void>;
+}
+
+/** Thin bridge to the native SystemBarsPlugin (registered in capacitor.plugins.json). */
+const SystemBars = registerPlugin<SystemBarsPlugin>('SystemBars');
 export type ThemeId = 'default' | 'prism' | 'custom';
 
 export interface ThemeMeta {
@@ -179,6 +188,7 @@ export function applyBgMode(mode: BgMode) {
   const el = document.documentElement;
   if (mode === 'light') el.dataset.bgmode = 'light';
   else delete el.dataset.bgmode;
+  syncSystemBars();
 }
 
 export function setBgMode(mode: BgMode) {
@@ -188,4 +198,17 @@ export function setBgMode(mode: BgMode) {
     /* storage unavailable */
   }
   applyBgMode(mode);
+}
+
+/**
+ * Sync the Android status/navigation bar icons (and pre-15 backgrounds) with
+ * the active background mode, so system bars stay readable on dark & light shells.
+ * Safe no-op on web / non-native platforms.
+ */
+export function syncSystemBars() {
+  if (!Capacitor.isNativePlatform()) return;
+  const light = getBgMode() === 'light';
+  void SystemBars.setAppearance({ lightStatus: light, lightNav: light }).catch(() => {
+    /* plugin unavailable on web fallback — ignore */
+  });
 }

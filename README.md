@@ -24,7 +24,7 @@
 - **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / **拖动进度即时同步**）
 - **终末地风格启动动画**：六边形徽章脉冲 + 扫描光带 + 逐行 BOOT 日志 + 24 段进度条，约 2.6 秒，可点击跳过
 - **终末地风格应用图标**：自绘黄黑六边形徽章 + 双八分音符 + 频谱条 + 警戒条纹，全套 Android 自适应图标
-- **Android / ColorOS 17 适配**：沉浸式状态栏与导航栏、安全区预留（`pt-safe` / `pb-safe`）、深色主题、通知权限运行时请求
+- **主流安卓系统适配（Android 8–16）**：状态栏 / 导航栏图标深浅与明暗背景自动联动（Android 15/16 强制 edge-to-edge 下的 `appearance` API 与 Android 14- 的着色双轨兼容，适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI 等主流系统）、预测性返回手势、横屏刘海 / 挖孔安全区、通知权限运行时请求
 - **离线可用**：Web 端与 APK 均不依赖云端服务
 
 ## 界面预览
@@ -59,11 +59,11 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.3.4 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；含 v1.3.3 全部特性与 v1.3.4 修复 | [EndfieldMusicTerminal-v1.3.4.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4.apk) |
-| v1.3.4 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.4-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-lite.apk) |
-| v1.3.4 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.4-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-debug.apk) |
+| v1.3.5 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；含 v1.3.4 全部特性与 v1.3.5 主流安卓系统适配 | [EndfieldMusicTerminal-v1.3.5.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.5.apk) |
+| v1.3.5 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.5-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.5-lite.apk) |
+| v1.3.5 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.5-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.5-debug.apk) |
 
-> v1.3.4 更新内容：内置预置曲库；歌词面板不再显示「作词/作曲/歌手」等 LRC 元数据行；修复浅色模式下歌词文字与输入框文字不可见；「加入歌单」弹窗改为顶部毛玻璃胶囊（与 Dock 同款）；修复封面 blob 在 StrictMode 下失效。
+> v1.3.5 更新内容：**主流安卓系统适配（Android 8–16）**——状态栏 / 导航栏图标深浅随明暗背景联动（Android 15/16 edge-to-edge 下走 `appearance` API，Android 14 及以下自动着色，适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI 等）；启用预测性返回手势（Android 13+）；横屏左右安全区适配刘海 / 挖孔。另含 v1.3.4 全部内容：内置预置曲库；歌词面板隐藏 LRC 元数据行；浅色模式歌词与输入框文字修复；「加入歌单」顶部毛玻璃胶囊弹窗（与 Dock 同款）；封面 blob 在 StrictMode 下失效修复。
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
 ## 技术栈
@@ -141,7 +141,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.3.4（versionCode 9，内置预置曲库 + 歌词/输入框浅色修复 + 顶部毛玻璃歌单弹窗）
+- Android 版本：v1.3.5（versionCode 10，主流安卓系统适配：系统栏明暗联动 + 预测性返回 + 横屏安全区）
 
 ## License
 

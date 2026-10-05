@@ -16,6 +16,7 @@
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustNothing"
+            android:enableOnBackInvokedCallback="true"
             android:exported="true">
 
             <intent-filter>

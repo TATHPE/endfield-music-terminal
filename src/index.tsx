@@ -10,19 +10,17 @@ import '@fontsource/rajdhani/600.css';
 import '@fontsource/rajdhani/700.css';
 import '@fontsource/share-tech-mono/400.css';
 import { Capacitor } from '@capacitor/core';
-import { StatusBar, Style } from '@capacitor/status-bar';
+import { StatusBar } from '@capacitor/status-bar';
 import { applyTheme, getTheme, applyBgMode, getBgMode } from '@/lib/theme';
 
 // Apply the persisted theme & background mode before first paint so the boot screen matches.
 applyTheme(getTheme());
-applyBgMode(getBgMode());
+applyBgMode(getBgMode()); // also syncs the native system bars via syncSystemBars()
 
-// Edge-to-edge immersive status bar (ColorOS 17): the web layer reserves
-// the top inset via env(safe-area-inset-top).
+// Edge-to-edge immersive status bar (ColorOS 17 / Android 15+): the web layer reserves
+// the top inset via env(safe-area-inset-top); icon style follows the active bg mode.
 if (Capacitor.isNativePlatform()) {
   void StatusBar.setOverlaysWebView({ overlay: true });
-  void StatusBar.setStyle({ style: Style.Dark });
-  void StatusBar.setBackgroundColor({ color: '#0A0A0C' });
 }
 
 createRoot(document.getElementById('root')!).render(

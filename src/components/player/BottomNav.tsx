@@ -24,7 +24,13 @@ interface BottomNavProps {
  */
 export default function BottomNav({ view, onChange }: BottomNavProps) {
   return (
-    <nav className="pointer-events-auto shrink-0 px-3 pb-[calc(max(env(safe-area-inset-bottom),20px)+16px)] pt-1">
+    <nav
+      className="pointer-events-auto shrink-0 pb-[calc(max(env(safe-area-inset-bottom),20px)+16px)] pt-1"
+      style={{
+        paddingLeft: 'calc(env(safe-area-inset-left) + 12px)',
+        paddingRight: 'calc(env(safe-area-inset-right) + 12px)',
+      }}
+    >
       <div
         className="relative mx-auto flex h-[64px] max-w-[430px] items-center justify-between rounded-[26px] border px-2 backdrop-blur-2xl"
         style={{
