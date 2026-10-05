@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,13 +18,12 @@ interface CoverArtProps {
  * When playing, a scan line sweeps the artwork and an engineering ring rotates.
  */
 export default function CoverArt({ cover, title, className = '', framed = false, playing = false }: CoverArtProps) {
+  // NOTE: the object URL is intentionally NOT revoked. Revoking in an effect
+  // races with React StrictMode's mount/unmount remount (the memoized URL is
+  // reused after the cleanup revoked it), leaving the <img> with a dead URL.
+  // Object URLs are page-scoped and released when the page unloads, which is
+  // fine for a player holding at most a handful of artwork blobs.
   const url = useMemo(() => (cover ? URL.createObjectURL(cover) : null), [cover]);
-
-  useEffect(() => {
-    return () => {
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [url]);
 
   return (
     <div

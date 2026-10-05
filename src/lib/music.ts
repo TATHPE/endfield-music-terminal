@@ -19,7 +19,9 @@ export interface ISong {
   lyrics?: string;
   /** user favorite flag, persisted with the song */
   favorited?: boolean;
-  audio: Blob;
+  /** in-app asset URL for preset (bundled) tracks; plays directly, no blob needed */
+  presetUrl?: string;
+  audio: Blob | null;
   addedAt: number;
 }
 

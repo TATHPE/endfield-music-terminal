@@ -140,8 +140,13 @@
   --foreground: #15151A;
   --card: #FFFFFF;
   --card-foreground: #15151A;
+  --card-border: #D8D8D4;
+  --popover: #FFFFFF;
+  --popover-foreground: #15151A;
   --muted: #ECECEA;
   --muted-foreground: #6B6B72;
+  --secondary: #ECECEA;
+  --secondary-foreground: #15151A;
   --border: #D8D8D4;
   --input: #D8D8D4;
   --sidebar: #EDEDEA;

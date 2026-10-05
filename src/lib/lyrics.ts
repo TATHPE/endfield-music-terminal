@@ -18,6 +18,14 @@ const TIME_RE = /\[(\d{1,2}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g;
 const META_RE = /^\[(ti|ar|al|by|re|ve|length|offset):/i;
 
 /**
+ * NetEase-style LRC header lines carry timestamps but are metadata
+ * (作词/作曲/编曲/歌手/录音工程师…) rather than lyric text.
+ * Lines whose text starts with one of these labels and a colon are dropped.
+ */
+const META_TEXT_RE =
+  /^(作词|作曲|编曲|制作人|录音|混音|歌手|监制|母带|音乐设计\/监制|音乐设计|音乐监制|混音工程师|录音工程师|配唱|和声|出品|企划|统筹|策划|发行|版权|OP|SP)\s*[:：]/;
+
+/**
  * Parse raw LRC text.
  * - timed: at least one line carries [mm:ss] timestamps
  * - plain:  text exists but has no timestamps (embedded unsynced lyrics)
@@ -56,8 +64,9 @@ export function parseLrc(raw: string): LrcResult {
       if (textStart < 0) textStart = m.index;
     }
     if (stamps.length > 0) {
-      sawTimestamp = true;
       const text = line.slice(cursor).trim();
+      if (!text || META_TEXT_RE.test(text)) continue; // skip metadata-only lines
+      sawTimestamp = true;
       for (const t of stamps) {
         lines.push({ time: Math.max(0, t + offsetMs / 1000), text });
       }

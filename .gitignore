@@ -72,3 +72,8 @@ android/app/build/
 android/captures/
 android/.idea/
 *.log
+
+# Bundled preset tracks (large binaries; shipped inside APK assets, not in repo)
+public/songs/*.mp3
+public/test-*.mp3
+

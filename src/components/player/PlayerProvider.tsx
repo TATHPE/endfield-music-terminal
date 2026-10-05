@@ -18,6 +18,20 @@ import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 
 const VOLUME_KEY = 'endfield-player:volume';
 const MODE_KEY = 'endfield-player:mode';
+const PRESET_MANIFEST_URL = '/songs/manifest.json';
+
+interface PresetTrack {
+  file: string;
+  title: string;
+  artist: string;
+  album: string;
+  duration: number;
+  codec: string;
+  sampleRate: number;
+  bitrate: number;
+  cover?: string | null;
+  lyrics?: string | null;
+}
 
 function readStored<T>(key: string, fallback: T): T {
   try {
@@ -81,6 +95,54 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Load the bundled preset library (songs/manifest.json inside app assets).
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(PRESET_MANIFEST_URL);
+        if (!res.ok) return;
+        const tracks = (await res.json()) as PresetTrack[];
+        if (!Array.isArray(tracks) || tracks.length === 0) return;
+        const preset: ISong[] = [];
+        for (const t of tracks) {
+          let cover: Blob | null = null;
+          if (t.cover) {
+            try {
+              const c = await fetch(t.cover);
+              cover = c.ok ? await c.blob() : null;
+            } catch {
+              cover = null;
+            }
+          }
+          preset.push({
+            id: `preset:${t.file}`,
+            title: t.title || t.file,
+            artist: t.artist || '铁痕电台-MSR',
+            album: t.album || '明日方舟：终末地',
+            duration: t.duration || 0,
+            codec: t.codec || 'MP3',
+            sampleRate: t.sampleRate || 0,
+            bitrate: t.bitrate || 0,
+            fileName: t.file,
+            cover,
+            lyrics: t.lyrics || undefined,
+            presetUrl: `/songs/${encodeURIComponent(t.file)}`,
+            audio: null,
+            addedAt: 1700000000000 + preset.length,
+          });
+        }
+        if (cancelled) return;
+        setSongs((prev) => [...preset, ...prev.filter((s) => !s.id.startsWith('preset:'))]);
+      } catch {
+        /* preset library unavailable — app works with user imports only */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const playSong = useCallback(
     (id: string) => {
       const song = songs.find((s) => s.id === id);
@@ -96,10 +158,17 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         URL.revokeObjectURL(urlRef.current);
         urlRef.current = null;
       }
-      const url = URL.createObjectURL(song.audio);
-      urlRef.current = url;
+      if (song.presetUrl) {
+        // Bundled preset track: play straight from the in-app asset URL.
+        audio.src = song.presetUrl;
+      } else if (song.audio) {
+        const url = URL.createObjectURL(song.audio);
+        urlRef.current = url;
+        audio.src = url;
+      } else {
+        return;
+      }
       setCurrentId(id);
-      audio.src = url;
       audio.volume = muted ? 0 : volume;
       setCurrentTime(0);
       setDuration(song.duration || 0);
@@ -217,7 +286,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         setSongs((prev) => [...prev, song]);
         ok += 1;
         if (!song.cover) {
-          void fetchItunesCover(song.artist, song.title).then((cover) => {
+          void fetchItunesCover(song.artist, song.title, song.album).then((cover) => {
             if (!cover) return;
             const updated = { ...song, cover };
             void putSong(updated).then(() => {
