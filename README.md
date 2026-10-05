@@ -23,7 +23,7 @@
 - **同步歌词**：内置 LRC 解析器（时间戳 / offset 标签），播放时逐行高亮并自动滚动居中
 - **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / **拖动进度即时同步**）
 - **终末地风格启动动画**：六边形徽章脉冲 + 扫描光带 + 逐行 BOOT 日志 + 24 段进度条，约 2.6 秒，可点击跳过
-- **终末地风格应用图标**：自绘黄黑六边形徽章 + 双八分音符 + 频谱条 + 警戒条纹，全套 Android 自适应图标
+- **终末地风格应用图标**：黑胶唱片式图标——纯白四角 + 黑色唱片盘面 + 黄色六边形播放键与外圈环形进度条（黄 / 黑 / 白三色统一），全密度位图嵌入 Android Launcher
 - **主流安卓系统适配（Android 8–16）**：状态栏 / 导航栏图标深浅与明暗背景自动联动（Android 15/16 强制 edge-to-edge 下的 `appearance` API 与 Android 14- 的着色双轨兼容，适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI 等主流系统）、预测性返回手势、横屏刘海 / 挖孔安全区、通知权限运行时请求
 - **离线可用**：Web 端与 APK 均不依赖云端服务
 
@@ -59,6 +59,9 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
+| v1.3.9 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；**应用图标重绘为黑胶唱片式**（纯白四角 + 黑色盘面 + 黄色六边形播放键与环形进度条，黄/黑/白三色统一），全密度位图嵌入 Launcher（48–192px） | [EndfieldMusicTerminal-v1.3.9.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.9.apk) |
+| v1.3.9 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.9-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.9-lite.apk) |
+| v1.3.9 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.9-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.9-debug.apk) |
 | v1.3.8 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；**全版本强制 edge-to-edge 根治浅色状态栏黑条**（状态栏/导航栏区域改由应用内容直接绘制，明暗完全跟随主题，任何 ROM 都无法再覆盖成黑条）；修复原生兜底时序（页面加载完成才读背景模式，避免误判）+ 布局单位兼容（旧内核下 Dock 位置正确） | [EndfieldMusicTerminal-v1.3.8.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8.apk) |
 | v1.3.8 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.8-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-lite.apk) |
 | v1.3.8 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.8-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-debug.apk) |
@@ -66,6 +69,7 @@
 | v1.3.4 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.4-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-lite.apk) |
 | v1.3.4 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.4-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-debug.apk) |
 
+> **v1.3.9 更新内容（应用图标重绘 · 黑胶唱片式）**：将应用图标整体重绘为黑胶唱片式视觉——纯白四角背景（干净无装饰）+ 黑色唱片盘面 + 中央黄色六边形播放键与外圈黄色环形进度条（黄/黑/白三色与界面风格统一）；同时将图标由原自适应矢量改为**全密度位图嵌入**（mdpi 48 至 xxxhdpi 192，圆角方形 Launcher 图标），各机型显示一致、无系统遮罩偏差。功能与适配保持 v1.3.8 全部能力（全版本 edge-to-edge、ColorOS 17 / OriginOS 3 / HyperOS 等主流系统适配、14 首预置曲库、LRC 歌词、三主题自定义、锁屏控制）。
 > **v1.3.8 更新内容（浅色状态栏黑条 · 全版本 edge-to-edge 根治）**：前两版（v1.3.6 仅加触发次数、v1.3.7 插件改名 + 原生兜底）在 OriginOS 3 真机上仍未生效——排查发现其根因不只是插件时序：非强制 edge-to-edge 的 Android（OriginOS 3 / Android 13 等）上，状态栏颜色由系统 `statusBarColor` 决定，任何着色调用都可能被 ROM 拦截或时序错过。v1.3.8 改为**所有 Android 版本强制 edge-to-edge**（`setDecorFitsSystemWindows(false)`），状态栏 / 导航栏区域直接由应用内容绘制，明暗背景**纯 CSS 跟随主题**——浅色模式必为浅色、深色模式必为深色，不再依赖任何原生着色调用；同时修复原生兜底在页面加载完成前误读背景模式的时序问题（`readyState` 门控 + 24 次重试），并将布局单位从 `dvh` 换成兼容写法（修复部分旧内核 Dock 位置异常）。
 > v1.3.4 为 **ColorOS 17 专项适配版本**（真机验证最稳定），ColorOS 17 用户遇到问题可优先回退到该版本。
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
@@ -145,7 +149,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.3.8（versionCode 13；全版本 edge-to-edge 根治浅色状态栏黑条 + 主流安卓系统适配）；另提供 ColorOS 17 专项版 v1.3.4
+- Android 版本：v1.3.9（versionCode 14；黑胶唱片式新图标 + 全版本 edge-to-edge 根治浅色状态栏黑条 + 主流安卓系统适配）；另提供 ColorOS 17 专项版 v1.3.4，历史稳定版 v1.3.8 保留可下载
 
 ## License
 
