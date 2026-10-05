@@ -59,14 +59,14 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.3.7 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；**根因级修复浅色模式顶部状态栏黑条**（插件同名冲突 → 唯一命名 + 官方插件兜底 + 原生直读背景模式） | [EndfieldMusicTerminal-v1.3.7.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.7.apk) |
-| v1.3.7 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.7-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.7-lite.apk) |
-| v1.3.7 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.7-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.7-debug.apk) |
-| v1.3.4 (release · ColorOS 17 专项版) | **对 ColorOS 17 适配最好、真机验证最稳定的版本**（专项适配）；内置 14 首预置曲库；ColorOS 17 用户优先选择本版，其他系统推荐 v1.3.7 | [EndfieldMusicTerminal-v1.3.4.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4.apk) |
+| v1.3.8 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；**全版本强制 edge-to-edge 根治浅色状态栏黑条**（状态栏/导航栏区域改由应用内容直接绘制，明暗完全跟随主题，任何 ROM 都无法再覆盖成黑条）；修复原生兜底时序（页面加载完成才读背景模式，避免误判）+ 布局单位兼容（旧内核下 Dock 位置正确） | [EndfieldMusicTerminal-v1.3.8.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8.apk) |
+| v1.3.8 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.8-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-lite.apk) |
+| v1.3.8 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.8-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-debug.apk) |
+| v1.3.4 (release · ColorOS 17 专项版) | **对 ColorOS 17 适配最好、真机验证最稳定的版本**（专项适配）；内置 14 首预置曲库；ColorOS 17 用户优先选择本版，其他系统推荐 v1.3.8 | [EndfieldMusicTerminal-v1.3.4.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4.apk) |
 | v1.3.4 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.4-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-lite.apk) |
 | v1.3.4 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.4-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.4-debug.apk) |
 
-> **v1.3.7 更新内容（浅色状态栏黑条根因级修复）**：问题根因是自研系统栏插件与 Capacitor 内置同名 `SystemBars` 插件冲突，导致浅色模式着色调用落空——在非强制 edge-to-edge 的 Android（如 OriginOS 3 / Android 13）上表现为顶部黑色状态栏条。修复：① 插件更名为唯一 `EndfieldSystemBars`；② JS 增加官方 StatusBar 插件兜底；③ **原生 Activity 直接读取持久化背景模式设置系统栏**（启动 / 回前台自动同步，完全不依赖插件时序）。Android 8–16 明暗两态状态栏均正确。
+> **v1.3.8 更新内容（浅色状态栏黑条 · 全版本 edge-to-edge 根治）**：前两版（v1.3.6 仅加触发次数、v1.3.7 插件改名 + 原生兜底）在 OriginOS 3 真机上仍未生效——排查发现其根因不只是插件时序：非强制 edge-to-edge 的 Android（OriginOS 3 / Android 13 等）上，状态栏颜色由系统 `statusBarColor` 决定，任何着色调用都可能被 ROM 拦截或时序错过。v1.3.8 改为**所有 Android 版本强制 edge-to-edge**（`setDecorFitsSystemWindows(false)`），状态栏 / 导航栏区域直接由应用内容绘制，明暗背景**纯 CSS 跟随主题**——浅色模式必为浅色、深色模式必为深色，不再依赖任何原生着色调用；同时修复原生兜底在页面加载完成前误读背景模式的时序问题（`readyState` 门控 + 24 次重试），并将布局单位从 `dvh` 换成兼容写法（修复部分旧内核 Dock 位置异常）。
 > v1.3.4 为 **ColorOS 17 专项适配版本**（真机验证最稳定），ColorOS 17 用户遇到问题可优先回退到该版本。
 > ColorOS 17 侧载时若提示「未知来源」，在设置中允许安装即可。
 
@@ -145,7 +145,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.3.7（versionCode 12；浅色状态栏黑条根因级修复 + 主流安卓系统适配）；另提供 ColorOS 17 专项版 v1.3.4
+- Android 版本：v1.3.8（versionCode 13；全版本 edge-to-edge 根治浅色状态栏黑条 + 主流安卓系统适配）；另提供 ColorOS 17 专项版 v1.3.4
 
 ## License
 

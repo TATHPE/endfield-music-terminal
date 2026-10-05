@@ -20,6 +20,13 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(android.os.Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Force edge-to-edge on EVERY Android version (not just 15+): with the
+        // decor not fitting the system bars, the status/navigation bar areas are
+        // drawn by the WebView itself, so their colors follow the in-app theme
+        // (dark shell -> dark bars, light shell -> light bars) purely via CSS.
+        // This is the OriginOS 3 / ColorOS / HyperOS / One UI universal fix — no
+        // native tinting call can be shadowed by the OS when there is nothing to tint.
+        androidx.core.view.WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         // Media notification / lock-screen controls on Android 13+ need POST_NOTIFICATIONS.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
@@ -31,9 +38,9 @@ public class MainActivity extends BridgeActivity {
             }
         }
         // Native safety net: read the persisted bg mode straight from the WebView's
-        // localStorage and paint the system bars accordingly. This does not depend on
-        // the Capacitor plugin bridge timing, so the light-mode status bar is correct
-        // even when the JS call ran before the bridge was ready.
+        // localStorage and sync the system-bar icon appearance (and bar colors as a
+        // fallback for ROMs that ignore decor-fits). Waits for the document to be
+        // ready so it never misreads a pre-load state as "dark".
         syncSystemBarsFromStorage();
     }
 
@@ -54,32 +61,37 @@ public class MainActivity extends BridgeActivity {
                 @Override
                 public void run() {
                     attempts[0]++;
+                    // Only report a real value once the document is fully loaded;
+                    // otherwise (pre-load / about:blank) return null to keep retrying.
                     wv.evaluateJavascript(
-                            "(function(){try{return localStorage.getItem('endfield-player:bgmode')||'dark'}catch(e){return 'dark'}})()",
+                            "(function(){try{ if(document.readyState!=='complete') return 'null'; " +
+                                    "return localStorage.getItem('endfield-player:bgmode')||'dark'; }catch(e){return 'null';}})()",
                             value -> {
-                                if (value != null && !value.equals("null")) {
-                                    applyBarColors(value.contains("light"));
-                                } else if (attempts[0] < 12) {
-                                    wv.postDelayed(this, 500);
+                                if (value != null && !value.equals("null") && !value.isEmpty()) {
+                                    applyBarAppearance(value.contains("light"));
+                                } else if (attempts[0] < 24) {
+                                    wv.postDelayed(this, 800);
                                 }
                             });
                 }
-            }, 400);
+            }, 500);
         } catch (Exception e) {
             // WebView not ready yet — safe to skip; the JS bridge will handle it.
         }
     }
 
-    private void applyBarColors(boolean light) {
+    private void applyBarAppearance(boolean light) {
         try {
             Window window = getWindow();
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(light ? LIGHT_BAR : DARK_BAR);
-            window.setNavigationBarColor(light ? LIGHT_BAR : DARK_BAR);
             WindowInsetsControllerCompat controller =
                     WindowCompat.getInsetsController(window, window.getDecorView());
             controller.setAppearanceLightStatusBars(light);
             controller.setAppearanceLightNavigationBars(light);
+            // Fallback tint for ROMs that ignore decor-fits; ignored under real
+            // edge-to-edge where the WebView paints these areas itself.
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(light ? LIGHT_BAR : DARK_BAR);
+            window.setNavigationBarColor(light ? LIGHT_BAR : DARK_BAR);
         } catch (Exception ignored) {
         }
     }

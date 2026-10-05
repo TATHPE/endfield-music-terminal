@@ -134,12 +134,14 @@
   animation: blink-dot 1.6s ease-in-out infinite;
 }
 
-/* Safe-area helpers for Android WebView (ColorOS 17) */
+/* Safe-area helpers for Android WebView — prefer the native env() inset and
+   fall back to the CSS variables Capacitor's built-in SystemBars plugin injects
+   (older WebView cores on OriginOS/HyperOS may not forward env() insets). */
 @utility pt-safe {
-  padding-top: env(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top, var(--safe-area-inset-top, 0px));
 }
 @utility pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom, var(--safe-area-inset-bottom, 0px));
 }
 
 /* Splash boot sequence */

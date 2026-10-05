@@ -45,7 +45,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
             role="dialog"
             aria-label="播放队列"
           >
-            <div className="clip-corner relative flex max-h-[72dvh] flex-col border-t border-primary/40 bg-card">
+            <div className="clip-corner relative flex max-h-[72vh] flex-col border-t border-primary/40 bg-card">
               {/* header */}
               <div className="flex items-center justify-between border-b border-border/80 px-4 py-3">
                 <div>

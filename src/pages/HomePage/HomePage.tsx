@@ -60,7 +60,7 @@ export default function HomePage() {
 
   return (
     <PlayerProvider>
-      <div className="engineering-grid flex min-h-dvh w-full justify-center bg-background">
+      <div className="engineering-grid fixed inset-0 flex w-full justify-center bg-background">
         {/* Desktop-side backdrop marks */}
         <div
           aria-hidden
@@ -71,7 +71,7 @@ export default function HomePage() {
           </span>
         </div>
 
-        <div className="relative flex h-dvh w-full max-w-[430px] flex-col overflow-hidden border-x border-border/70 bg-background">
+        <div className="relative flex h-full w-full max-w-[430px] flex-col overflow-hidden border-x border-border/70 bg-background">
           <StatusBar />
           {/* light layer of the dual-tone player background */}
           <div
