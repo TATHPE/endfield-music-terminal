@@ -37,6 +37,15 @@
 | **③ 正在播放 · 封面** —— ARTWORK 面板：专辑封面完整正方形显示、TRACK 1/27 · MP3 · 48.0kHz · 265kbps 四列参数、分段刻度进度条、模式/上下曲/暂停/音量控件，页面固定 Dock 上方。<br><br><img src="docs/screenshots/phone/03-nowplaying-artwork.jpg" width="220" alt="正在播放·封面" /> | **④ 正在播放 · 歌词** —— LYRICS 面板：LRC 歌词逐行高亮（时间轴标注），自动滚动居中；浅色背景可正常阅读。<br><br><img src="docs/screenshots/phone/04-nowplaying-lyrics.jpg" width="220" alt="正在播放·歌词" /> |
 | **⑤ 设置** —— SETTINGS // 参数配置：背景黑色/白色切换、T-01 标准终端 / T-02 棱镜频谱 / T-03 自定义主题、自定义配色（主色/辅助色/点缀色）+ 预设色板 + 恢复默认，实时生效并持久化。<br><br><img src="docs/screenshots/phone/05-settings.jpg" width="220" alt="设置页" /> | |
 
+**浅色主题界面（v1.4.1 真机实拍）**——白色纯色背景、自定义主题（T-03）与预设色板、无歌词引导界面均正常显示：
+
+| | |
+| --- | --- |
+| **⑥ 曲库 · 浅色主题** —— 白色纯色背景下的曲库列表（播放中曲目高亮、MiniPlayer 悬浮胶囊、毛玻璃 Dock 常驻），浅色模式下文字与控件正常显示。<br><br><img src="docs/screenshots/phone/06-library-light.jpg" width="220" alt="曲库·浅色" /> | **⑦ 歌单 · 浅色主题** —— 播放队列清单页在浅色背景下的显示（收藏清单、新建歌单入口）。<br><br><img src="docs/screenshots/phone/07-playlists-light.jpg" width="220" alt="歌单·浅色" /> |
+| **⑧ 搜索 · 浅色主题** —— 全域检索页（搜索歌曲 / 艺术家 / 歌单）。<br><br><img src="docs/screenshots/phone/08-search-light.jpg" width="220" alt="搜索·浅色" /> | **⑨ 正在播放 · 封面 · 浅色** —— ARTWORK 面板在浅色主题下的专辑封面完整正方形显示。<br><br><img src="docs/screenshots/phone/09-nowplaying-artwork-light.jpg" width="220" alt="正在播放·封面·浅色" /> |
+| **⑩ 正在播放 · 无歌词引导** —— 歌曲无歌词时显示「这首歌没有歌词」引导界面，提供「联网获取歌词」与「导入歌词文件」两个操作（v1.4.1 新增）。<br><br><img src="docs/screenshots/phone/10-nowplaying-lyrics-empty.jpg" width="220" alt="无歌词引导" /> | **⑪ 正在播放 · 歌词 · 浅色** —— LRC 歌词逐行高亮在浅色背景下的阅读效果。<br><br><img src="docs/screenshots/phone/11-nowplaying-lyrics-light.jpg" width="220" alt="歌词·浅色" /> |
+| **⑫ 设置 · 浅色主题** —— 白色背景 + T-03 自定义主题选中，自定义配色与预设色板完整显示、不被 Dock 遮挡。<br><br><img src="docs/screenshots/phone/12-settings-light.jpg" width="220" alt="设置·浅色" /> | |
+
 ## 使用方式
 
 1. **导入歌曲**：进入「曲库」页，点击右上角 **+ 导入曲目**，选择音频文件（mp3 / flac / wav / m4a / ogg / ape 等）。导入后曲库显示曲目、艺术家、专辑与时长；歌曲无内嵌封面时会自动向 iTunes 搜索兜底（后台异步匹配，不阻塞操作）。
@@ -68,7 +77,7 @@
 | v1.3.8 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.8-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-lite.apk) |
 | v1.3.8 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.8-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-debug.apk) |
 
-> **v1.4.1 更新内容（歌词获取流程重构）**：设备扫描歌曲后仅读取本地同名 .lrc / .txt 歌词，**不再自动联网匹配**——无歌词歌曲在歌词页显示「这首歌没有歌词」引导界面，由用户自主选择「联网获取歌词」（网易云 / QQ 音乐双源）或「导入歌词文件」（本地 .lrc）；封面在线匹配（iTunes 公共曲库）改为后台线程池异步执行，扫描与播放不再被网络 I/O 阻塞；修复曲库副标题 `ORIGIN NODE — 本地音频存储` 在安卓上的错误断行（词组级换行，不再从词中断开）。
+> **v1.4.1 更新内容（歌词获取流程重构）**：设备扫描歌曲后仅读取本地同名 .lrc / .txt 歌词，**不再自动联网匹配**——无歌词歌曲在歌词页显示「这首歌没有歌词」引导界面，由用户自主选择「联网获取歌词」（网易云 / QQ 音乐双源）或「导入歌词文件」（本地 .lrc）；封面在线匹配（iTunes 公共曲库）改为后台线程池异步执行，扫描与播放不再被网络 I/O 阻塞；修复曲库副标题 `ORIGIN NODE — 本地音频存储` 在安卓上的错误断行（词组级换行，不再从词中断开）。**终末地歌曲资产**：正式版不含预置歌曲，《明日方舟：终末地》官方 Vocal 曲目（14 首，含专辑封面与 LRC 歌词）可下载歌曲资产包 **EndfieldSongs-v1.0.zip**（位于 v1.0.0 Release 资产，约 92 MB）：https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldSongs-v1.0.zip —— 解压后通过「+ 导入曲目」批量导入即可。
 > **v1.4.0 更新内容（设备音乐自动化 · 正式版）**：新增「扫描设备」一键导入手机音乐（自动去重）；歌词自动匹配（本地 LRC 优先 → 网易云 / QQ 音乐双源联网匹配并写入曲库）；无内嵌封面自动匹配专辑封面（Apple iTunes 公共曲库，歌名 + 歌手匹配，300×300 大图）；设备歌曲播放重构为原生读取 + Blob 播放（根治 ColorOS 17 上 WebView 音频不可拖动、播放无声）；权限被拒时弹窗一键跳转系统权限页；锁屏进度条新增防回弹机制（对系统媒体控件时间回灌生效）。⚠️ **已知遗留问题**：ColorOS 17 锁屏界面拖动进度条仍会回弹、无法随进度条快进（Media Session 兼容限制），后续版本继续跟进；扫描导入大量歌曲时匹配歌词/封面属同步网络 I/O，期间播放指令会短暂排队（详见 Release 说明），属正常现象。
 > **v1.3.9 更新内容（应用图标重绘 · 黑胶唱片式）**：将应用图标整体重绘为黑胶唱片式视觉——纯白四角背景（干净无装饰）+ 黑色唱片盘面 + 中央黄色六边形播放键与外圈黄色环形进度条（黄/黑/白三色与界面风格统一）；同时将图标由原自适应矢量改为**全密度位图嵌入**（mdpi 48 至 xxxhdpi 192，圆角方形 Launcher 图标），各机型显示一致、无系统遮罩偏差。功能与适配保持 v1.3.8 全部能力（全版本 edge-to-edge、ColorOS 17 / OriginOS 3 / HyperOS 等主流系统适配、14 首预置曲库、LRC 歌词、三主题自定义、锁屏控制）。
 > **v1.3.8 更新内容（浅色状态栏黑条 · 全版本 edge-to-edge 根治）**：前两版（v1.3.6 仅加触发次数、v1.3.7 插件改名 + 原生兜底）在 OriginOS 3 真机上仍未生效——排查发现其根因不只是插件时序：非强制 edge-to-edge 的 Android（OriginOS 3 / Android 13 等）上，状态栏颜色由系统 `statusBarColor` 决定，任何着色调用都可能被 ROM 拦截或时序错过。v1.3.8 改为**所有 Android 版本强制 edge-to-edge**（`setDecorFitsSystemWindows(false)`），状态栏 / 导航栏区域直接由应用内容绘制，明暗背景**纯 CSS 跟随主题**——浅色模式必为浅色、深色模式必为深色，不再依赖任何原生着色调用；同时修复原生兜底在页面加载完成前误读背景模式的时序问题（`readyState` 门控 + 24 次重试），并将布局单位从 `dvh` 换成兼容写法（修复部分旧内核 Dock 位置异常）。
