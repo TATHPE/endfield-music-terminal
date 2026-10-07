@@ -152,7 +152,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.4.1（versionCode 16；歌词获取流程重构：扫描不自动联网匹配 / 歌词页自主获取或导入 / 封面异步匹配）；历史稳定版 v1.4.0 / v1.3.9 / v1.3.8 保留在对应 Release 可下载
+- Android 版本：v1.4.1（versionCode 16；歌词获取流程重构：扫描不自动联网匹配 / 歌词页自主获取或导入 / 封面异步匹配）；历史稳定版  v1.3.9 / v1.3.8 保留在对应 Release 可下载
 
 ## License
 
