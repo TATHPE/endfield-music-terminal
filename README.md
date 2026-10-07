@@ -31,20 +31,14 @@
 
 > 截图取自 ColorOS 17 真机实拍（竖屏），与实际 APK 界面一致。
 
-| | |
-| --- | --- |
-| **① 曲库** —— 本地曲库列表：TRACKS / 总时长 / 就绪状态，右上角「+ 导入曲目」；预置曲目带序号、封面与时长；底部毛玻璃 Dock 常驻。<br><br><img src="docs/screenshots/phone/01-library.jpg" width="220" alt="曲库页" /> | **② 歌单** —— QUEUE MANIFESTS 播放队列清单：新建歌单输入框、「收藏」与自定义歌单（终末地 · 14 TRACKS · 49:51）；播放中的 MiniPlayer 为毛玻璃悬浮胶囊。<br><br><img src="docs/screenshots/phone/02-playlists.jpg" width="220" alt="歌单页" /> |
-| **③ 正在播放 · 封面** —— ARTWORK 面板：专辑封面完整正方形显示、TRACK 1/27 · MP3 · 48.0kHz · 265kbps 四列参数、分段刻度进度条、模式/上下曲/暂停/音量控件，页面固定 Dock 上方。<br><br><img src="docs/screenshots/phone/03-nowplaying-artwork.jpg" width="220" alt="正在播放·封面" /> | **④ 正在播放 · 歌词** —— LYRICS 面板：LRC 歌词逐行高亮（时间轴标注），自动滚动居中；浅色背景可正常阅读。<br><br><img src="docs/screenshots/phone/04-nowplaying-lyrics.jpg" width="220" alt="正在播放·歌词" /> |
-| **⑤ 设置** —— SETTINGS // 参数配置：背景黑色/白色切换、T-01 标准终端 / T-02 棱镜频谱 / T-03 自定义主题、自定义配色（主色/辅助色/点缀色）+ 预设色板 + 恢复默认，实时生效并持久化。<br><br><img src="docs/screenshots/phone/05-settings.jpg" width="220" alt="设置页" /> | |
-
 **浅色主题界面（v1.4.1 真机实拍）**——白色纯色背景、自定义主题（T-03）与预设色板、无歌词引导界面均正常显示：
 
 | | |
 | --- | --- |
-| **⑥ 曲库 · 浅色主题** —— 白色纯色背景下的曲库列表（播放中曲目高亮、MiniPlayer 悬浮胶囊、毛玻璃 Dock 常驻），浅色模式下文字与控件正常显示。<br><br><img src="docs/screenshots/phone/06-library-light.jpg" width="220" alt="曲库·浅色" /> | **⑦ 歌单 · 浅色主题** —— 播放队列清单页在浅色背景下的显示（收藏清单、新建歌单入口）。<br><br><img src="docs/screenshots/phone/07-playlists-light.jpg" width="220" alt="歌单·浅色" /> |
-| **⑧ 搜索 · 浅色主题** —— 全域检索页（搜索歌曲 / 艺术家 / 歌单）。<br><br><img src="docs/screenshots/phone/08-search-light.jpg" width="220" alt="搜索·浅色" /> | **⑨ 正在播放 · 封面 · 浅色** —— ARTWORK 面板在浅色主题下的专辑封面完整正方形显示。<br><br><img src="docs/screenshots/phone/09-nowplaying-artwork-light.jpg" width="220" alt="正在播放·封面·浅色" /> |
-| **⑩ 正在播放 · 无歌词引导** —— 歌曲无歌词时显示「这首歌没有歌词」引导界面，提供「联网获取歌词」与「导入歌词文件」两个操作（v1.4.1 新增）。<br><br><img src="docs/screenshots/phone/10-nowplaying-lyrics-empty.jpg" width="220" alt="无歌词引导" /> | **⑪ 正在播放 · 歌词 · 浅色** —— LRC 歌词逐行高亮在浅色背景下的阅读效果。<br><br><img src="docs/screenshots/phone/11-nowplaying-lyrics-light.jpg" width="220" alt="歌词·浅色" /> |
-| **⑫ 设置 · 浅色主题** —— 白色背景 + T-03 自定义主题选中，自定义配色与预设色板完整显示、不被 Dock 遮挡。<br><br><img src="docs/screenshots/phone/12-settings-light.jpg" width="220" alt="设置·浅色" /> | |
+| **① 曲库 · 浅色主题** —— 白色纯色背景下的曲库列表（播放中曲目高亮、MiniPlayer 悬浮胶囊、毛玻璃 Dock 常驻），浅色模式下文字与控件正常显示。<br><br><img src="docs/screenshots/phone/06-library-light.jpg" width="220" alt="曲库·浅色" /> | **② 歌单 · 浅色主题** —— 播放队列清单页在浅色背景下的显示（收藏清单、新建歌单入口）。<br><br><img src="docs/screenshots/phone/07-playlists-light.jpg" width="220" alt="歌单·浅色" /> |
+| **③ 搜索 · 浅色主题** —— 全域检索页（搜索歌曲 / 艺术家 / 歌单）。<br><br><img src="docs/screenshots/phone/08-search-light.jpg" width="220" alt="搜索·浅色" /> | **④ 正在播放 · 封面 · 浅色** —— ARTWORK 面板在浅色主题下的专辑封面完整正方形显示。<br><br><img src="docs/screenshots/phone/09-nowplaying-artwork-light.jpg" width="220" alt="正在播放·封面·浅色" /> |
+| **⑤ 正在播放 · 无歌词引导** —— 歌曲无歌词时显示「这首歌没有歌词」引导界面，提供「联网获取歌词」与「导入歌词文件」两个操作（v1.4.1 新增）。<br><br><img src="docs/screenshots/phone/10-nowplaying-lyrics-empty.jpg" width="220" alt="无歌词引导" /> | **⑥ 正在播放 · 歌词 · 浅色** —— LRC 歌词逐行高亮在浅色背景下的阅读效果。<br><br><img src="docs/screenshots/phone/11-nowplaying-lyrics-light.jpg" width="220" alt="歌词·浅色" /> |
+| **⑦ 设置 · 浅色主题** —— 白色背景 + T-03 自定义主题选中，自定义配色与预设色板完整显示、不被 Dock 遮挡。<br><br><img src="docs/screenshots/phone/12-settings-light.jpg" width="220" alt="设置·浅色" /> | |
 
 ## 使用方式
 
