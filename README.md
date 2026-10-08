@@ -21,10 +21,10 @@
 - **正在播放面板**：ARTWORK（封面 + 播放扫描动画）/ LYRICS 双面板，分段刻度进度条、循环 / 随机 / 单曲三种播放模式
 - **播放队列**：底部上滑队列面板，可查看队列、移除曲目；支持收藏与自定义歌单（IndexedDB 持久化）
 - **同步歌词**：内置 LRC 解析器（时间戳 / offset 标签），播放时逐行高亮并自动滚动居中；设备扫描仅读取本地同名 .lrc/.txt，无歌词歌曲可在歌词页自主选择「联网获取歌词」或「导入歌词文件」（.lrc）
-- **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / 拖动进度）。⚠️ 已知遗留问题：ColorOS 17 锁屏界面拖动进度条仍会回弹、无法随进度条快进（Media Session 兼容限制，后续版本继续跟进）
+- **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / 拖动进度）。✅ v1.4.2 已修复 ColorOS 17 锁屏拖动进度条回弹：`MediaSessionBridge` 回调改为透传原生 `details` 并精确读取秒级 `seekTime`，锁屏 seek 不再丢失目标位置
 - **终末地风格启动动画**：六边形徽章脉冲 + 扫描光带 + 逐行 BOOT 日志 + 24 段进度条，约 2.6 秒，可点击跳过
 - **终末地风格应用图标**：黑胶唱片式图标——纯白四角 + 黑色唱片盘面 + 黄色六边形播放键与外圈环形进度条（黄 / 黑 / 白三色统一），全密度位图嵌入 Android Launcher
-- **主流安卓系统适配（Android 8–16）**：状态栏 / 导航栏图标深浅与明暗背景自动联动（Android 15/16 强制 edge-to-edge 下的 `appearance` API 与 Android 14- 的着色双轨兼容，适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI 等主流系统）、预测性返回手势、横屏刘海 / 挖孔安全区、通知权限运行时请求
+- **主流安卓系统适配（Android 8–16）**：状态栏 / 导航栏图标深浅与明暗背景自动联动（Android 15/16 强制 edge-to-edge 下的 `appearance` API 与 Android 14- 的着色双轨兼容，适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI 等主流系统）、预测性返回手势、横屏刘海 / 挖孔安全区、通知权限运行时请求；**HyperOS / OriginOS 适配（v1.4.2）**：系统栏双通道刷新 + legacy 兜底，Dock 安全区与播放键静态图标在旧内核下同样正确显示
 - **离线可用**：Web 端与 APK 均不依赖云端服务
 
 ## 界面预览
@@ -55,13 +55,14 @@
 7. **主题设置**：「设置」Tab 内可在 **标准终端**（柠檬黄/黑/暖白，默认）、**棱镜频谱**（亮粉/青绿/明黄）与 **自定义** 之间切换；自定义主题通过自绘 HSV 调色器（饱和度/亮度板 + 色相条 + HEX 直输）与 12 预设色板自由调配主色、辅助色、点缀色，实时生效并持久化保存；主题覆盖全部界面——含启动动画、警戒条纹、歌词高亮、滚动条、进度控件与底部 Dock。
 8. **纯色背景切换**：设置页可切换 **黑色 / 白色** 纯色外壳；浅色模式下前景、卡片、网格、玻璃 Dock 与播放条自动适配明暗。
 9. **底部 Dock（ColorOS 17 规范）**：毛玻璃胶囊（图标 + 文字说明），中央搜索按钮；Dock 位于系统手势条（安全区）之上且为**底部固定层**——内容滚动区域自动收缩在 Dock 上方，任何控件都不会被 Dock 遮挡或拦截点击；播放中的 **MiniPlayer 为毛玻璃悬浮胶囊**，位于 Dock 上方。
-10. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。修复了锁屏/系统媒体控件调节无效的问题（媒体按键与传输控制标志、seek 回调字段对齐）。⚠️ 已知遗留问题：ColorOS 17 锁屏界面拖动进度条仍会回弹、无法快进，属 Media Session 在该 ROM 的兼容限制，尚未完全解决。首次安装 Android 13+ 会请求通知权限。
+10. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。修复了锁屏/系统媒体控件调节无效的问题（媒体按键与传输控制标志、seek 回调字段对齐）。✅ v1.4.2 已修复 ColorOS 17 锁屏拖动进度条回弹：原生回调参数改为透传，并精确读取秒级 `seekTime`，锁屏拖动可正常跳转。首次安装 Android 13+ 会请求通知权限。
 11. **重启恢复**：曲库、歌单、播放模式、音量、主题与背景偏好持久化保存，重新打开应用自动恢复。
 
 ## 下载
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
+| v1.4.2 (release · 正式版) | 正式签名版，**锁屏拖动进度条回弹修复 + 频谱 / 终端行为开关 / 布局 / 歌词同步 / 多 ROM 适配修复**（详见下方 v1.4.2 更新内容）；不含预置歌曲（通过扫描设备从手机导入） | [EndfieldMusicTerminal-v1.4.2.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.2/EndfieldMusicTerminal-v1.4.2.apk) |
 | v1.4.1 (release · 正式版) | 正式签名版，**歌词获取流程重构**：扫描歌曲仅读取本地同名 .lrc/.txt、**不自动联网匹配**；无歌词歌曲在歌词页自主选择「联网获取歌词」或「导入歌词文件」；封面在线匹配改为后台线程池异步执行；修复曲库副标题 ORIGIN NODE — 本地音频存储 在安卓上的错误断行；不含预置歌曲（通过扫描设备从手机导入） | [EndfieldMusicTerminal-v1.4.1.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.1/EndfieldMusicTerminal-v1.4.1.apk) |
 | v1.4.0 (release · 已移除) | 正式签名版（**已移除**）：设备音乐自动化——「扫描设备」导入手机音乐（自动去重）、歌词自动匹配（本地 LRC 优先 → 网易云 / QQ 音乐双源联网匹配）、无内嵌封面自动匹配专辑封面（iTunes 公共曲库）。因**播放体验不佳**（ColorOS 17 锁屏进度条回弹、联网匹配期间播放排队等待）已移除安装包，**建议使用 v1.4.1** | 已移除（无下载） |
 | v1.3.9 (release · 完整版) | 正式签名版，**内置 14 首《明日方舟：终末地》预置曲库**（含封面与 LRC 歌词，打开曲库即可播放）；**应用图标重绘为黑胶唱片式**（纯白四角 + 黑色盘面 + 黄色六边形播放键与环形进度条，黄/黑/白三色统一），全密度位图嵌入 Launcher（48–192px） | [EndfieldMusicTerminal-v1.3.9.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.9.apk) |
@@ -71,6 +72,7 @@
 | v1.3.8 (release · 无歌曲版) | 正式签名版，**不含预置曲库**（约 4 MB 轻量包），仅保留导入与全部功能 | [EndfieldMusicTerminal-v1.3.8-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-lite.apk) |
 | v1.3.8 (debug) | 调试签名版（完整版），仅用于体验 | [EndfieldMusicTerminal-v1.3.8-debug.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldMusicTerminal-v1.3.8-debug.apk) |
 
+> **v1.4.2 更新内容（锁屏拖动进度条回弹修复 · 体验与多 ROM 适配）**：**核心修复：锁屏拖动进度条回弹**现已完全适配 ColorOS 17——根因在 JS 侧 `MediaSessionBridge`：插件回调包装器把原生回传的 `details`（含目标位置 `seekTime`）整包丢弃，导致锁屏 seek 取不到目标位置而回弹；已改为透传回调参数并精确读取秒级 `seekTime`，类型检查通过。**其余修复**：频谱空白（根容器宽度为 0 不可见，改为 `flex-1 min-w-0`；并修复 AudioContext 不 resume、隐藏媒体返回零数据、无重试等链路问题）；终端行为开关不实时生效（改为发布订阅 + `useSyncExternalStore`）；MiniPlayer 遮挡设置项、「17s LOG」截断、标题与 SYS ONLINE 重叠（逐项修正布局与居中）；歌词不同步（滚动由 smooth 改为瞬时精确吸附，消除密集段落的追赶滞后）；**HyperOS / OriginOS**：系统栏双通道刷新 + legacy 兜底，Dock 安全区，播放键改静态图标避免旧内核卡 opacity。
 > **v1.4.1 更新内容（歌词获取流程重构）**：设备扫描歌曲后仅读取本地同名 .lrc / .txt 歌词，**不再自动联网匹配**——无歌词歌曲在歌词页显示「这首歌没有歌词」引导界面，由用户自主选择「联网获取歌词」（网易云 / QQ 音乐双源）或「导入歌词文件」（本地 .lrc）；封面在线匹配（iTunes 公共曲库）改为后台线程池异步执行，扫描与播放不再被网络 I/O 阻塞；修复曲库副标题 `ORIGIN NODE — 本地音频存储` 在安卓上的错误断行（词组级换行，不再从词中断开）。**终末地歌曲资产**：正式版不含预置歌曲，《明日方舟：终末地》官方 Vocal 曲目（14 首，含专辑封面与 LRC 歌词）可下载歌曲资产包 **EndfieldSongs-v1.0.zip**（位于 v1.0.0 Release 资产，约 92 MB）：https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.0.0/EndfieldSongs-v1.0.zip —— 解压后通过「+ 导入曲目」批量导入即可。
 > **v1.4.0 更新内容（设备音乐自动化 · 正式版 · 已移除）**：新增「扫描设备」一键导入手机音乐（自动去重）；自动匹配歌词（优先读取歌曲同目录 .lrc/.txt，无本地歌词时联网匹配——网易云 → QQ 音乐双源，写入曲库）；无内嵌封面自动匹配专辑封面（Apple iTunes 公共曲库，歌名 + 歌手匹配，300×300 大图）；设备歌曲播放重构为原生读取 + Blob 播放（根治 ColorOS 17 上 WebView 音频不可拖动、播放无声）；锁屏进度条防回弹机制（对系统媒体控件时间回灌生效）；权限被拒时弹窗一键跳转系统权限页。⚠️ **重要说明：自动匹配歌词时音乐无法播放属正常现象**——扫描导入大量歌曲后，播放器为每首歌逐首发起歌词、封面的联网匹配请求，这些请求是同步网络 I/O（单首最长约 15 秒超时），运行于原生主线程，请求期间音频播放指令会短暂排队等待，表现为「点击播放后没有立即出声」；匹配任务完成后播放立即恢复正常，建议扫描后稍等片刻再播放。⚠️ **已知遗留问题**：ColorOS 17 锁屏界面拖动进度条仍会回弹、无法随进度条快进（Media Session 媒体会话对 seek 指令的兼容限制），后续版本继续跟进。**本版本因播放体验不佳已移除安装包**，不再提供下载，建议直接使用 v1.4.1（歌词获取流程重构：扫描不自动联网 / 歌词页自主获取或导入 / 封面异步匹配）。
 > **v1.3.9 更新内容（应用图标重绘 · 黑胶唱片式）**：将应用图标整体重绘为黑胶唱片式视觉——纯白四角背景（干净无装饰）+ 黑色唱片盘面 + 中央黄色六边形播放键与外圈黄色环形进度条（黄/黑/白三色与界面风格统一）；同时将图标由原自适应矢量改为**全密度位图嵌入**（mdpi 48 至 xxxhdpi 192，圆角方形 Launcher 图标），各机型显示一致、无系统遮罩偏差。功能与适配保持 v1.3.8 全部能力（全版本 edge-to-edge、ColorOS 17 / OriginOS 3 / HyperOS 等主流系统适配、14 首预置曲库、LRC 歌词、三主题自定义、锁屏控制）。
@@ -102,7 +104,7 @@ endfield-player/
 ├── src/                    # Web 源码
 │   ├── pages/HomePage/     # 主页面（曲库 / 歌单 / 正在播放 + 滑动切换）
 │   ├── components/player/  # 播放器组件（SplashScreen / BottomNav / NowPlayingView / QueuePanel ...）
-│   └── lib/                # 数据层（db.ts / parser.ts / lyrics.ts / playlists.ts / player-context.ts）
+│   └── lib/                # 数据层（db.ts / parser.ts / lyrics.ts / playlists.ts / player-context.ts / media-scanner.ts / terminal-config.ts）
 ├── android/                # Capacitor Android 原生工程（含自绘应用图标）
 ├── public/
 ├── capacitor.config.ts     # Capacitor 配置（appId: com.endfield.audio.terminal）
@@ -152,7 +154,7 @@ gradle assembleDebug
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.4.1（versionCode 16；歌词获取流程重构：扫描不自动联网匹配 / 歌词页自主获取或导入 / 封面异步匹配）；历史稳定版 v1.4.0 / v1.3.9 / v1.3.8 保留在对应 Release 可下载
+- Android 版本：v1.4.2（versionCode 17；锁屏拖动进度条 seek 修复 / 频谱渲染链路修复 / 终端行为开关实时生效 / 歌词瞬时精确吸附 / HyperOS·OriginOS 系统栏双通道适配）；历史版本 v1.4.1 / v1.4.0 / v1.3.9 / v1.3.8 保留在对应 Release 可下载
 
 ## License
 
@@ -161,3 +163,5 @@ gradle assembleDebug
 ## 免责声明
 
 本项目为粉丝向学习项目，与《明日方舟：终末地》及其开发商无关，不包含任何游戏素材与版权资源。
+
+本项目由 **AI 辅助开发**，辅助开发所使用的 AI 包括 **豆包** 与 **DeepSeek**。如果你对本项目有新的想法，欢迎直接把源码交给豆包或 DeepSeek 修改。
