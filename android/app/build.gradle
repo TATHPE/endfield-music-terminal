@@ -13,7 +13,7 @@ android {
         applicationId "com.endfield.audio.terminal"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 17
+        versionCode 18
         versionName "1.4.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

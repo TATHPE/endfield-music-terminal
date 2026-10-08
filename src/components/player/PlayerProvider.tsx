@@ -17,6 +17,7 @@ import { md5Hex } from '@/lib/md5';
 import { PlayerContext, type PlayerContextState } from '@/lib/player-context';
 import { MediaScanner, loadDeviceAudio, isNative, type DeviceSong } from '@/lib/media-scanner';
 import MediaSessionBridge from '@/components/player/MediaSessionBridge';
+import { shouldLog, type LogLevel } from '@/lib/terminal-config';
 
 const VOLUME_KEY = 'endfield-player:volume';
 const MODE_KEY = 'endfield-player:mode';
@@ -298,7 +299,9 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const appendLog = useCallback((line: string) => {
+  /** Terminal log stream — gated by the LOG level chosen in 系统配置 (trace < info < warn < error). */
+  const appendLog = useCallback((line: string, level: LogLevel = 'info') => {
+    if (!shouldLog(level)) return;
     setScanLogs((prev) => [...prev.slice(-80), line]);
   }, []);
 
@@ -483,7 +486,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         toast.error('未检测到音频文件');
         return;
       }
-      appendLog(`SCAN DIR: /MEDIA/USB0`);
+      appendLog(`SCAN DIR: /MEDIA/USB0`, 'trace');
       appendLog(`FOUND ${list.length} MEDIA FILE${list.length === 1 ? '' : 'S'}`);
       let ok = 0;
       let fail = 0;
@@ -494,7 +497,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
           await putSong(song);
           setSongs((prev) => [...prev, song]);
           ok += 1;
-          appendLog(`LOAD TRACK ${file.name} OK (${formatCodec(song.codec)})`);
+          appendLog(`LOAD TRACK ${file.name} OK (${formatCodec(song.codec)})`, 'trace');
           // Media integrity hash — computed off the critical path so large
           // files don't block the import loop.
           void (async () => {
@@ -519,7 +522,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
           }
         } catch {
           fail += 1;
-          appendLog(`LOAD TRACK ${file.name} FAILED — FORMAT UNSUPPORTED`);
+          appendLog(`LOAD TRACK ${file.name} FAILED — FORMAT UNSUPPORTED`, 'warn');
         }
       }
       if (ok > 0) {
@@ -604,7 +607,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
    *  Songs already in the library (matched by device path) are skipped. */
   const scanDeviceSongs = useCallback(async () => {
     if (!isNative()) return { added: 0, skipped: 0, failed: 0, permissionDenied: false, error: '' };
-    appendLog('SCAN DIR: /DEVICE/MEDIASTORE');
+    appendLog('SCAN DIR: /DEVICE/MEDIASTORE', 'trace');
     let list: DeviceSong[] = [];
     try {
       const res = await MediaScanner.scanAudio();
@@ -612,12 +615,12 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       const msg = (e as Error).message || '';
       if (msg.includes('PERM_DENIED')) {
-        appendLog('SCAN FAILED — STORAGE PERMISSION DENIED');
+        appendLog('SCAN FAILED — STORAGE PERMISSION DENIED', 'error');
         toast.error('存储权限被拒绝，无法扫描设备歌曲');
         return { added: 0, skipped: 0, failed: 1, permissionDenied: true, error: msg };
       }
       const detail = msg.replace(/^SCAN_ERR\|/, '').replace(/^扫描失败:\s*/, '');
-      appendLog(`SCAN FAILED — ${detail || 'UNKNOWN ERROR'}`);
+      appendLog(`SCAN FAILED — ${detail || 'UNKNOWN ERROR'}`, 'error');
       toast.error(detail ? `扫描设备音频失败：${detail}` : '扫描设备音频失败');
       return { added: 0, skipped: 0, failed: 1, permissionDenied: false, error: detail };
     }
@@ -652,7 +655,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         await putSong(song);
         setSongs((prev) => [...prev, song]);
         added += 1;
-        appendLog(`LOAD TRACK ${fileName} OK — ${song.codec}`);
+        appendLog(`LOAD TRACK ${fileName} OK — ${song.codec}`, 'trace');
         // Offline sidecar lyric read only — online matching waits for the
         // lyrics panel where the user explicitly opts in.
         matchDeviceLyricsLocal(song);
