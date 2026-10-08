@@ -21,7 +21,34 @@ export interface PlayerContextState {
   /** all user playlists, sorted by createdAt */
   playlists: Playlist[];
 
+  /** terminal import/scan log stream (most recent first) for the media node */
+  scanLogs: string[];
+  /** live 24-bucket spectrum readout from the playing source (0..255) */
+  spectrum: number[];
+  spectrumOn: boolean;
+  setSpectrumOn: (v: boolean) => void;
+  /** assign base-archive tags (战场记录 / 通讯日志 / BGM / 环境音) to a song */
+  setSongTags: (id: string, tags: string[]) => void;
+  /** persist the current queue as a QUEUE SNAPSHOT playlist */
+  saveQueueSnapshot: () => void;
+
   importFiles: (files: FileList | File[]) => Promise<void>;
+  /** scan the device MediaStore for audio and import new songs (native only);
+   *  offline sidecar lyrics are read in the background, online matching is
+   *  deferred to the lyrics panel where the user explicitly opts in */
+  scanDeviceSongs: () => Promise<{
+    added: number;
+    skipped: number;
+    failed: number;
+    /** true when the failure was a permission denial (vs a scan error). */
+    permissionDenied: boolean;
+    /** underlying error detail for scan failures ('' when none). */
+    error?: string;
+  }>;
+  /** user-triggered online lyric match from the lyrics panel (native pool) */
+  fetchLyricsOnline: (songId: string) => Promise<void>;
+  /** attach lyric text from a user-picked .lrc/.txt file to a song */
+  importLyrics: (songId: string, content: string) => Promise<void>;
   removeSong: (id: string) => void;
   playSong: (id: string) => void;
   togglePlay: () => void;

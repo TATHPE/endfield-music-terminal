@@ -15,7 +15,12 @@ function SignalBars() {
   );
 }
 
-/** Top system status bar — Endfield terminal chrome. */
+/**
+ * Top system status bar — Endfield terminal chrome.
+ * Three columns: SYS ONLINE (left), ENDFIELD OS title (dead center),
+ * clock + signal (right). The centered title never overlaps the sides on
+ * narrow phone widths.
+ */
 export default function StatusBar() {
   const [now, setNow] = useState(() => new Date());
 
@@ -29,15 +34,17 @@ export default function StatusBar() {
 
   return (
     <header className="pt-safe relative z-30 shrink-0 border-b border-border bg-background/95">
-      <div className="flex h-9 items-center justify-between px-3">
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-[0.18em] text-foreground/85">
+      <div className="relative flex h-9 items-center justify-between px-3">
+        <div className="flex shrink-0 items-center gap-2 font-mono text-[10px] tracking-[0.18em] text-foreground/85">
           <span className="blink-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
           <span className="text-primary">SYS</span>
           <span className="text-success">ONLINE</span>
         </div>
-        <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.12em] text-foreground/70">
+        <h1 className="absolute left-1/2 max-w-[46%] -translate-x-1/2 truncate font-mono text-[10px] font-semibold tracking-[0.22em] text-foreground">
+          ENDFIELD OS v2.4
+        </h1>
+        <div className="flex shrink-0 items-center gap-2 font-mono text-[10px] tracking-[0.12em] text-foreground/70">
           <span className="hidden text-foreground/50 sm:inline">{date}</span>
-          <span>ENDFIELD OS v2.4</span>
           <span className="text-foreground">{time}</span>
           <SignalBars />
         </div>

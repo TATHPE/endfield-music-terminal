@@ -61,7 +61,7 @@ function PlaylistCard({
         <button
           type="button"
           onClick={() => onToggleExpand(pl.id)}
-          aria-label={`展开歌单 ${pl.name}`}
+          aria-label={`展开播放序列 ${pl.name}`}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
         >
           <span
@@ -91,7 +91,7 @@ function PlaylistCard({
         <button
           type="button"
           onClick={() => onPlayPlaylist(pl.id)}
-          aria-label={`播放歌单 ${pl.name}`}
+          aria-label={`播放播放序列 ${pl.name}`}
           className="clip-corner-sm flex h-9 w-9 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-transform active:scale-95"
         >
           <Play className="h-4 w-4 translate-x-[1px]" />
@@ -101,7 +101,7 @@ function PlaylistCard({
           <button
             type="button"
             onClick={() => onDeletePlaylist(pl.id)}
-            aria-label={`删除歌单 ${pl.name}`}
+            aria-label={`删除播放序列 ${pl.name}`}
             className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -121,7 +121,7 @@ function PlaylistCard({
           >
             {tracks.length === 0 ? (
               <li className="px-4 pb-3 font-mono text-[10px] tracking-widest text-muted-foreground/60">
-                EMPTY — 从曲库添加歌曲到该清单
+                EMPTY — 从介质库添加介质到该清单
               </li>
             ) : (
               tracks.map((song, i) => {
@@ -143,7 +143,7 @@ function PlaylistCard({
                           String(i + 1).padStart(2, '0')
                         )}
                       </span>
-                      <CoverArt cover={song.cover} title={song.title} className="h-8 w-8" />
+                      <CoverArt cover={song.cover} title={song.title} artist={song.artist} deviceAlbumId={song.deviceAlbumId} devicePath={song.devicePath} className="h-8 w-8" />
                       <span className="min-w-0 flex-1">
                         <span
                           className={cn(
@@ -174,7 +174,7 @@ function PlaylistCard({
                       <button
                         type="button"
                         onClick={() => onRemoveFromPlaylist(pl.id, song.id)}
-                        aria-label={`从歌单移除 ${song.title}`}
+                        aria-label={`从播放序列移除 ${song.title}`}
                         className="shrink-0 p-1 text-muted-foreground/40 transition-colors hover:text-destructive"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -236,9 +236,9 @@ export default function PlaylistsView() {
     <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
       <header>
         <p className="font-mono text-[10px] tracking-[0.28em] text-primary">
-          AUDIO TERMINAL // PLAYLIST NODE
+          AUDIO TERMINAL // SEQUENCE NODE [AUD-02]
         </p>
-        <h1 className="mt-1 text-3xl font-bold tracking-wide text-foreground">歌单</h1>
+        <h1 className="mt-1 text-3xl font-bold tracking-wide text-foreground">播放序列</h1>
         <p className="mt-1 font-mono text-[10px] tracking-widest text-muted-foreground">
           QUEUE MANIFESTS — 播放队列清单
         </p>
@@ -252,7 +252,7 @@ export default function PlaylistsView() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') submitCreate();
           }}
-          placeholder="新建歌单名称…"
+          placeholder="新建播放序列名称…"
           maxLength={32}
           className="clip-corner-sm min-w-0 flex-1 border border-border bg-secondary px-3 py-2 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary"
         />
@@ -260,7 +260,7 @@ export default function PlaylistsView() {
           type="button"
           onClick={submitCreate}
           disabled={!draft.trim()}
-          aria-label="新建歌单"
+          aria-label="新建播放序列"
           className="clip-corner-sm flex h-10 w-10 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-transform active:scale-95 disabled:opacity-40"
         >
           <Plus className="h-4.5 w-4.5" />
@@ -275,9 +275,9 @@ export default function PlaylistsView() {
         ))}
         {custom.length === 0 && (
           <li className="mt-2 border border-dashed border-border/70 px-4 py-6 text-center font-mono text-[11px] leading-relaxed tracking-wider text-muted-foreground/70">
-            未创建歌单
+            未创建播放序列
             <br />
-            输入名称创建你的第一个播放清单
+            输入名称创建你的第一个队列清单
           </li>
         )}
       </ul>
@@ -285,7 +285,7 @@ export default function PlaylistsView() {
       {/* favorites usage hint */}
       {isPlaying && currentId && (
         <p className="font-mono text-[9px] tracking-widest text-muted-foreground/50">
-          提示：曲库中点击 ♥ 可将曲目加入收藏清单
+          提示：介质库中点击 ♥ 可将介质加入收藏清单
         </p>
       )}
     </div>

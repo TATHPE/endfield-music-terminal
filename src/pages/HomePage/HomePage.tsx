@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type TouchEvent } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type TouchEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ViewId } from '@/lib/nav';
+import { cn } from '@/lib/utils';
 import { syncSystemBars } from '@/lib/theme';
+import { getConfigSnapshot, subscribeTerminalConfig } from '@/lib/terminal-config';
 import PlayerProvider from '@/components/player/PlayerProvider';
 import StatusBar from '@/components/player/StatusBar';
 import BottomNav from '@/components/player/BottomNav';
@@ -15,6 +17,26 @@ import SplashScreen from '@/components/player/SplashScreen';
 
 const VIEW_ORDER: ViewId[] = ['library', 'playlists', 'search', 'nowplaying', 'settings'];
 
+/** Short square-wave blip for dock taps when terminal beep is enabled. */
+function playBeep() {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.07);
+    osc.onended = () => void ctx.close();
+  } catch {
+    /* audio unavailable */
+  }
+}
+
 /**
  * Mobile-first Endfield-style music terminal.
  * The app shell is phone-sized (max 430px) and centered on larger screens.
@@ -24,7 +46,10 @@ export default function HomePage() {
   const [view, setView] = useState<ViewId>('library');
   const [dir, setDir] = useState<1 | -1>(1);
   const [booted, setBooted] = useState(false);
+  const [idleDim, setIdleDim] = useState(false);
   const swipeStart = useRef<{ x: number; y: number } | null>(null);
+  const cfg = useSyncExternalStore(subscribeTerminalConfig, getConfigSnapshot);
+  const idleTimerRef = useRef<number | null>(null);
 
   // Final safety net: after React mounts the bridge is definitely ready, so
   // re-push the system bar appearance to match the active background mode.
@@ -32,10 +57,32 @@ export default function HomePage() {
     syncSystemBars();
   }, []);
 
+  // Idle dimmer: with idleMinutes > 0 the shell fades to a standby readout
+  // after N minutes of no pointer/touch activity; any tap wakes it.
+  useEffect(() => {
+    const idleMs = cfg.idleMinutes * 60 * 1000;
+    if (!idleMs) return;
+    const arm = () => {
+      setIdleDim(false);
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = window.setTimeout(() => setIdleDim(true), idleMs);
+    };
+    arm();
+    const wake = () => arm();
+    window.addEventListener('pointerdown', wake);
+    window.addEventListener('pointermove', wake);
+    return () => {
+      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      window.removeEventListener('pointerdown', wake);
+      window.removeEventListener('pointermove', wake);
+    };
+  }, [cfg.idleMinutes]);
+
   const go = (v: ViewId) => {
     const cur = VIEW_ORDER.indexOf(view);
     const nxt = VIEW_ORDER.indexOf(v);
     if (cur !== nxt) setDir(nxt > cur ? 1 : -1);
+    if (cfg.beepOn) playBeep();
     setView(v);
   };
 
@@ -79,7 +126,11 @@ export default function HomePage() {
             className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[38%] bg-[radial-gradient(130%_100%_at_50%_-18%,var(--bg-glow),transparent_70%)]"
           />
           <main
-            className="scanlines relative z-[1] min-h-0 flex-1 overflow-hidden"
+            className={cn(
+              'relative z-[1] min-h-0 flex-1 overflow-hidden',
+              cfg.scanlinesOn && 'bg-scan-anim scanlines',
+            )}
+            style={cfg.scanlinesOn ? { animationDuration: `${cfg.scanSpeed}s` } : undefined}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
@@ -96,9 +147,9 @@ export default function HomePage() {
                          control lives strictly above the floating dock */
                       'h-full overflow-hidden pb-[124px]'
                     : view === 'settings'
-                      ? /* fixed page like now-playing: content never scrolls
-                           and lives strictly above the floating dock */
-                        'h-full overflow-hidden pb-[124px]'
+                      ? /* fixed page: padding covers BOTH the floating MiniPlayer
+                           and the dock, so the IDLE controls are never covered */
+                        'h-full overflow-hidden pb-[182px]'
                       : /* browse pages: content scrolls behind the frosted
                            dock and shows through it blurred; bottom padding
                            still lets the last row rest above the dock buttons */
@@ -133,6 +184,22 @@ export default function HomePage() {
             <BottomNav view={view} onChange={go} />
           </div>
           {!booted && <SplashScreen onDone={() => setBooted(true)} />}
+
+          {/* Idle standby dimmer */}
+          {idleDim && (
+            <button
+              type="button"
+              onClick={() => setIdleDim(false)}
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-2 bg-background/90 font-mono"
+              aria-label="唤醒终端"
+            >
+              <span className="block-cursor inline-block h-4 w-2 bg-primary" />
+              <span className="text-xs tracking-[0.4em] text-foreground/80">AWAITING INPUT</span>
+              <span className="text-[9px] tracking-[0.3em] text-muted-foreground">
+                TERMINAL STANDBY — 点击唤醒
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </PlayerProvider>

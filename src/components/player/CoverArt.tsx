@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { albumArtUrl, isNative } from '@/lib/media-scanner';
 
 interface CoverArtProps {
   cover: Blob | null;
@@ -10,20 +11,42 @@ interface CoverArtProps {
   framed?: boolean;
   /** playing: animate scan line + rotating engineering ring */
   playing?: boolean;
+  /** MediaStore album id for lazily loading album art of device-scanned songs */
+  deviceAlbumId?: number;
+  /** Device file path — lets the native side read embedded art when albumart is unavailable */
+  devicePath?: string;
+  /** Artist name — used by the native side for the online cover fallback */
+  artist?: string;
 }
 
 /**
  * Album artwork. Object URL is derived during render (official React pattern)
  * and revoked on cleanup; falls back to an Endfield hazard placeholder.
  * When playing, a scan line sweeps the artwork and an engineering ring rotates.
+ * Device-scanned songs have no embedded cover: album art is fetched once from
+ * MediaStore through the native bridge (cached per album id).
  */
-export default function CoverArt({ cover, title, className = '', framed = false, playing = false }: CoverArtProps) {
+export default function CoverArt({ cover, title, className = '', framed = false, playing = false, deviceAlbumId, devicePath, artist }: CoverArtProps) {
   // NOTE: the object URL is intentionally NOT revoked. Revoking in an effect
   // races with React StrictMode's mount/unmount remount (the memoized URL is
   // reused after the cleanup revoked it), leaving the <img> with a dead URL.
   // Object URLs are page-scoped and released when the page unloads, which is
   // fine for a player holding at most a handful of artwork blobs.
   const url = useMemo(() => (cover ? URL.createObjectURL(cover) : null), [cover]);
+  const [deviceCover, setDeviceCover] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (url || (!deviceAlbumId && !devicePath) || !isNative()) return;
+    let cancelled = false;
+    void albumArtUrl(deviceAlbumId || 0, devicePath, title, artist).then((b64) => {
+      if (!cancelled && b64) setDeviceCover(b64);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [url, deviceAlbumId, devicePath, title, artist]);
+
+  const src = url ?? deviceCover;
 
   return (
     <div
@@ -33,9 +56,9 @@ export default function CoverArt({ cover, title, className = '', framed = false,
         className,
       )}
     >
-      {url ? (
+      {src ? (
         <img
-          src={url}
+          src={src}
           alt={`${title} 专辑封面`}
           loading="lazy"
           decoding="async"

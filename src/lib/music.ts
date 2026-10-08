@@ -21,6 +21,14 @@ export interface ISong {
   favorited?: boolean;
   /** in-app asset URL for preset (bundled) tracks; plays directly, no blob needed */
   presetUrl?: string;
+  /** absolute device path for scanned songs; played via _capacitor_file_ bridge */
+  devicePath?: string;
+  /** MediaStore album id for lazily loading album art on device songs */
+  deviceAlbumId?: number;
+  /** base-archive tags: 战场记录 / 通讯日志 / BGM / 环境音 */
+  tags?: string[];
+  /** MD5 of the audio blob, computed once at import; '' when unknown */
+  hash?: string;
   audio: Blob | null;
   addedAt: number;
 }

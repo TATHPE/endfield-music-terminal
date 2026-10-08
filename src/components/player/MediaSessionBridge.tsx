@@ -1,7 +1,7 @@
 // EXPORTS: MediaSessionBridge
 import { useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { MediaSession } from '@capgo/capacitor-media-session';
+import { MediaSession, type ActionHandler } from '@capgo/capacitor-media-session';
 import { usePlayer } from '@/lib/player-context';
 
 /** Convert a cover Blob to a data: URL the native side can decode (blob: is unsupported). */
@@ -37,9 +37,14 @@ export default function MediaSessionBridge() {
     if (!native) return;
     let cancelled = false;
 
-    const bind = (action: Parameters<typeof MediaSession.setActionHandler>[0]['action'], fn: () => void) => {
-      void MediaSession.setActionHandler({ action }, () => {
-        if (!cancelled) fn();
+    const bind = (
+      action: Parameters<typeof MediaSession.setActionHandler>[0]['action'],
+      fn: ActionHandler,
+    ) => {
+      // Forward the plugin callback's details (seekto carries seekTime here);
+      // dropping it made lock-screen seeks resolve with no target.
+      void MediaSession.setActionHandler({ action }, (details) => {
+        if (!cancelled) fn(details);
       }).catch(() => {});
     };
 
@@ -47,12 +52,12 @@ export default function MediaSessionBridge() {
     bind('pause', () => actionsRef.current.togglePlay());
     bind('nexttrack', () => actionsRef.current.playNext());
     bind('previoustrack', () => actionsRef.current.playPrev());
-    bind('seekto', (detail?: { position?: number; seekTime?: number }) => {
-      // The native plugin reports the target as `seekTime` (seconds); older
-      // builds used `position`. Accept both so lock-screen / system transport
-      // seek actually moves playback.
-      const pos = detail?.seekTime ?? detail?.position;
-      if (typeof pos === 'number' && Number.isFinite(pos)) actionsRef.current.seek(pos);
+    bind('seekto', (detail) => {
+      // MediaSessionPlugin.handleSeekTo converts the native millisecond position
+      // to seconds and returns it as `seekTime`.
+      const pos = detail?.seekTime;
+      if (typeof pos !== 'number' || !Number.isFinite(pos)) return;
+      actionsRef.current.seek(pos);
     });
     bind('seekforward', () => {
       const { seek, currentTime, duration } = actionsRef.current;

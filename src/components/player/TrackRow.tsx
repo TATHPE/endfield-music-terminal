@@ -1,4 +1,4 @@
-import { Heart, ListPlus, Trash2 } from 'lucide-react';
+import { Heart, ListPlus, Tag, Trash2 } from 'lucide-react';
 import type { ISong } from '@/lib/music';
 import { formatTime } from '@/lib/music';
 import { cn } from '@/lib/utils';
@@ -13,9 +13,10 @@ interface TrackRowProps {
   onRemove: () => void;
   onToggleFavorite: () => void;
   onAddToPlaylist: () => void;
+  onTag: () => void;
 }
 
-/** One library row: index readout, artwork, meta, favorite, add, duration, remove. */
+/** One library row: index readout, artwork, meta (+ media tag / integrity hash), actions. */
 export default function TrackRow({
   song,
   index,
@@ -24,6 +25,7 @@ export default function TrackRow({
   onRemove,
   onToggleFavorite,
   onAddToPlaylist,
+  onTag,
 }: TrackRowProps) {
   return (
     <li>
@@ -48,18 +50,30 @@ export default function TrackRow({
               String(index + 1).padStart(2, '0')
             )}
           </span>
-          <CoverArt cover={song.cover} title={song.title} className="h-11 w-11" />
+          <CoverArt cover={song.cover} title={song.title} artist={song.artist} deviceAlbumId={song.deviceAlbumId} devicePath={song.devicePath} className="h-11 w-11" />
           <span className="min-w-0 flex-1">
             <span className={cn('block truncate text-sm', isCurrent ? 'font-semibold text-primary' : 'font-medium text-foreground')}>
               {song.title}
             </span>
-            <span className="block truncate font-mono text-[10px] tracking-wide text-muted-foreground">
+            <span className="block truncate font-mono text-[9px] tracking-wide text-muted-foreground">
+              {song.tags && song.tags.length > 0 && (
+                <span className="text-hint">{song.tags.map((t) => `[${t}]`).join('')}</span>
+              )}
               {song.artist} · {song.album}
+              {song.hash ? ` · HASH:${song.hash.slice(0, 8)}` : ''}
             </span>
           </span>
           <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
             {song.duration > 0 ? formatTime(song.duration) : '--:--'}
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={onTag}
+          aria-label={`编辑 ${song.title} 的介质标签`}
+          className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-hint"
+        >
+          <Tag className={cn('h-3.5 w-3.5', song.tags && song.tags.length > 0 && 'text-hint')} />
         </button>
         <button
           type="button"
@@ -75,7 +89,7 @@ export default function TrackRow({
         <button
           type="button"
           onClick={onAddToPlaylist}
-          aria-label={`将 ${song.title} 加入歌单`}
+          aria-label={`将 ${song.title} 加入播放序列`}
           className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-primary"
         >
           <ListPlus className="h-3.5 w-3.5" />

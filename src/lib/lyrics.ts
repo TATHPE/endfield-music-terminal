@@ -30,8 +30,12 @@ const META_TEXT_RE =
  * - timed: at least one line carries [mm:ss] timestamps
  * - plain:  text exists but has no timestamps (embedded unsynced lyrics)
  * - null:   empty / garbage
+ *
+ * extraOffsetSec is a user-side sync shift (seconds, negative = lyrics lead)
+ * applied on top of the file's own [offset:±ms] header. The shift never moves
+ * a line before 0.
  */
-export function parseLrc(raw: string): LrcResult {
+export function parseLrc(raw: string, extraOffsetSec = 0): LrcResult {
   if (!raw || !raw.trim()) return null;
   const rawLines = raw.replace(/\r/g, '').split('\n');
 
@@ -39,6 +43,7 @@ export function parseLrc(raw: string): LrcResult {
   const offsetLine = rawLines.find((l) => /^\[offset:/i.test(l));
   const offsetMatch = offsetLine?.match(/\[offset:\s*([+-]?\d+)\s*\]/i);
   if (offsetMatch) offsetMs = Number(offsetMatch[1]) || 0;
+  offsetMs += (Number.isFinite(extraOffsetSec) ? extraOffsetSec : 0) * 1000;
 
   const lines: LrcLine[] = [];
   let sawTimestamp = false;

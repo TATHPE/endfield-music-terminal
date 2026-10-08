@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  Activity,
   ListOrdered,
   Music,
   Pause,
@@ -22,11 +23,12 @@ import HazardStrip from '@/components/player/HazardStrip';
 import ProgressBar from '@/components/player/ProgressBar';
 import LyricsView from '@/components/player/LyricsView';
 import QueuePanel from '@/components/player/QueuePanel';
+import SpectrumBars from '@/components/player/SpectrumBars';
 
 const MODE_META = {
-  sequence: { label: '顺序循环', Icon: Repeat },
-  shuffle: { label: '随机播放', Icon: Shuffle },
-  'repeat-one': { label: '单曲循环', Icon: Repeat1 },
+  sequence: { label: '序列循环', Icon: Repeat },
+  shuffle: { label: '无序序列', Icon: Shuffle },
+  'repeat-one': { label: '单介质循环', Icon: Repeat1 },
 } as const;
 
 type Panel = 'artwork' | 'lyrics';
@@ -49,6 +51,9 @@ export default function NowPlayingView() {
     muted,
     setVolume,
     toggleMute,
+    spectrum,
+    spectrumOn,
+    setSpectrumOn,
   } = usePlayer();
   const [panel, setPanel] = useState<Panel>('artwork');
   const [queueOpen, setQueueOpen] = useState(false);
@@ -98,19 +103,36 @@ export default function NowPlayingView() {
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="font-mono text-[10px] tracking-[0.28em] text-primary">
-            AUDIO TERMINAL // NOW PLAYING
+            AUDIO TERMINAL // OUTPUT STREAM [AUD-03]
           </p>
-          <h1 className="mt-0.5 text-2xl font-bold tracking-wide text-foreground">正在播放</h1>
+          <h1 className="mt-0.5 text-2xl font-bold tracking-wide text-foreground">音频输出</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => setQueueOpen(true)}
-          aria-label="打开播放队列"
-          className="clip-corner-sm flex shrink-0 items-center gap-1.5 border border-border bg-secondary px-2.5 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-primary"
-        >
-          <ListOrdered className="h-3.5 w-3.5" />
-          QUEUE
-        </button>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setSpectrumOn(!spectrumOn)}
+            aria-label={spectrumOn ? '关闭频谱' : '开启频谱'}
+            title="频谱可视化"
+            className={cn(
+              'clip-corner-sm flex shrink-0 items-center gap-1.5 border px-2.5 py-1.5 font-mono text-[10px] tracking-widest transition-colors',
+              spectrumOn
+                ? 'border-primary/60 bg-primary/10 text-primary'
+                : 'border-border bg-secondary text-muted-foreground hover:text-primary',
+            )}
+          >
+            <Activity className="h-3.5 w-3.5" />
+            SPECTRUM
+          </button>
+          <button
+            type="button"
+            onClick={() => setQueueOpen(true)}
+            aria-label="打开播放队列"
+            className="clip-corner-sm flex shrink-0 items-center gap-1.5 border border-border bg-secondary px-2.5 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-primary"
+          >
+            <ListOrdered className="h-3.5 w-3.5" />
+            QUEUE
+          </button>
+        </div>
       </header>
 
       {/* Panel switch */}
@@ -158,8 +180,11 @@ export default function NowPlayingView() {
                   <CoverArt
                     cover={song.cover}
                     title={song.title}
+                    artist={song.artist}
                     framed
                     playing={isPlaying}
+                    deviceAlbumId={song.deviceAlbumId}
+                    devicePath={song.devicePath}
                     className="aspect-square w-full"
                   />
                   <div aria-hidden className="absolute inset-x-1 bottom-1">
@@ -182,6 +207,16 @@ export default function NowPlayingView() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Live spectrum readout (optional) */}
+      {spectrumOn && (
+        <div className="mt-1.5 flex items-center gap-2 border-y border-border/60 py-1">
+          <span className="shrink-0 font-mono text-[8px] tracking-[0.2em] text-muted-foreground">
+            SPECTRUM
+          </span>
+          <SpectrumBars data={spectrum} />
+        </div>
+      )}
 
       {/* Track info: uniform four-column mono readout */}
       <div className="mt-2 grid grid-cols-4 gap-1 border-y border-border/80 py-1.5 text-center font-mono text-[10px] tracking-[0.14em] text-muted-foreground">
@@ -211,35 +246,26 @@ export default function NowPlayingView() {
         </div>
       </div>
 
-      {/* Transport: uniform 44px controls + prominent play key */}
+      {/* Transport: uniform 44px controls + prominent play key.
+          NOTE: icons render statically (no framer-motion transform/opacity) —
+          old WebView kernels on OriginOS 3 leave the animated icon stuck at
+          opacity 0 / a broken transform, making the play key look like a bare
+          solid block covered by the theme color. Plain CSS transitions only. */}
       <div className="mt-1 flex items-center justify-center gap-2">
-        <motion.button
+        <button
           type="button"
           onClick={cycleMode}
           aria-label={`播放模式：${modeLabel}`}
           title={modeLabel}
-          whileTap={{ scale: 0.82, rotate: -12 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 22 }}
           className={cn(
-            'clip-corner-sm flex h-11 w-11 shrink-0 items-center justify-center border transition-colors',
+            'clip-corner-sm flex h-11 w-11 shrink-0 items-center justify-center border transition-colors active:scale-90',
             mode === 'sequence'
               ? 'border-border bg-card/60 text-muted-foreground hover:text-primary'
               : 'border-primary/50 bg-primary/10 text-primary',
           )}
         >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key={mode}
-              initial={{ scale: 0.5, opacity: 0, rotate: -90 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              exit={{ scale: 0.5, opacity: 0, rotate: 90 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-              className="flex items-center justify-center"
-            >
-              <ModeIcon className="h-[22px] w-[22px]" strokeWidth={2.2} />
-            </motion.span>
-          </AnimatePresence>
-        </motion.button>
+          <ModeIcon className="h-[22px] w-[22px]" strokeWidth={2.2} />
+        </button>
 
         <button
           type="button"
@@ -250,27 +276,14 @@ export default function NowPlayingView() {
           <SkipBack className="h-[22px] w-[22px]" />
         </button>
 
-        <motion.button
+        <button
           type="button"
           onClick={togglePlay}
           aria-label={isPlaying ? '暂停' : '播放'}
-          whileTap={{ scale: 0.9 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-          className="clip-corner-lg mx-1 flex h-14 w-14 items-center justify-center bg-primary text-primary-foreground shadow-[0_0_24px_rgba(242,194,0,0.22)]"
+          className="clip-corner-lg mx-1 flex h-14 w-14 items-center justify-center bg-primary text-primary-foreground shadow-[0_0_24px_rgba(242,194,0,0.22)] transition-transform active:scale-90"
         >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.span
-              key={isPlaying ? 'pause' : 'play'}
-              initial={{ scale: 0.6, opacity: 0, rotate: -12 }}
-              animate={{ scale: 1, opacity: 1, rotate: 0 }}
-              exit={{ scale: 0.6, opacity: 0, rotate: 12 }}
-              transition={{ duration: 0.16 }}
-              className="flex items-center justify-center"
-            >
-              {isPlaying ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 translate-x-[2px]" />}
-            </motion.span>
-          </AnimatePresence>
-        </motion.button>
+          {isPlaying ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 translate-x-[2px]" />}
+        </button>
 
         <button
           type="button"

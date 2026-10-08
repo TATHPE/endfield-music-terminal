@@ -14,7 +14,7 @@ interface SystemBarsPlugin {
  * "SystemBars" id is taken by Capacitor's built-in plugin and would shadow ours).
  */
 const SystemBars = registerPlugin<SystemBarsPlugin>('EndfieldSystemBars');
-export type ThemeId = 'default' | 'prism' | 'custom';
+export type ThemeId = 'default' | 'prism' | 'night' | 'custom';
 
 export interface ThemeMeta {
   id: ThemeId;
@@ -51,6 +51,13 @@ export const THEMES: ThemeMeta[] = [
     colors: ['#FF01A4', '#00FFC9', '#FEFE1F'],
   },
   {
+    id: 'night',
+    name: '基地夜间终端',
+    code: 'T-04',
+    desc: '低饱和青 / 深黑 / 灰',
+    colors: ['#7FB8B0', '#07080A', '#C9CDD0'],
+  },
+  {
     id: 'custom',
     name: '自定义',
     code: 'T-03',
@@ -77,7 +84,7 @@ export const DEFAULT_CUSTOM: CustomColors = {
 export function getTheme(): ThemeId {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    return v === 'prism' || v === 'custom' ? v : 'default';
+    return v === 'prism' || v === 'night' || v === 'custom' ? v : 'default';
   } catch {
     return 'default';
   }
@@ -149,8 +156,8 @@ export function applyTheme(id: ThemeId) {
   if (id === 'default') {
     delete el.dataset.theme;
     clearInlineTheme(el);
-  } else if (id === 'prism') {
-    el.dataset.theme = 'prism';
+  } else if (id === 'prism' || id === 'night') {
+    el.dataset.theme = id;
     clearInlineTheme(el);
   } else {
     applyCustomTheme(getCustomTheme());

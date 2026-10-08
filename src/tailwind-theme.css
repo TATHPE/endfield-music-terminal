@@ -42,6 +42,11 @@
   --success-foreground: #0A0A0C;
   --warning: #F2C200;
   --warning-foreground: #0A0A0C;
+  /* desaturated alert orange / light slate-blue hint (ENDFIELD OS palette) */
+  --alert: #D97A3D;
+  --alert-foreground: #0A0A0C;
+  --hint: #9AA7B8;
+  --hint-foreground: #0A0A0C;
   --border: #26262B;
   --input: #26262B;
   --ring: #F2C200;
@@ -133,6 +138,70 @@
   --bg-glow: rgba(255, 1, 164, 0.13);
 }
 
+/* Base night terminal — desaturated teal over near-black, low luminance.
+   Enabled via <html data-theme="night"> (see src/lib/theme.ts). */
+[data-theme='night'] {
+  --button-outline: rgba(127, 184, 176, .14);
+  --badge-outline: rgba(127, 184, 176, .12);
+
+  --background: #07080A;
+  --bg-glow: rgba(127, 184, 176, 0.09);
+  --glass-bg: rgba(12, 15, 17, 0.62);
+  --glass-border: rgba(201, 205, 208, 0.10);
+  --grid-line: rgba(201, 205, 208, 0.04);
+  --scan-line: rgba(201, 205, 208, 0.025);
+  --segment-line: rgba(201, 205, 208, 0.12);
+  --foreground: #C9CDD0;
+  --card: #0E1013;
+  --card-foreground: #C9CDD0;
+  --card-border: #1C2126;
+  --popover: #101318;
+  --popover-foreground: #C9CDD0;
+  --primary: #7FB8B0;
+  --primary-foreground: #07080A;
+  --secondary: #161A1E;
+  --secondary-foreground: #C9CDD0;
+  --muted: #101318;
+  --muted-foreground: #7C858C;
+  --accent: #7FB8B0;
+  --accent-foreground: #07080A;
+  --info: #7FB8B0;
+  --info-foreground: #07080A;
+  --destructive: #B04A45;
+  --destructive-foreground: #F4EFEA;
+  --success: #7FA98F;
+  --success-foreground: #07080A;
+  --warning: #C9A24B;
+  --warning-foreground: #07080A;
+  --alert: #C97B3D;
+  --alert-foreground: #07080A;
+  --hint: #9AA7B0;
+  --hint-foreground: #07080A;
+  --border: #1F242A;
+  --input: #1F242A;
+  --ring: #7FB8B0;
+  --chart-1: #7FB8B0;
+  --chart-2: #9AA7B0;
+  --chart-3: #C9A24B;
+  --chart-4: #5C8A82;
+  --chart-5: #3A434A;
+  --sidebar: #0E1013;
+  --sidebar-foreground: #C9CDD0;
+  --sidebar-primary: #7FB8B0;
+  --sidebar-primary-foreground: #07080A;
+  --sidebar-accent: #1C2126;
+  --sidebar-accent-foreground: #7FB8B0;
+  --sidebar-border: #1F242A;
+  --sidebar-ring: #7FB8B0;
+
+  --primary-border: color-mix(in oklab, var(--primary) 88%, black);
+  --accent-border: color-mix(in oklab, var(--accent) 88%, black);
+  --info-border: color-mix(in oklab, var(--info) 88%, black);
+  --warning-border: color-mix(in oklab, var(--warning) 88%, black);
+  --alert-border: color-mix(in oklab, var(--alert) 88%, black);
+  --hint-border: color-mix(in oklab, var(--hint) 88%, black);
+}
+
 /* Pure light background mode — solid white shell with dark ink.
    Enabled via <html data-bgmode="light"> (see src/lib/theme.ts). */
 [data-bgmode='light'] {
@@ -161,6 +230,10 @@
   --scan-line: rgba(10, 10, 12, 0.035);
   --segment-line: rgba(10, 10, 12, 0.12);
   --bg-glow: rgba(242, 194, 0, 0.14);
+  --alert: #B25E22;
+  --alert-foreground: #FFFFFF;
+  --hint: #5E6B7A;
+  --hint-foreground: #FFFFFF;
 }
 
 @theme inline {
@@ -187,6 +260,10 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-alert: var(--alert);
+  --color-alert-foreground: var(--alert-foreground);
+  --color-hint: var(--hint);
+  --color-hint-foreground: var(--hint-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

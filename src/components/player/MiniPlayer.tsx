@@ -10,8 +10,9 @@ interface MiniPlayerProps {
 }
 
 /**
- * Frosted floating capsule above the dock, matching the reference layout:
- * a glassy rounded bar with artwork, title, transport controls and progress.
+ * Narrow terminal status bar replacing the frosted capsule: straight cut
+ * corners, hairline separators and a segment readout — ENDFIELD OS vehicle
+ * deck chrome. Tap opens the full AUDIO OUTPUT panel.
  */
 export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
   const { currentSong, isPlaying, togglePlay, playNext, currentTime, duration } = usePlayer();
@@ -22,53 +23,60 @@ export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
 
   return (
     <motion.div
-      initial={{ y: 56, opacity: 0 }}
+      initial={{ y: 40, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 56, opacity: 0 }}
-      transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-      className="relative z-20 mx-3 overflow-hidden rounded-[22px] border backdrop-blur-2xl"
+      exit={{ y: 40, opacity: 0 }}
+      transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+      className="clip-corner relative z-20 mx-3 overflow-hidden border backdrop-blur-2xl"
       style={{
         background: 'var(--glass-bg)',
         borderColor: 'var(--glass-border)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06), var(--glass-shadow)',
+        boxShadow: 'var(--glass-shadow)',
       }}
     >
-      <div aria-hidden className="absolute inset-x-0 top-0 h-[3px] bg-foreground/10">
-        <div className="h-full bg-primary transition-[width] duration-200" style={{ width: `${ratio * 100}%` }} />
+      {/* segment progress header */}
+      <div aria-hidden className="flex h-1.5 w-full gap-[1px] bg-foreground/8">
+        {Array.from({ length: 26 }, (_, i) => (
+          <span
+            key={i}
+            className="flex-1"
+            style={{ background: (i + 1) / 26 <= ratio ? 'var(--primary)' : 'transparent' }}
+          />
+        ))}
       </div>
-      <div className="flex items-center gap-3 px-3 py-2 pt-3">
+      <div className="flex items-center gap-3 border-t border-foreground/10 px-3 py-2">
         <button
           type="button"
           onClick={onOpen}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          aria-label="打开正在播放"
+          aria-label="打开音频输出"
         >
-          <CoverArt cover={currentSong.cover} title={currentSong.title} className="h-10 w-10" />
+          <CoverArt cover={currentSong.cover} title={currentSong.title} artist={currentSong.artist} deviceAlbumId={currentSong.deviceAlbumId} devicePath={currentSong.devicePath} className="h-9 w-9" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-foreground">{currentSong.title}</p>
-            <p className="truncate font-mono text-[10px] tracking-wider text-muted-foreground">
+            <p className="truncate font-mono text-[11px] font-semibold tracking-wider text-foreground">
+              NOW PLAYING // <span className="text-primary">{currentSong.title}</span>
+            </p>
+            <p className="truncate font-mono text-[9px] tracking-widest text-muted-foreground">
               {currentSong.artist} · {formatTime(currentTime)} / {formatTime(duration)}
             </p>
           </div>
           {isPlaying && <EqBars className="ml-auto hidden shrink-0 pr-1 sm:flex" />}
         </button>
-        <motion.button
+        <button
           type="button"
           onClick={togglePlay}
           aria-label={isPlaying ? '暂停' : '播放'}
-          whileTap={{ scale: 0.85 }}
-          transition={{ type: 'spring', stiffness: 500, damping: 22 }}
-          className="clip-corner-sm flex h-10 w-10 shrink-0 items-center justify-center border border-primary/50 bg-primary/10 text-primary transition-colors hover:bg-primary/20"
+          className="clip-corner-sm flex h-9 w-9 shrink-0 items-center justify-center border border-primary/50 bg-primary/10 text-primary transition-colors active:scale-90"
         >
-          {isPlaying ? <Pause className="h-4.5 w-4.5" /> : <Play className="h-4.5 w-4.5 translate-x-[1px]" />}
-        </motion.button>
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-[1px]" />}
+        </button>
         <button
           type="button"
           onClick={playNext}
           aria-label="下一首"
-          className="flex h-10 w-9 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-primary active:scale-90"
+          className="flex h-9 w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-primary active:scale-90"
         >
-          <SkipForward className="h-4.5 w-4.5" />
+          <SkipForward className="h-4 w-4" />
         </button>
       </div>
     </motion.div>

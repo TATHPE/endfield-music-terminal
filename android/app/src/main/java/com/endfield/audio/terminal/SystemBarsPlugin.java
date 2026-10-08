@@ -1,6 +1,7 @@
 package com.endfield.audio.terminal;
 
 import android.os.Build;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import androidx.core.view.WindowCompat;
@@ -24,6 +25,9 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * On Android 7-14 we also paint the bar backgrounds to match the active theme.
  *
  * ColorOS / HyperOS / OriginOS / HarmonyOS / One UI all share this behavior.
+ * OriginOS 3 additionally ignores WindowInsetsControllerCompat in some builds,
+ * so we ALSO drive the legacy setSystemUiVisibility flags (light status bar)
+ * as a second channel — harmless on API 30+, effective on older ROMs.
  */
 @CapacitorPlugin(name = "EndfieldSystemBars")
 public class SystemBarsPlugin extends Plugin {
@@ -44,13 +48,24 @@ public class SystemBarsPlugin extends Plugin {
                 controller.setAppearanceLightStatusBars(Boolean.TRUE.equals(lightStatus));
                 controller.setAppearanceLightNavigationBars(Boolean.TRUE.equals(lightNav));
 
-                // Android < 15: edge-to-edge is not enforced, paint bar backgrounds
-                // so icons stay readable on both dark and light shells.
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                    window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                    window.setStatusBarColor(Boolean.TRUE.equals(lightStatus) ? LIGHT_BAR : DARK_BAR);
-                    window.setNavigationBarColor(Boolean.TRUE.equals(lightNav) ? LIGHT_BAR : DARK_BAR);
+                // Paint the bar backgrounds on EVERY version. On Android 15+
+                // (enforced edge-to-edge) the system officially ignores the color
+                // and the WebView paints the area itself — but some ColorOS /
+                // HyperOS / OriginOS builds still respect it or fall back to a
+                // black bar when transparent is left untouched, so setting the
+                // color unconditionally is the safe cross-ROM fix.
+                window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                window.setStatusBarColor(Boolean.TRUE.equals(lightStatus) ? LIGHT_BAR : DARK_BAR);
+                window.setNavigationBarColor(Boolean.TRUE.equals(lightNav) ? LIGHT_BAR : DARK_BAR);
+
+                // Legacy channel (OriginOS 3 / old ColorOS ignore the controller).
+                View decor = window.getDecorView();
+                int flags = 0;
+                if (Boolean.TRUE.equals(lightStatus)) flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                if (Build.VERSION.SDK_INT >= 26 && Boolean.TRUE.equals(lightNav)) {
+                    flags |= View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
                 }
+                decor.setSystemUiVisibility(flags);
                 call.resolve();
             } catch (Exception e) {
                 call.reject("Failed to apply system bar appearance: " + e.getMessage());

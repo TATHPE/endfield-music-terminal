@@ -1,9 +1,10 @@
 // EXPORTS: SearchView
 import { useMemo, useRef, useState } from 'react';
-import { Heart, ListMusic, Play, Search, X } from 'lucide-react';
+import { ChevronDown, Heart, ListMusic, Play, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlayer } from '@/lib/player-context';
 import HazardStrip from '@/components/player/HazardStrip';
+import type { ISong } from '@/lib/music';
 
 function fmt(sec: number): string {
   if (!Number.isFinite(sec) || sec <= 0) return '--:--';
@@ -12,25 +13,87 @@ function fmt(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-/** Global search — filters the local library and playlists by keyword. */
+interface QueryToken {
+  kind: 'keyword' | 'artist' | 'album' | 'tag' | 'duration';
+  value: string;
+  /** duration max in seconds */
+  maxSec: number;
+}
+
+/** Split the raw query into advanced-search tokens.
+ *  artist:/album:/tag: match substrings; duration:<N matches tracks shorter
+ *  than N seconds; bare words match title/artist/album. Tokens AND together. */
+function parseQuery(raw: string): QueryToken[] {
+  const tokens: QueryToken[] = [];
+  for (const part of raw.split(/\s+/)) {
+    if (!part) continue;
+    const artist = part.match(/^artist:(.+)$/i);
+    if (artist) {
+      tokens.push({ kind: 'artist', value: artist[1].toLowerCase(), maxSec: 0 });
+      continue;
+    }
+    const album = part.match(/^album:(.+)$/i);
+    if (album) {
+      tokens.push({ kind: 'album', value: album[1].toLowerCase(), maxSec: 0 });
+      continue;
+    }
+    const tag = part.match(/^tag:(.+)$/i);
+    if (tag) {
+      tokens.push({ kind: 'tag', value: tag[1].toLowerCase(), maxSec: 0 });
+      continue;
+    }
+    const dur = part.match(/^duration:<(\d+)$/i);
+    if (dur) {
+      tokens.push({ kind: 'duration', value: '', maxSec: Number(dur[1]) });
+      continue;
+    }
+    tokens.push({ kind: 'keyword', value: part.toLowerCase(), maxSec: 0 });
+  }
+  return tokens;
+}
+
+function songMatches(song: ISong, token: QueryToken): boolean {
+  switch (token.kind) {
+    case 'artist':
+      return song.artist.toLowerCase().includes(token.value);
+    case 'album':
+      return song.album.toLowerCase().includes(token.value);
+    case 'tag':
+      return (song.tags ?? []).some((t) => t.toLowerCase().includes(token.value));
+    case 'duration':
+      return song.duration > 0 && song.duration < token.maxSec;
+    default:
+      return (
+        song.title.toLowerCase().includes(token.value) ||
+        song.artist.toLowerCase().includes(token.value) ||
+        song.album.toLowerCase().includes(token.value)
+      );
+  }
+}
+
+/** Global search — filters the local media library and playback sequences
+ *  by keyword or the advanced syntax (artist:/album:/tag:/duration:<N). */
 export default function SearchView() {
   const { songs, playlists, playSong, playPlaylist, currentId, isPlaying, toggleFavorite } = usePlayer();
   const [query, setQuery] = useState('');
+  const [syntaxOpen, setSyntaxOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const q = query.trim().toLowerCase();
+  const q = query.trim();
+  const tokens = parseQuery(q);
+  const hasSyntax = tokens.some((t) => t.kind !== 'keyword');
 
   const results = useMemo(() => {
     if (!q) return { songs: [], playlists: [] };
-    const songHits = songs.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q) ||
-        s.album.toLowerCase().includes(q),
-    );
-    const plHits = playlists.filter((p) => p.name.toLowerCase().includes(q));
+    const songHits = songs.filter((s) => tokens.every((t) => songMatches(s, t)));
+    const keywordOnly = tokens.every((t) => t.kind === 'keyword');
+    const plHits = keywordOnly
+      ? playlists.filter((p) =>
+          tokens.some((t) => p.name.toLowerCase().includes(t.value)),
+        )
+      : [];
     return { songs: songHits, playlists: plHits };
-  }, [q, songs, playlists]);
+  }, [q, tokens, songs, playlists]);
 
   const total = results.songs.length + results.playlists.length;
 
@@ -75,6 +138,25 @@ export default function SearchView() {
       </div>
 
       <HazardStrip className="h-[2px] opacity-50" />
+
+      {/* Advanced syntax collapsible */}
+      <button
+        type="button"
+        onClick={() => setSyntaxOpen((v) => !v)}
+        className="flex items-center justify-between font-mono text-[9px] tracking-[0.22em] text-muted-foreground transition-colors hover:text-primary"
+      >
+        <span>{hasSyntax ? 'ADVANCED QUERY ACTIVE' : '高级检索语法'}</span>
+        <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', syntaxOpen && 'rotate-180')} />
+      </button>
+      {syntaxOpen && (
+        <div className="border border-border/70 bg-background/60 px-3 py-2 font-mono text-[9px] leading-relaxed tracking-wider text-muted-foreground">
+          <p>artist:xxx — 按艺术家筛选</p>
+          <p>album:xxx — 按专辑筛选</p>
+          <p>tag:战场记录 — 按介质标签筛选</p>
+          <p>duration:&lt;120 — 时长小于 120 秒</p>
+          <p className="mt-1 text-foreground/50">多个条件用空格组合（AND 关系）</p>
+        </div>
+      )}
 
       {!q ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">

@@ -134,6 +134,21 @@
   animation: blink-dot 1.6s ease-in-out infinite;
 }
 
+/* Terminal block cursor (blinking) used in status readouts */
+@keyframes block-cursor {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.block-cursor {
+  animation: block-cursor 1.1s steps(1) infinite;
+}
+
 /* Safe-area helpers for Android WebView — prefer the native env() inset and
    fall back to the CSS variables Capacitor's built-in SystemBars plugin injects
    (older WebView cores on OriginOS/HyperOS may not forward env() insets). */
@@ -217,4 +232,18 @@
 }
 .progress-flow {
   animation: progress-flow 2.4s linear infinite;
+}
+
+/* Configurable background scanline drift — speed set via inline
+   animation-duration from the terminal behavior config. */
+@keyframes bg-scan-move {
+  0% {
+    background-position-y: 0;
+  }
+  100% {
+    background-position-y: 24px;
+  }
+}
+.bg-scan-anim {
+  animation: bg-scan-move linear infinite;
 }

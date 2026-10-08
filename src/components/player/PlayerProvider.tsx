@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { ISong, PlayMode } from '@/lib/music';
-import { PLAY_MODES, makeId } from '@/lib/music';
+import { PLAY_MODES, formatCodec, makeId } from '@/lib/music';
 import type { Playlist } from '@/lib/playlists';
 import { FAVORITES_ID, makePlaylistId, normalizePlaylistName } from '@/lib/playlists';
 import {
@@ -13,12 +13,52 @@ import {
   deletePlaylist as dbDeletePlaylist,
 } from '@/lib/db';
 import { fetchItunesCover, parseAudioFile, toSong } from '@/lib/parser';
+import { md5Hex } from '@/lib/md5';
 import { PlayerContext, type PlayerContextState } from '@/lib/player-context';
+import { MediaScanner, loadDeviceAudio, isNative, type DeviceSong } from '@/lib/media-scanner';
 import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 
 const VOLUME_KEY = 'endfield-player:volume';
 const MODE_KEY = 'endfield-player:mode';
+const SPECTRUM_KEY = 'endfield-player:spectrum';
 const PRESET_MANIFEST_URL = '/songs/manifest.json';
+const SPECTRUM_BUCKETS = 24;
+// fftSize 64 → frequencyBinCount 32
+const FFT_BINS = 32;
+
+/**
+ * One WebAudio graph per page lifetime, held at module scope.
+ * createMediaElementSource permanently binds an <audio> element — even after
+ * AudioContext.close() it can never be rebound — so a StrictMode double-mount
+ * must reuse the same graph rather than close and rebuild it.
+ */
+interface AudioGraph {
+  ctx: AudioContext;
+  analyser: AnalyserNode;
+}
+let sharedGraph: AudioGraph | null = null;
+
+function acquireAudioGraph(audio: HTMLAudioElement): AudioGraph | null {
+  if (sharedGraph) return sharedGraph;
+  const Ctor =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!Ctor) return null;
+  try {
+    const ctx = new Ctor();
+    const src = ctx.createMediaElementSource(audio);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 64;
+    analyser.smoothingTimeConstant = 0.8;
+    src.connect(analyser);
+    analyser.connect(ctx.destination);
+    sharedGraph = { ctx, analyser };
+    void ctx.resume();
+    return sharedGraph;
+  } catch {
+    return null;
+  }
+}
 
 interface PresetTrack {
   file: string;
@@ -53,9 +93,24 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   const [muted, setMuted] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [scanLogs, setScanLogs] = useState<string[]>([]);
+  const [spectrum, setSpectrum] = useState<number[]>(() => Array(SPECTRUM_BUCKETS).fill(0));
+  const [spectrumOn, setSpectrumOnState] = useState<boolean>(() =>
+    readStored<boolean>(SPECTRUM_KEY, true),
+  );
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
+  const spectrumOnRef = useRef(spectrumOn);
+  spectrumOnRef.current = spectrumOn;
+  // Guards async playback setup: only applies the result if the same song is
+  // still the requested one (user may have tapped another track meanwhile).
+  const currentIdRef = useRef<string | null>(null);
+  // After a seek, ignore stale timeupdate events for a short window: the WebView
+  // may still fire timeupdate with the pre-seek position until the actual seek
+  // lands, which would overwrite the optimistic value and make lock-screen
+  // scrubbers snap back.
+  const seekGuardRef = useRef(0);
 
   const currentSong = songs.find((s) => s.id === currentId) || null;
 
@@ -99,14 +154,57 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      try {
-        const res = await fetch(PRESET_MANIFEST_URL);
-        if (!res.ok) return;
-        const tracks = (await res.json()) as PresetTrack[];
-        if (!Array.isArray(tracks) || tracks.length === 0) return;
-        const preset: ISong[] = [];
-        for (const t of tracks) {
-          let cover: Blob | null = null;
+      // A lite build ships NO bundled songs. If a previous full build left
+      // preset tracks in IndexedDB (overwrite install), those records point at
+      // /songs/* assets that no longer exist -> clicking them fails to play.
+      // Whenever the preset manifest is missing / empty / unreadable, drop any
+      // stale preset records from the library and storage.
+      const dropStalePresets = () => {
+        setSongs((prev) => prev.filter((s) => !s.id.startsWith('preset:')));
+        void getAllSongs().then((all) => {
+          for (const s of all) {
+            if (s.id.startsWith('preset:')) void deleteSong(s.id);
+          }
+        });
+      };
+      // Retry a few times: on a cold start the WebView's local asset server
+      // may not be ready the moment this effect runs, and a flaky first fetch
+      // must not silently wipe the bundled library.
+      let manifest: PresetTrack[] | null = null;
+      let explicitEmpty = false;
+      for (let attempt = 0; attempt < 3 && !cancelled; attempt++) {
+        try {
+          // cache: 'no-store' is required: an upgrade install over a previous
+          // lite build can serve a WebView-cached 404 for /songs/manifest.json,
+          // which would drop the whole bundled library.
+          const res = await fetch(PRESET_MANIFEST_URL, { cache: 'no-store' });
+          if (!res.ok) {
+            explicitEmpty = true;
+            break;
+          }
+          const tracks = (await res.json()) as PresetTrack[];
+          if (!Array.isArray(tracks) || tracks.length === 0) {
+            explicitEmpty = true;
+            break;
+          }
+          manifest = tracks;
+          break;
+        } catch {
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 800));
+        }
+      }
+      if (cancelled) return;
+      if (!manifest) {
+        // Only an explicit 404/empty manifest is treated as "this build ships
+        // no preset songs" and clears stale records. A network failure keeps
+        // whatever is already in the library.
+        if (explicitEmpty) dropStalePresets();
+        return;
+      }
+      const tracks = manifest;
+      const preset: ISong[] = [];
+      for (const t of tracks) {
+        let cover: Blob | null = null;
           if (t.cover) {
             try {
               const c = await fetch(t.cover);
@@ -132,15 +230,76 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
             addedAt: 1700000000000 + preset.length,
           });
         }
-        if (cancelled) return;
-        setSongs((prev) => [...preset, ...prev.filter((s) => !s.id.startsWith('preset:'))]);
-      } catch {
-        /* preset library unavailable — app works with user imports only */
-      }
+      if (cancelled) return;
+      setSongs((prev) => [...preset, ...prev.filter((s) => !s.id.startsWith('preset:'))]);
     })();
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Build the shared WebAudio graph once the <audio> element exists;
+  // retry briefly if the ref isn't ready on the first pass. The graph is a
+  // module-level singleton (see acquireAudioGraph), so remounts never rebind
+  // the element.
+  useEffect(() => {
+    let cancelled = false;
+    let retryTimer: number | undefined;
+    let attempts = 0;
+
+    const build = () => {
+      if (cancelled) return;
+      const audio = audioRef.current;
+      if (audio) {
+        acquireAudioGraph(audio);
+        return;
+      }
+      if (attempts < 10) {
+        attempts += 1;
+        retryTimer = window.setTimeout(build, 120);
+      }
+    };
+    build();
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
+    };
+  }, []);
+
+  // Sample frequency data on a fixed interval while the readout is enabled.
+  // Kept separate from graph setup so it keeps running even if graph
+  // acquisition is still retrying.
+  useEffect(() => {
+    const bins = new Uint8Array(FFT_BINS);
+    const timer = setInterval(() => {
+      const graph = sharedGraph;
+      if (!graph || !spectrumOnRef.current) return;
+      graph.analyser.getByteFrequencyData(bins);
+      const next = new Array<number>(SPECTRUM_BUCKETS);
+      for (let i = 0; i < SPECTRUM_BUCKETS; i += 1) {
+        const start = Math.floor((i / SPECTRUM_BUCKETS) * bins.length);
+        const end = Math.max(start + 1, Math.floor(((i + 1) / SPECTRUM_BUCKETS) * bins.length));
+        let sum = 0;
+        for (let j = start; j < end; j += 1) sum += bins[j];
+        next[i] = sum / (end - start);
+      }
+      setSpectrum(next);
+    }, 66);
+    return () => clearInterval(timer);
+  }, []);
+
+  const setSpectrumOn = useCallback((v: boolean) => {
+    setSpectrumOnState(v);
+    try {
+      localStorage.setItem(SPECTRUM_KEY, JSON.stringify(v));
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
+  const appendLog = useCallback((line: string) => {
+    setScanLogs((prev) => [...prev.slice(-80), line]);
   }, []);
 
   const playSong = useCallback(
@@ -148,6 +307,9 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       const song = songs.find((s) => s.id === id);
       const audio = audioRef.current;
       if (!song || !audio) return;
+      // User gesture — the AudioContext must be running for the analyser
+      // to return live frequency data on mobile.
+      void sharedGraph?.ctx.resume();
       // If the song is not part of the active playlist context, fall back to the whole library.
       setActiveQueueId((cur) => {
         if (cur === null) return cur;
@@ -158,21 +320,47 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         URL.revokeObjectURL(urlRef.current);
         urlRef.current = null;
       }
-      if (song.presetUrl) {
-        // Bundled preset track: play straight from the in-app asset URL.
-        audio.src = song.presetUrl;
-      } else if (song.audio) {
-        const url = URL.createObjectURL(song.audio);
-        urlRef.current = url;
-        audio.src = url;
-      } else {
-        return;
-      }
       setCurrentId(id);
+      currentIdRef.current = id;
       audio.volume = muted ? 0 : volume;
       setCurrentTime(0);
       setDuration(song.duration || 0);
-      void audio.play();
+      const start = (src: string) => {
+        audio.src = src;
+        void audio.play().catch((err: unknown) => {
+          // Surface the real failure (autoplay block, missing file, codec, ...)
+          // instead of dying silently.
+          const name = err instanceof Error ? err.name : String(err);
+          setIsPlaying(false);
+          toast.error(`播放失败（${name}）：${song.title}`);
+        });
+      };
+      if (song.presetUrl) {
+        // Bundled preset track: play straight from the in-app asset URL.
+        start(song.presetUrl);
+      } else if (song.devicePath && isNative()) {
+        // Scanned device track: read the file through the native bridge into a
+        // Blob-backed object URL. Blob playback is fully seekable — the
+        // WebViewAssetLoader stream is not reliably Range-capable on ColorOS,
+        // which made lock-screen scrubbers snap back. Oversized files fall back
+        // to the asset-loader URL.
+        void loadDeviceAudio(song.devicePath).then((src) => {
+          if (audioRef.current && currentIdRef.current === id) {
+            audioRef.current.src = src;
+            void audioRef.current.play().catch((err: unknown) => {
+              const name = err instanceof Error ? err.name : String(err);
+              setIsPlaying(false);
+              toast.error(`播放失败（${name}）：${song.title}`);
+            });
+          }
+        });
+      } else if (song.audio) {
+        const url = URL.createObjectURL(song.audio);
+        urlRef.current = url;
+        start(url);
+      } else {
+        return;
+      }
     },
     [songs, playlists, volume, muted],
   );
@@ -182,7 +370,12 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     if (!audio) return;
     if (currentId && audio.src) {
       if (audio.paused) {
-        void audio.play();
+        void sharedGraph?.ctx.resume();
+        void audio.play().catch((err: unknown) => {
+          const name = err instanceof Error ? err.name : String(err);
+          setIsPlaying(false);
+          toast.error(`播放失败（${name}）`);
+        });
       } else {
         audio.pause();
       }
@@ -229,8 +422,21 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   const seek = useCallback((t: number) => {
     const audio = audioRef.current;
     if (!audio || !Number.isFinite(t)) return;
-    audio.currentTime = t;
-    setCurrentTime(t);
+    // Clamp to the real duration when known so an out-of-range seek target
+    // (e.g. a ROM passing milliseconds as seconds) can't push the position
+    // past the end and snap back.
+    const dur = Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : t;
+    const clamped = Math.max(0, Math.min(t, dur));
+    try {
+      audio.currentTime = clamped;
+      // Ignore stale timeupdate events until the real seek has landed.
+      seekGuardRef.current = Date.now();
+    } catch {
+      /* some WebViews reject seeking before metadata is ready — keep the UI value */
+    }
+    // Reflect the new position immediately (optimistically) so the lock-screen
+    // transport doesn't snap back before the WebView fires timeupdate.
+    setCurrentTime(clamped);
   }, []);
 
   const cycleMode = useCallback(() => {
@@ -266,44 +472,204 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     setMuted(audio.muted);
   }, []);
 
-  const importFiles = useCallback(async (files: FileList | File[]) => {
-    const list = Array.from(files).filter(
-      (f) =>
-        f.type.startsWith('audio/') ||
-        /\.(mp3|flac|m4a|wav|ogg|aac|opus|ape|wma|aiff)$/i.test(f.name),
-    );
-    if (list.length === 0) {
-      toast.error('未检测到音频文件');
-      return;
-    }
-    let ok = 0;
-    let fail = 0;
-    for (const file of list) {
+  const importFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const list = Array.from(files).filter(
+        (f) =>
+          f.type.startsWith('audio/') ||
+          /\.(mp3|flac|m4a|wav|ogg|aac|opus|ape|wma|aiff)$/i.test(f.name),
+      );
+      if (list.length === 0) {
+        toast.error('未检测到音频文件');
+        return;
+      }
+      appendLog(`SCAN DIR: /MEDIA/USB0`);
+      appendLog(`FOUND ${list.length} MEDIA FILE${list.length === 1 ? '' : 'S'}`);
+      let ok = 0;
+      let fail = 0;
+      for (const file of list) {
+        try {
+          const meta = await parseAudioFile(file);
+          const song = toSong(meta, file, makeId(), Date.now());
+          await putSong(song);
+          setSongs((prev) => [...prev, song]);
+          ok += 1;
+          appendLog(`LOAD TRACK ${file.name} OK (${formatCodec(song.codec)})`);
+          // Media integrity hash — computed off the critical path so large
+          // files don't block the import loop.
+          void (async () => {
+            try {
+              const buf = await file.arrayBuffer();
+              const hash = md5Hex(buf);
+              const updated = { ...song, hash };
+              await putSong(updated);
+              setSongs((prev) => prev.map((s) => (s.id === song.id ? updated : s)));
+            } catch {
+              /* hash is best-effort */
+            }
+          })();
+          if (!song.cover) {
+            void fetchItunesCover(song.artist, song.title, song.album).then((cover) => {
+              if (!cover) return;
+              const updated = { ...song, cover };
+              void putSong(updated).then(() => {
+                setSongs((prev) => prev.map((s) => (s.id === song.id ? updated : s)));
+              });
+            });
+          }
+        } catch {
+          fail += 1;
+          appendLog(`LOAD TRACK ${file.name} FAILED — FORMAT UNSUPPORTED`);
+        }
+      }
+      if (ok > 0) {
+        appendLog(`IMPORT COMPLETE: ${ok} OK / ${fail} FAILED`);
+        toast.success(`已导入 ${ok} 首曲目${fail > 0 ? `，${fail} 首解析失败` : ''}`);
+      } else if (fail > 0) {
+        toast.error('导入失败，请检查音频文件格式');
+      }
+    },
+    [appendLog],
+  );
+
+  /** Read the same-directory sidecar lyric (.lrc/.txt) for a device song.
+   *  Offline only — no network requests during a scan. Online matching is
+   *  deferred to the lyrics panel where the user explicitly asks for it. */
+  const matchDeviceLyricsLocal = useCallback((song: ISong) => {
+    if (!song.devicePath) return;
+    void (async () => {
       try {
-        const meta = await parseAudioFile(file);
-        const song = toSong(meta, file, makeId(), Date.now());
+        const r = await MediaScanner.getLyricsLocal({ path: song.devicePath });
+        if (!r || !r.source || !r.lyrics) return;
+        const updated = { ...song, lyrics: r.lyrics };
+        await putSong(updated);
+        setSongs((prev) => prev.map((s) => (s.id === song.id ? updated : s)));
+      } catch {
+        /* lyrics are best-effort */
+      }
+    })();
+  }, []);
+
+  /** User-triggered online lyric match from the lyrics panel. Runs the native
+   *  lookup on a background thread pool and writes the result through. */
+  const fetchLyricsOnline = useCallback(
+    async (songId: string) => {
+      const song = songs.find((s) => s.id === songId);
+      if (!song) return;
+      if (!song.title) {
+        toast.info('该歌曲缺少标题，无法联网匹配歌词');
+        return;
+      }
+      toast.loading('正在联网匹配歌词…', { duration: 0 });
+      try {
+        const r = await MediaScanner.getLyricsOnline({
+          title: song.title,
+          artist: song.artist,
+        });
+        toast.dismiss();
+        if (!r || !r.source || !r.lyrics) {
+          toast.info('未找到匹配的在线歌词，可尝试导入 .lrc 文件');
+          return;
+        }
+        const updated = { ...song, lyrics: r.lyrics };
+        await putSong(updated);
+        setSongs((prev) => prev.map((s) => (s.id === songId ? updated : s)));
+        toast.success('已获取歌词');
+      } catch {
+        toast.dismiss();
+        toast.error('联网获取歌词失败，请稍后重试');
+      }
+    },
+    [songs],
+  );
+
+  /** Import lyric text (from a user-picked .lrc/.txt file) for a song. */
+  const importLyrics = useCallback(
+    async (songId: string, content: string) => {
+      const song = songs.find((s) => s.id === songId);
+      if (!song) return;
+      if (!content || !content.trim()) {
+        toast.error('歌词文件内容为空');
+        return;
+      }
+      const updated = { ...song, lyrics: content };
+      await putSong(updated);
+      setSongs((prev) => prev.map((s) => (s.id === songId ? updated : s)));
+      toast.success('已导入歌词');
+    },
+    [songs],
+  );
+
+  /** Scan the device MediaStore for audio and import new songs (native only).
+   *  Songs already in the library (matched by device path) are skipped. */
+  const scanDeviceSongs = useCallback(async () => {
+    if (!isNative()) return { added: 0, skipped: 0, failed: 0, permissionDenied: false, error: '' };
+    appendLog('SCAN DIR: /DEVICE/MEDIASTORE');
+    let list: DeviceSong[] = [];
+    try {
+      const res = await MediaScanner.scanAudio();
+      list = res.songs || [];
+    } catch (e) {
+      const msg = (e as Error).message || '';
+      if (msg.includes('PERM_DENIED')) {
+        appendLog('SCAN FAILED — STORAGE PERMISSION DENIED');
+        toast.error('存储权限被拒绝，无法扫描设备歌曲');
+        return { added: 0, skipped: 0, failed: 1, permissionDenied: true, error: msg };
+      }
+      const detail = msg.replace(/^SCAN_ERR\|/, '').replace(/^扫描失败:\s*/, '');
+      appendLog(`SCAN FAILED — ${detail || 'UNKNOWN ERROR'}`);
+      toast.error(detail ? `扫描设备音频失败：${detail}` : '扫描设备音频失败');
+      return { added: 0, skipped: 0, failed: 1, permissionDenied: false, error: detail };
+    }
+    appendLog(`SCAN OK — ${list.length} MEDIA FILE${list.length === 1 ? '' : 'S'} FOUND`);
+    const existing = await getAllSongs();
+    const knownPaths = new Set(existing.filter((s) => s.devicePath).map((s) => s.devicePath));
+    let added = 0;
+    let skipped = 0;
+    for (const s of list) {
+      if (!s.path || knownPaths.has(s.path)) {
+        skipped += 1;
+        continue;
+      }
+      const fileName = s.path.split('/').pop() || 'unknown';
+      const song: ISong = {
+        id: `device:${s.id}`,
+        title: s.title || fileName.replace(/\.[^.]+$/, ''),
+        artist: s.artist || '未知艺术家',
+        album: s.album || '',
+        duration: Math.round(s.duration / 1000),
+        codec: formatCodec(s.mime || fileName.split('.').pop() || ''),
+        sampleRate: 0,
+        bitrate: 0,
+        fileName,
+        cover: null,
+        audio: null,
+        devicePath: s.path,
+        deviceAlbumId: s.albumId > 0 ? s.albumId : undefined,
+        addedAt: Date.now(),
+      };
+      try {
         await putSong(song);
         setSongs((prev) => [...prev, song]);
-        ok += 1;
-        if (!song.cover) {
-          void fetchItunesCover(song.artist, song.title, song.album).then((cover) => {
-            if (!cover) return;
-            const updated = { ...song, cover };
-            void putSong(updated).then(() => {
-              setSongs((prev) => prev.map((s) => (s.id === song.id ? updated : s)));
-            });
-          });
-        }
+        added += 1;
+        appendLog(`LOAD TRACK ${fileName} OK — ${song.codec}`);
+        // Offline sidecar lyric read only — online matching waits for the
+        // lyrics panel where the user explicitly opts in.
+        matchDeviceLyricsLocal(song);
       } catch {
-        fail += 1;
+        /* keep going */
       }
     }
-    if (ok > 0) {
-      toast.success(`已导入 ${ok} 首曲目${fail > 0 ? `，${fail} 首解析失败` : ''}`);
-    } else if (fail > 0) {
-      toast.error('导入失败，请检查音频文件格式');
+    appendLog(`SCAN COMPLETE: ${added} ADDED / ${skipped} SKIPPED`);
+    if (added > 0) {
+      toast.success(`已从设备扫描并添加 ${added} 首歌曲（本地歌词已读取）`);
+    } else if (skipped > 0) {
+      toast.info(`设备歌曲已全部在曲库中（跳过 ${skipped} 首）`);
+    } else {
+      toast.info('设备中未发现可导入的音频');
     }
-  }, []);
+    return { added, skipped, failed: 0, permissionDenied: false, error: '' };
+  }, [matchDeviceLyricsLocal, appendLog]);
 
   const removeSong = useCallback(
     (id: string) => {
@@ -335,6 +701,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
           urlRef.current = null;
         }
         setCurrentId(null);
+        currentIdRef.current = null;
         setCurrentTime(0);
         setDuration(0);
         setIsPlaying(false);
@@ -363,6 +730,34 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       }),
     );
   }, []);
+
+  // ---- Media tags --------------------------------------------------------
+  const setSongTags = useCallback((id: string, tags: string[]) => {
+    setSongs((prev) => {
+      const target = prev.find((s) => s.id === id);
+      if (!target) return prev;
+      const next = { ...target, tags };
+      void putSong(next);
+      return prev.map((s) => (s.id === id ? next : s));
+    });
+  }, []);
+
+  // ---- Queue snapshot ----------------------------------------------------
+  const saveQueueSnapshot = useCallback(() => {
+    if (queue.length === 0) {
+      toast.info('队列为空，无法保存快照');
+      return;
+    }
+    const pl: Playlist = {
+      id: makePlaylistId(),
+      name: `SNAP-${new Date().toISOString().slice(5, 16).replace(/[-T:]/g, '')}`,
+      songIds: queue.map((s) => s.id),
+      createdAt: Date.now(),
+    };
+    void putPlaylist(pl);
+    setPlaylists((prev) => [...prev, pl]);
+    toast.success(`QUEUE SNAPSHOT 已保存：${pl.name}`);
+  }, [queue]);
 
   // ---- Playlists ---------------------------------------------------------
   const createPlaylist = useCallback((name: string) => {
@@ -463,7 +858,16 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     activeQueueId,
     queue,
     playlists,
+    scanLogs,
+    spectrum,
+    spectrumOn,
+    setSpectrumOn,
+    setSongTags,
+    saveQueueSnapshot,
     importFiles,
+    scanDeviceSongs,
+    fetchLyricsOnline,
+    importLyrics,
     removeSong,
     playSong,
     togglePlay,
@@ -490,13 +894,26 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       <MediaSessionBridge />
       <audio
         ref={audioRef}
-        className="hidden"
-        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+        // Visually hidden but not display:none — some Android WebView kernels
+        // return zeroed analyser data for a display:none media element.
+        className="pointer-events-none absolute h-px w-px opacity-0"
+        onTimeUpdate={(e) => {
+          // Drop timeupdate events that race a just-issued seek (they carry the
+          // pre-seek position and would snap the lock-screen scrubber back).
+          if (Date.now() - seekGuardRef.current < 400) return;
+          setCurrentTime(e.currentTarget.currentTime);
+        }}
         onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
         onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
         onEnded={handleEnded}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onError={(e) => {
+          const el = e.currentTarget;
+          const code = el.error?.code ?? 'unknown';
+          const src = el.currentSrc || el.src || '';
+          toast.error(`音频加载失败（MEDIA_ERR_${code}）：${src.split('/').pop() || '未知源'}`);
+        }}
       />
     </PlayerContext.Provider>
   );

@@ -1,5 +1,6 @@
 // EXPORTS: PlaylistAddSheet
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Plus } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
@@ -28,7 +29,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
     onClose();
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && songId && (
         <>
@@ -39,7 +40,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/70"
+            className="fixed inset-0 z-[80] bg-black/70"
             aria-hidden
           />
           <motion.div
@@ -48,7 +49,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '-120%', opacity: 0 }}
             transition={{ type: 'spring', damping: 30, stiffness: 340 }}
-            className="fixed inset-x-0 top-0 z-50 pt-[calc(env(safe-area-inset-top)+14px)]"
+            className="fixed inset-x-0 top-0 z-[90] pt-[calc(env(safe-area-inset-top)+14px)]"
             role="dialog"
             aria-label="加入歌单"
           >
@@ -133,6 +134,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

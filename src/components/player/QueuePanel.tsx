@@ -1,6 +1,7 @@
 // EXPORTS: QueuePanel
+import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ListX, Play } from 'lucide-react';
+import { Camera, ListX, Play } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
 import { formatTime } from '@/lib/music';
 import { cn } from '@/lib/utils';
@@ -14,14 +15,14 @@ interface QueuePanelProps {
 
 /** Slide-up queue readout for the current playback context. */
 export default function QueuePanel({ open, onClose }: QueuePanelProps) {
-  const { queue, currentId, playSong, removeFromQueue, activeQueueId, playlists } = usePlayer();
+  const { queue, currentId, playSong, removeFromQueue, activeQueueId, playlists, saveQueueSnapshot } = usePlayer();
 
   const activeName =
     activeQueueId === null
       ? '全部曲目'
       : playlists.find((p) => p.id === activeQueueId)?.name ?? '未知清单';
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -32,7 +33,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/70"
+            className="fixed inset-0 z-[80] bg-black/70"
             aria-hidden
           />
           <motion.div
@@ -41,7 +42,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 30, stiffness: 340 }}
-            className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-[430px]"
+            className="fixed inset-x-0 bottom-0 z-[90] mx-auto max-w-[430px]"
             role="dialog"
             aria-label="播放队列"
           >
@@ -50,18 +51,28 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
               <div className="flex items-center justify-between border-b border-border/80 px-4 py-3">
                 <div>
                   <p className="font-mono text-[9px] tracking-[0.28em] text-primary">
-                    ACTIVE QUEUE // {activeQueueId === null ? 'LIBRARY' : 'PLAYLIST'}
+                    ACTIVE QUEUE // {activeQueueId === null ? 'LIBRARY NODE' : 'SEQUENCE NODE'}
                   </p>
                   <h2 className="mt-0.5 text-lg font-bold tracking-wide text-foreground">{activeName}</h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label="关闭队列"
-                  className="clip-corner-sm border border-border bg-secondary px-2.5 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  CLOSE
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => saveQueueSnapshot()}
+                    className="clip-corner-sm flex items-center gap-1.5 border border-border bg-secondary px-2.5 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-primary"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    SAVE SNAPSHOT
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="关闭队列"
+                    className="clip-corner-sm flex items-center gap-1.5 border border-border bg-secondary px-2.5 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    CLOSE
+                  </button>
+                </div>
               </div>
 
               {/* body */}
@@ -98,7 +109,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
                               String(i + 1).padStart(2, '0')
                             )}
                           </span>
-                          <CoverArt cover={song.cover} title={song.title} className="h-9 w-9" />
+                          <CoverArt cover={song.cover} title={song.title} artist={song.artist} deviceAlbumId={song.deviceAlbumId} devicePath={song.devicePath} className="h-9 w-9" />
                           <span className="min-w-0 flex-1">
                             <span
                               className={cn(
@@ -134,6 +145,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

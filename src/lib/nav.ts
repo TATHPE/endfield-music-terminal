@@ -8,11 +8,11 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { id: 'library', label: '曲库', code: '[01]' },
-  { id: 'playlists', label: '歌单', code: '[02]' },
-  { id: 'search', label: '搜索', code: '[05]' },
-  { id: 'nowplaying', label: '正在播放', code: '[03]' },
-  { id: 'settings', label: '设置', code: '[04]' },
+  { id: 'library', label: '介质库', code: '[01]' },
+  { id: 'playlists', label: '播放序列', code: '[02]' },
+  { id: 'search', label: '全域检索', code: '[05]' },
+  { id: 'nowplaying', label: '音频输出', code: '[03]' },
+  { id: 'settings', label: '系统配置', code: '[04]' },
 ];
 
 /** Center search lives between the two left tabs and the two right tabs. */

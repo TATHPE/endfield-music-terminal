@@ -5,11 +5,13 @@ import HazardStrip from '@/components/player/HazardStrip';
 const BOOT_LINES = [
   { tag: 'BOOT', text: 'TERMINAL BOOT SEQUENCE .......... OK' },
   { tag: 'MEM', text: 'MEMORY CHECK / 0128 TB .......... OK' },
-  { tag: 'AUD', text: 'AUDIO DRIVER ................... ONLINE' },
-  { tag: 'LINK', text: 'ORIGIN NODE LINK ................ ESTABLISHED' },
+  { tag: 'AUD', text: 'INIT AUDIO SUBSYSTEM ........... ONLINE' },
+  { tag: 'BUS', text: 'CONNECT AUDIO BUS .............. ESTABLISHED' },
+  { tag: 'LINK', text: 'ORIGIN NODE LINK ............... ESTABLISHED' },
+  { tag: 'NET', text: 'SYS ONLINE · UNIT-07 ............ READY' },
 ];
 
-const BOOT_TIMINGS = [260, 560, 860, 1160, 1500, 2150, 2580];
+const BOOT_TIMINGS = [240, 500, 760, 1020, 1280, 1540, 1850, 2480, 2920];
 
 interface SplashScreenProps {
   onDone: () => void;
@@ -27,9 +29,11 @@ export default function SplashScreen({ onDone }: SplashScreenProps) {
       setTimeout(() => setLines(2), BOOT_TIMINGS[1]),
       setTimeout(() => setLines(3), BOOT_TIMINGS[2]),
       setTimeout(() => setLines(4), BOOT_TIMINGS[3]),
-      setTimeout(() => setProgress(100), BOOT_TIMINGS[4]),
-      setTimeout(() => setFading(true), BOOT_TIMINGS[5]),
-      setTimeout(onDone, BOOT_TIMINGS[6]),
+      setTimeout(() => setLines(5), BOOT_TIMINGS[4]),
+      setTimeout(() => setLines(6), BOOT_TIMINGS[5]),
+      setTimeout(() => setProgress(100), BOOT_TIMINGS[6]),
+      setTimeout(() => setFading(true), BOOT_TIMINGS[7]),
+      setTimeout(onDone, BOOT_TIMINGS[8]),
     ];
     return () => {
       timers.forEach(clearTimeout);
