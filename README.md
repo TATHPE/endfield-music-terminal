@@ -14,18 +14,20 @@
 
 ## 功能特性
 
-- **本地歌曲导入**：从设备文件系统批量导入音频，曲库持久化存储在浏览器 IndexedDB
-- **内置预置曲库**：14 首《明日方舟：终末地》官方 Vocal 曲目随 APK 打包（完整版），打开曲库即可直接播放，每首带专辑封面与 LRC 歌词；轻量「无歌曲版」仅保留导入功能
-- **专辑封面解析**：用 `music-metadata` 解析 ID3 / FLAC / MP4 / OGG / WAV / APE 等标签与内嵌封面；无内嵌封面时以 iTunes Search 后台线程池异步兜底匹配（不阻塞扫描与播放）
-- **五视图界面 + 手势滑动切换**：曲库 / 歌单 / 搜索 / 正在播放 / 设置，支持底部 Dock 点击或左右滑动切换
-- **正在播放面板**：ARTWORK（封面 + 播放扫描动画）/ LYRICS 双面板，分段刻度进度条、循环 / 随机 / 单曲三种播放模式
-- **播放队列**：底部上滑队列面板，可查看队列、移除曲目；支持收藏与自定义歌单（IndexedDB 持久化）
-- **同步歌词**：内置 LRC 解析器（时间戳 / offset 标签），播放时逐行高亮并自动滚动居中；设备扫描仅读取本地同名 .lrc/.txt，无歌词歌曲可在歌词页自主选择「联网获取歌词」或「导入歌词文件」（.lrc）
-- **后台播放与锁屏控制**：基于 Media Session 的 Android 前台媒体服务，锁屏 / 通知栏显示歌曲、封面、进度并可控制（播放 / 暂停 / 上下曲 / ±10s 快进快退 / 拖动进度）。✅ v1.4.2 已修复 ColorOS 17 锁屏拖动进度条回弹：`MediaSessionBridge` 回调改为透传原生 `details` 并精确读取秒级 `seekTime`，锁屏 seek 不再丢失目标位置
-- **终末地风格启动动画**：六边形徽章脉冲 + 扫描光带 + 逐行 BOOT 日志 + 24 段进度条，约 2.6 秒，可点击跳过
-- **终末地风格应用图标**：黑胶唱片式图标——纯白四角 + 黑色唱片盘面 + 黄色六边形播放键与外圈环形进度条（黄 / 黑 / 白三色统一），全密度位图嵌入 Android Launcher
-- **主流安卓系统适配（Android 8–16）**：状态栏 / 导航栏图标深浅与明暗背景自动联动（Android 15/16 强制 edge-to-edge 下的 `appearance` API 与 Android 14- 的着色双轨兼容，适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI 等主流系统）、预测性返回手势、横屏刘海 / 挖孔安全区、通知权限运行时请求；**HyperOS / OriginOS 适配（v1.4.2）**：系统栏双通道刷新 + legacy 兜底，Dock 安全区与播放键静态图标在旧内核下同样正确显示
-- **离线可用**：Web 端与 APK 均不依赖云端服务
+- **五页终端界面**：介质库 `[01]` / 播放序列 `[02]` / 音频输出 `[03]` / 系统配置 `[04]` / 全域检索 `[05]`——底部毛玻璃 Dock 点击，或在主体区域左右滑动切换；滑入检索页不会自动弹出键盘。
+- **介质库**：页首显示 `TRACKS / TOTAL / READY` 状态与「扫描设备」「+ 导入曲目」入口；**ALL / 战场记录 / 通讯日志 / BGM / 环境音** 分类页签按介质标签筛选；每行显示序号（播放中改为频谱条）、封面、标题、`[标签]`、艺术家 · 专辑与时长，行内可 **编辑介质标签 / 收藏 / 加入播放序列 / 移除**。
+- **扫描设备**：调用原生 MediaScanner 直接读取手机媒体库（无需逐个选文件），自动去重、跳过已入库曲目，结果与失败原因（新增 / 跳过 / 权限被拒）回显在介质库页首。
+- **音频解析**：`music-metadata` 解析 ID3 / FLAC / MP4 / OGG / WAV / APE 等标签与内嵌封面；本地文件无内嵌封面时匹配 iTunes 公共曲库，设备曲目则读取系统专辑图；在线封面匹配在后台异步执行，不阻塞扫描与播放。
+- **同步歌词**：内置 LRC 解析器（时间戳 / offset），逐行高亮并自动滚动居中；歌词页提供 **±0.5s / ±1s 时间轴微调（偏移量持久化）**、**SCROLL 居中滚动**与 **LOG 全量日志**两种阅读模式。扫描只自动读取歌曲同目录的同名 `.lrc` / `.txt`，**联网获取歌词由用户在歌词页主动触发**（网易云 → QQ 音乐双源），也可直接导入本地 `.lrc` / `.txt`。
+- **播放序列**：内置「收藏」清单与自定义序列（新建 / 展开 / 删除），序列卡片可整单播放或移除单曲；播放队列面板可查看队列并移除曲目。
+- **全域检索**：按关键词过滤本地曲库（歌曲 / 艺术家 / 专辑）与播放序列；支持**高级检索语法** `artist:` / `album:` / `tag:` / `duration:<秒数>`，命中时面板提示 `ADVANCED QUERY ACTIVE`，结果可直接播放或加入序列。
+- **音频输出**：ARTWORK（整幅正方形封面 + SPECTRUM 实时频谱）/ LYRICS 双面板；`TRACK / 格式 / 采样率 / 码率` 四列参数、分段刻度进度条、`VOL` 滑块；播放模式在 **序列循环 → 无序序列 → 单介质循环** 之间切换。
+- **后台播放与锁屏控制**：Media Session + Android 前台媒体服务，通知栏 / 锁屏显示歌曲、封面与进度，支持播放 / 暂停 / 上一曲 / 下一曲 / ±10s / 拖动进度；**ColorOS 17 锁屏拖动进度条回弹已在 v1.4.2 修复**（原生回调 `details` 透传 + 精确读取秒级 `seekTime`）。
+- **系统配置**：**黑色 / 白色**纯色外壳切换；主题 **T-01 标准终端**（柠檬黄 / 黑 / 暖白）、**T-02 棱镜频谱**（亮粉 / 青绿 / 明黄）、**T-04 基地夜间终端**（低饱和青 / 深黑 / 灰）与 **T-03 自定义**（主色 / 辅助色 / 点缀色 + 12 预设色板 + 恢复默认）；终端行为开关 **扫描线**（可调转速 4–24s）、**按键蜂鸣**、**LOG 级别**（trace / info / warn / error）、**IDLE**（常亮 / 1 分钟 / 5 分钟）——发布订阅即时生效，无需重启。
+- **终末地风格启动动画**：六边形徽章脉冲 + 扫描光带 + 逐行 BOOT 日志 + 24 段进度条，约 2.6 秒，可点击跳过。
+- **终末地风格应用图标**：黑胶唱片式——纯白四角 + 黑色唱片盘面 + 黄色六边形播放键与外圈环形进度条；全密度位图（mdpi 48 – xxxhdpi 192）嵌入 Android Launcher。
+- **系统适配（Android 8–16）**：状态栏 / 导航栏图标与背景按明暗**双通道**同步（自研 `EndfieldSystemBars` 原生插件为主，官方 `@capacitor/status-bar` 兜底），Android 15/16 强制 edge-to-edge 下同样正确；预测性返回手势、横屏刘海 / 挖孔安全区、Dock 固定在手势条之上、通知权限运行时请求；已适配 ColorOS / HyperOS / OriginOS / 鸿蒙 / One UI。
+- **离线可用与持久化**：除用户主动发起的歌词 / 封面联网匹配外全程离线；曲库与序列存 IndexedDB，主题、背景、终端行为、歌词偏移存 localStorage，重启自动恢复。
 
 ## 界面预览
 
@@ -39,21 +41,23 @@
 
 ## 使用方式
 
-1. **导入歌曲**：进入「曲库」页，点击右上角 **+ 导入曲目**，选择音频文件（mp3 / flac / wav / m4a / ogg / ape 等）。导入后曲库显示曲目、艺术家、专辑与时长；歌曲无内嵌封面时会自动向 iTunes 搜索兜底（后台异步匹配，不阻塞操作）。
-2. **开始播放**：点击曲库中的曲目即开始播放并进入「正在播放」页。底部 **MiniPlayer** 常驻显示当前播放进度，点击可回到正在播放页。
-3. **正在播放页**：
-   - **ARTWORK / LYRICS**：切换封面视图与同步歌词视图；歌词随播放逐行高亮、自动滚动居中；无歌词时显示引导界面，可点击「联网获取歌词」或「导入歌词文件」。
-   - **QUEUE**：打开底部队列面板，查看全部队列曲目，可移除任意曲目。
-   - **播放模式**：点击循环图标在「顺序 → 随机 → 单曲循环」之间切换，图标带切换动画。
-   - **进度与音量**：分段刻度进度条可拖动跳转；VOL 滑块调节音量。
-4. **收藏与歌单**：曲库行内可点 **收藏**（加入「收藏」清单）或 **加入歌单**（可即时新建）；「歌单」Tab 内管理清单。
-5. **滑动切换界面**：在主体区域**左右滑动**即可在 曲库 ↔ 歌单 ↔ 搜索 ↔ 正在播放 ↔ 设置 之间切换（底部导航点击同样可用）；滑入搜索页时**不会自动弹出键盘**，点击搜索框才唤起。
-6. **搜索**：底部 Dock 中央的搜索按钮进入全域检索，按关键词过滤本地曲库（歌曲 / 艺术家 / 专辑）与歌单，结果可直接播放或加入队列。
-7. **主题设置**：「设置」Tab 内可在 **标准终端**（柠檬黄/黑/暖白，默认）、**棱镜频谱**（亮粉/青绿/明黄）与 **自定义** 之间切换；自定义主题通过自绘 HSV 调色器（饱和度/亮度板 + 色相条 + HEX 直输）与 12 预设色板自由调配主色、辅助色、点缀色，实时生效并持久化保存；主题覆盖全部界面——含启动动画、警戒条纹、歌词高亮、滚动条、进度控件与底部 Dock。
-8. **纯色背景切换**：设置页可切换 **黑色 / 白色** 纯色外壳；浅色模式下前景、卡片、网格、玻璃 Dock 与播放条自动适配明暗。
-9. **底部 Dock（ColorOS 17 规范）**：毛玻璃胶囊（图标 + 文字说明），中央搜索按钮；Dock 位于系统手势条（安全区）之上且为**底部固定层**——内容滚动区域自动收缩在 Dock 上方，任何控件都不会被 Dock 遮挡或拦截点击；播放中的 **MiniPlayer 为毛玻璃悬浮胶囊**，位于 Dock 上方。
-10. **后台播放与锁屏控制（Android）**：播放中退到后台/锁屏后，通知栏与锁屏界面显示歌曲、封面与进度；支持播放 / 暂停 / 上一曲 / 下一曲 / ±10 秒快进快退 / 拖动进度。修复了锁屏/系统媒体控件调节无效的问题（媒体按键与传输控制标志、seek 回调字段对齐）。✅ v1.4.2 已修复 ColorOS 17 锁屏拖动进度条回弹：原生回调参数改为透传，并精确读取秒级 `seekTime`，锁屏拖动可正常跳转。首次安装 Android 13+ 会请求通知权限。
-11. **重启恢复**：曲库、歌单、播放模式、音量、主题与背景偏好持久化保存，重新打开应用自动恢复。
+1. **导入曲目**：进入「介质库」`[01]`。
+   - **扫描设备**：直接读取手机媒体库批量导入（自动去重、跳过已入库曲目，结果与失败原因回显在页首）；
+   - **+ 导入曲目**：手动选择本地音频（mp3 / flac / wav / m4a / ogg / ape 等），导入时解析标签与内嵌封面，无封面时联网匹配。
+2. **分类与标签**：介质库页签 **ALL / 战场记录 / 通讯日志 / BGM / 环境音** 按介质标签筛选；点行内 **标签图标** 可为该曲目指定或修改介质标签。
+3. **播放**：点任意一行即开始播放并进入「音频输出」`[03]`；播放中的行序号变为频谱条，MiniPlayer 胶囊常驻 Dock 上方显示进度，点击可回到音频输出页。
+4. **音频输出页**：
+   - **ARTWORK / LYRICS**：切换封面视图与歌词视图；
+   - **QUEUE**：展开播放队列，查看并移除队列曲目；
+   - **播放模式**：点模式图标在 **序列循环 → 无序序列 → 单介质循环** 之间切换；
+   - **进度与音量**：拖动分段刻度进度条跳转，`VOL` 滑块调节音量。
+5. **歌词**：歌词页顶部工具栏可 **±0.5s / ±1s 微调时间轴**（`SYNC` 显示当前偏移并自动保存），**SCROLL** 为居中滚动阅读、**LOG** 为带时间戳的全量歌词日志；无歌词时点 **REQUEST REMOTE LYRIC** 联网获取（网易云 → QQ 音乐）或 **IMPORT LOCAL SCRIPT** 导入本地 `.lrc` / `.txt`。
+6. **收藏与播放序列**：曲库行内点 **♥** 加入收藏、点 **加入序列** 图标选择或即时新建序列；「播放序列」`[02]` 页可新建 / 展开 / 删除序列并整单播放，页脚提示「介质库中点击 ♥ 可将介质加入收藏清单」。
+7. **全域检索**：点 Dock 中央的「全域检索」`[05]`，输入关键词过滤曲库与序列；展开 **高级检索语法** 可用 `artist:xxx`、`album:xxx`、`tag:战场记录`、`duration:<120` 组合筛选，结果可直接播放或加入序列。
+8. **系统配置**：`[04]` 页切换 **黑色 / 白色** 外壳、选择主题 **T-01 / T-02 / T-04 / T-03 自定义**（自定义可调配主色 / 辅助色 / 点缀色并保存），并调整终端行为：**扫描线**（开关 + 转速）、**蜂鸣**、**LOG 级别**、**IDLE** 熄屏时间——全部即时生效并持久化。
+9. **滑动切换**：在主体区域**左右滑动**即可在五个页面间切换（底部 Dock 点击同样可用）。
+10. **后台与锁屏**：退到后台或锁屏后，通知栏与锁屏显示歌曲、封面与进度，可播放 / 暂停 / 上一曲 / 下一曲 / ±10s / 拖动进度；首次安装 Android 13+ 会请求通知权限。
+11. **重启恢复**：曲库、序列、播放模式、音量、主题、背景与终端行为偏好全部持久化，重新打开应用即恢复上次状态。
 
 ## 下载
 
@@ -79,34 +83,38 @@
 ## 技术栈
 
 ![React](https://img.shields.io/badge/REACT-19-F2C200?style=for-the-badge&labelColor=0A0A0C)
-![TypeScript](https://img.shields.io/badge/TS-5-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![TypeScript](https://img.shields.io/badge/TS-5.9-F2C200?style=for-the-badge&labelColor=0A0A0C)
 ![Tailwind](https://img.shields.io/badge/TAILWIND-4-F2C200?style=for-the-badge&labelColor=0A0A0C)
 ![Capacitor](https://img.shields.io/badge/CAPACITOR-8-F2C200?style=for-the-badge&labelColor=0A0A0C)
-![Vite](https://img.shields.io/badge/VITE-6-F2C200?style=for-the-badge&labelColor=0A0A0C)
-![music-metadata](https://img.shields.io/badge/MUSIC--METADATA-11-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![Vite](https://img.shields.io/badge/VITE-8-F2C200?style=for-the-badge&labelColor=0A0A0C)
+![music-metadata](https://img.shields.io/badge/MUSIC--METADATA-12-F2C200?style=for-the-badge&labelColor=0A0A0C)
 
 | 层 | 技术 |
 | --- | --- |
-| Web 前端 | React 19 + TypeScript + Tailwind CSS v4 |
+| Web 前端 | React 19 + TypeScript 5.9 + Tailwind CSS v4 |
 | 播放引擎 | HTML5 Audio + Web Audio API（频谱动画） |
-| 标签解析 | music-metadata（浏览器 WASM 构建） |
-| 数据存储 | IndexedDB（曲库） / localStorage（偏好） |
-| 移动端封装 | Capacitor 8（Android 平台） |
-| 构建 | Vite（Web）+ Gradle 8.14 / AGP 8.13（APK） |
+| 标签解析 | music-metadata 12（浏览器构建） |
+| 歌词与封面匹配 | 本地 `.lrc` / `.txt` → 网易云 / QQ 音乐；封面 iTunes 公共曲库 / 系统专辑图 |
+| 数据存储 | IndexedDB（曲库 / 序列） + localStorage（主题 / 背景 / 终端行为 / 歌词偏移） |
+| 移动端封装 | Capacitor 8（Android 平台，含自研 MediaScanner / SystemBars 插件） |
+| 构建 | Vite 8（Web）+ Gradle 8.14 / AGP 8.13（APK；minSdk 24 / targetSdk 36） |
 
 ## 目录结构
 
 ```
 endfield-player/
-├── src/                    # Web 源码
-│   ├── pages/HomePage/     # 主页面（曲库 / 歌单 / 正在播放 + 滑动切换）
-│   ├── components/player/  # 播放器组件（SplashScreen / BottomNav / NowPlayingView / QueuePanel ...）
-│   └── lib/                # 数据层（db.ts / parser.ts / lyrics.ts / playlists.ts / player-context.ts / media-scanner.ts / terminal-config.ts）
-├── android/                # Capacitor Android 原生工程（含自绘应用图标）
-├── public/
-├── capacitor.config.ts     # Capacitor 配置（appId: com.endfield.audio.terminal）
-├── vite.config.ts          # Web 构建配置
-└── vite.capacitor.config.ts# APK 专用构建配置（输出 dist/apk）
+├── src/                     # Web 源码
+│   ├── pages/HomePage/      # 主壳（五页切换 / 手势滑动 / Dock / MiniPlayer）
+│   ├── components/player/   # 播放器界面（LibraryView / PlaylistsView / SearchView /
+│   │                        #   NowPlayingView / LyricsView / SettingsView / SplashScreen / BottomNav ...）
+│   └── lib/                 # 数据与能力层（db / parser / music / lyrics / playlists /
+│                            #   player-context / media-scanner / terminal-config / theme）
+├── android/                 # Capacitor Android 原生工程（MediaScannerPlugin / SystemBarsPlugin、自绘启动页与图标）
+├── public/                  # 静态资源（图标、预置曲库 manifest）
+├── docs/                    # 界面截图与功能说明
+├── capacitor.config.ts      # Capacitor 配置（appId: com.endfield.audio.terminal）
+├── vite.config.ts           # Web 构建配置
+└── vite.capacitor.config.ts # APK 专用构建配置（输出 dist/apk）
 ```
 
 ## 本地运行（Web）
