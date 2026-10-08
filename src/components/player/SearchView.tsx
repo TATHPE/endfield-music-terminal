@@ -117,7 +117,7 @@ export default function SearchView() {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="搜索歌曲 / 艺术家 / 歌单…"
+          placeholder="搜索歌曲 / 艺术家 / 播放序列…"
           enterKeyHint="search"
           className="w-full border border-border bg-card py-3 pl-9 pr-9 font-mono text-sm tracking-wider text-foreground outline-none transition-all duration-200 placeholder:text-muted-foreground/60 focus:border-accent/60 focus:shadow-[0_0_0_1px] focus:shadow-accent/30"
           style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)' }}
@@ -162,7 +162,7 @@ export default function SearchView() {
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
           <Search className="h-8 w-8 text-foreground/15" strokeWidth={1.4} />
           <p className="font-mono text-[11px] tracking-[0.22em] text-muted-foreground">
-            输入关键词检索本地曲库与歌单
+            输入关键词检索本地介质库与播放序列
           </p>
         </div>
       ) : (
@@ -183,7 +183,7 @@ export default function SearchView() {
 
           {results.playlists.length > 0 && (
             <section className="flex flex-col gap-1.5">
-              <h3 className="font-mono text-[10px] tracking-[0.28em] text-accent">PLAYLISTS // 歌单</h3>
+              <h3 className="font-mono text-[10px] tracking-[0.28em] text-accent">PLAYLISTS // 播放序列</h3>
               {results.playlists.map((pl) => (
                 <button
                   key={pl.id}

@@ -51,7 +51,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
             transition={{ type: 'spring', damping: 30, stiffness: 340 }}
             className="fixed inset-x-0 top-0 z-[90] pt-[calc(env(safe-area-inset-top)+14px)]"
             role="dialog"
-            aria-label="加入歌单"
+            aria-label="加入播放序列"
           >
             <div className="mx-auto max-w-[430px] px-3">
               <div
@@ -67,7 +67,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
                   <p className="font-mono text-[9px] tracking-[0.28em] text-primary">
                     ASSIGN TRACK // PLAYLIST
                   </p>
-                  <h2 className="mt-0.5 text-lg font-bold tracking-wide text-foreground">加入歌单</h2>
+                  <h2 className="mt-0.5 text-lg font-bold tracking-wide text-foreground">加入播放序列</h2>
 
                   {/* create inline */}
                   <div className="mt-4 flex items-center gap-2">
@@ -77,7 +77,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') submit();
                       }}
-                      placeholder="新建歌单名称…"
+                      placeholder="新建播放序列名称…"
                       maxLength={32}
                       className="clip-corner-sm min-w-0 flex-1 border border-border bg-secondary px-3 py-2 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary"
                     />
@@ -85,7 +85,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
                       type="button"
                       onClick={submit}
                       disabled={!draft.trim()}
-                      aria-label="新建歌单"
+                      aria-label="新建播放序列"
                       className="clip-corner-sm flex h-9 w-9 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-transform active:scale-95 disabled:opacity-40"
                     >
                       <Plus className="h-4 w-4" />
@@ -96,7 +96,7 @@ export default function PlaylistAddSheet({ open, songId, onClose }: PlaylistAddS
                   <div className="mt-3 flex max-h-56 flex-col gap-1 overflow-y-auto">
                     {custom.length === 0 ? (
                       <p className="py-4 text-center font-mono text-[11px] tracking-widest text-muted-foreground/60">
-                        暂无自定义歌单 — 输入名称创建一个
+                        暂无自定义播放序列 — 输入名称创建一个
                       </p>
                     ) : (
                       custom.map((pl) => {

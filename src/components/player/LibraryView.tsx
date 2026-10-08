@@ -135,9 +135,9 @@ export default function LibraryView() {
       } else {
         setScanMsg(
           r.added > 0
-            ? `SCAN OK — 新增 ${r.added} 首 · 跳过 ${r.skipped} 首 · 歌词自动匹配中`
+            ? `SCAN OK — 新增 ${r.added} 首 · 跳过 ${r.skipped} 首 · 本地歌词已读取`
             : r.skipped > 0
-              ? `SCAN OK — 设备歌曲已全部在曲库（${r.skipped} 首）`
+              ? `SCAN OK — 设备歌曲已全部在介质库（${r.skipped} 首）`
               : 'SCAN OK — 设备中未发现可导入的音频',
         );
       }

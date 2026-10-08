@@ -667,7 +667,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     if (added > 0) {
       toast.success(`已从设备扫描并添加 ${added} 首歌曲（本地歌词已读取）`);
     } else if (skipped > 0) {
-      toast.info(`设备歌曲已全部在曲库中（跳过 ${skipped} 首）`);
+      toast.info(`设备歌曲已全部在介质库中（跳过 ${skipped} 首）`);
     } else {
       toast.info('设备中未发现可导入的音频');
     }

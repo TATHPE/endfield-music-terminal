@@ -83,7 +83,7 @@ export default function NowPlayingView() {
         <Music className="h-10 w-10 text-primary/70" strokeWidth={1.4} />
         <p className="text-base font-semibold text-foreground">没有正在播放的曲目</p>
         <p className="font-mono text-[11px] tracking-widest text-muted-foreground">
-          前往曲库导入本地音频并选择曲目开始播放
+          前往介质库导入本地音频并选择曲目开始播放
         </p>
       </div>
     );
