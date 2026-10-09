@@ -1,6 +1,7 @@
 package com.endfield.audio.terminal.lyrics;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -14,9 +15,15 @@ import java.nio.charset.StandardCharsets;
  * background pool on a dead socket), a browser-ish UA (NetEase / QQ refuse some
  * bare clients), and the {@code Accept} header the JSON endpoints expect.
  *
- * <p>Errors are deliberately non-throwing: a non-200 response or any network
- * problem simply yields {@code null}, so callers treat "unreachable" the same
- * way as "no match" and can fall through to the next provider.
+ * <p>The two failure modes are deliberately kept apart, because the caller
+ * reports them differently:
+ * <ul>
+ *   <li><b>transport failure</b> (offline, DNS failure, timeout, socket reset,
+ *       TLS error) — thrown as an {@link IOException}, so a total outage reaches
+ *       the user as "fetch failed";</li>
+ *   <li><b>HTTP non-200</b> — returns {@code null}: the service answered and
+ *       simply has nothing usable, which is a "no match" rather than an error.</li>
+ * </ul>
  */
 public final class LyricsHttp {
 
@@ -34,10 +41,11 @@ public final class LyricsHttp {
      *
      * @param url     absolute http(s) URL
      * @param referer value for the {@code Referer} header; omitted when {@code null}
-     * @return the response body, or {@code null} on a non-200 status or any network
-     *         / protocol / decoding error
+     * @return the response body, or {@code null} on a non-200 status
+     * @throws IOException when no response was produced at all (offline, DNS,
+     *                     timeout, TLS or socket error)
      */
-    public static String get(String url, String referer) {
+    public static String get(String url, String referer) throws IOException {
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(url).openConnection();
@@ -56,8 +64,6 @@ public final class LyricsHttp {
                 while ((line = br.readLine()) != null) sb.append(line);
             }
             return sb.toString();
-        } catch (Exception e) {
-            return null;
         } finally {
             if (conn != null) conn.disconnect();
         }

@@ -9,7 +9,7 @@
  * 空格与 emoji 均不得改动；带变量的文案一律导出为函数。
  */
 
-/** 页面 / 面板标题（与 src/lib/nav.ts 的 NAV_ITEMS 标签保持一致）。 */
+/** 页面 / 面板标题 —— nav.ts 的 NAV_ITEMS 标签直接引用这里（单一真源）。 */
 export const PAGES = {
   LIBRARY: '介质库',
   PLAYLISTS: '播放序列',

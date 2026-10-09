@@ -1,4 +1,6 @@
-// EXPORTS: ViewId, NAV_ITEMS, DOCK_ITEMS
+// EXPORTS: ViewId, NAV_ITEMS, DOCK_SEARCH_ID
+import { PAGES } from '@/lib/strings';
+
 export type ViewId = 'library' | 'playlists' | 'search' | 'nowplaying' | 'settings';
 
 export interface NavItem {
@@ -7,12 +9,13 @@ export interface NavItem {
   code: string;
 }
 
+/** 底部导航标签统一取自 src/lib/strings.ts，避免两处维护。 */
 export const NAV_ITEMS: NavItem[] = [
-  { id: 'library', label: '介质库', code: '[01]' },
-  { id: 'playlists', label: '播放序列', code: '[02]' },
-  { id: 'search', label: '全域检索', code: '[05]' },
-  { id: 'nowplaying', label: '音频输出', code: '[03]' },
-  { id: 'settings', label: '系统配置', code: '[04]' },
+  { id: 'library', label: PAGES.LIBRARY, code: '[01]' },
+  { id: 'playlists', label: PAGES.PLAYLISTS, code: '[02]' },
+  { id: 'search', label: PAGES.SEARCH, code: '[05]' },
+  { id: 'nowplaying', label: PAGES.NOW_PLAYING, code: '[03]' },
+  { id: 'settings', label: PAGES.SETTINGS, code: '[04]' },
 ];
 
 /** Center search lives between the two left tabs and the two right tabs. */

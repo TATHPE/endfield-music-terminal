@@ -166,7 +166,7 @@ pwsh tools/build-apk.ps1 -NoSongs         # 无歌曲版（R8 压缩后约 2 MB�
 pwsh tools/build-apk.ps1 -Type both -OutDir D:\out
 ```
 
-- 版本号取自 `package.json` 的 `version`，`versionCode` 自动推导为 `主 × 10000 + 次 × 100 + 修`（`1.4.2` → `10402`），也可用 `-PappVersionName=` / `-PappVersionCode=` 覆盖
+- 版本号取自 `package.json` 的 `version`，`versionCode` 自动推导为 `主 × 10000 + 次 × 100 + 修`（`1.4.3` → `10403`），也可用 `-PappVersionName=` / `-PappVersionCode=` 覆盖
 - 预置曲库索引 `public/songs/manifest.json` **不入库**，由 `node tools/gen-song-manifest.mjs` 从本地歌曲资产生成（歌曲资产见 Release 资产包 `EndfieldSongs-v1.0.zip`）
 - `-NoSongs` 会先把 `public/songs` 临时移开再构建，因此产出的包不含预置曲库与索引
 

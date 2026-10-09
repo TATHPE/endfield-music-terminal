@@ -2,7 +2,7 @@ package com.endfield.audio.terminal.lyrics;
 
 import android.util.Base64;
 
-import java.io.UnsupportedEncodingException;
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
@@ -10,9 +10,10 @@ import java.nio.charset.StandardCharsets;
  * Tencent Music (QQ) lyric fallback: search by songmid, fetch the LRC.
  *
  * <p>Ported verbatim from {@code MediaScannerPlugin.qqLyric}; only the HTTP call
- * moved to {@link LyricsHttp} and the checked {@code IOException} was dropped
- * (that method reports failures as {@code null}). The base64 decoding keeps using
- * the Android API, which is why this class is not JVM-testable.
+ * moved to {@link LyricsHttp}, which keeps the original contract: a transport
+ * failure is an {@link IOException} ("fetch failed"), a non-200 answer or an
+ * unmatchable song is {@code null} ("no match"). The base64 decoding keeps using
+ * the Android API, which is why this class is not JVM-testable without a stub.
  */
 public class QQLyricsProvider implements LyricsProvider {
 
@@ -25,10 +26,10 @@ public class QQLyricsProvider implements LyricsProvider {
     }
 
     @Override
-    public String fetch(String title, String artist) {
+    public String fetch(String title, String artist) throws IOException {
         if (title == null || title.isEmpty()) return null;
         String query = (artist == null || artist.isEmpty()) ? title : title + " " + artist;
-        String enc = encodeUtf8(query);
+        String enc = URLEncoder.encode(query, "UTF-8");
         String searchUrl = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp?format=json&p=1&n=5&w=" + enc;
         String searchJson = LyricsHttp.get(searchUrl, REFERER);
         String songmid = LyricsParsing.bestQQSongMid(searchJson, title);
@@ -47,14 +48,5 @@ public class QQLyricsProvider implements LyricsProvider {
             }
         }
         return null;
-    }
-
-    /** UTF-8 exists on every JVM/Android build; the checked exception is a formality. */
-    private static String encodeUtf8(String raw) {
-        try {
-            return URLEncoder.encode(raw, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalStateException("UTF-8 unavailable", e);
-        }
     }
 }

@@ -287,7 +287,9 @@ public class MediaScannerPlugin extends Plugin {
      * <p>The lookup itself is delegated to {@link LyricsRepository}; the response
      * shape is unchanged ({@code source:'net'|null, lyrics}) and {@code source}
      * stays {@code "net"} for every online source, because the JS side only checks
-     * it for truthiness.
+     * it for truthiness. "No match" resolves with nulls as before; a lookup where no
+     * source could be reached at all is rejected, so the UI keeps showing its
+     * "联网获取歌词失败" message rather than "未找到匹配的在线歌词".
      */
     @PluginMethod
     public void getLyricsOnline(PluginCall call) {
@@ -300,8 +302,13 @@ public class MediaScannerPlugin extends Plugin {
         IO_POOL.execute(() -> {
             try {
                 LyricsRepository.Result hit = LYRICS.fetch(title, artist);
+                if (hit.outcome == LyricsRepository.Result.Outcome.FAILED) {
+                    String why = (hit.error == null || hit.error.isEmpty()) ? "网络不可用" : hit.error;
+                    call.reject("联网歌词获取失败: " + why);
+                    return;
+                }
                 JSObject ret = new JSObject();
-                if (hit != null && hit.lyrics != null && !hit.lyrics.trim().isEmpty()) {
+                if (hit.outcome == LyricsRepository.Result.Outcome.OK) {
                     ret.put("source", "net");
                     ret.put("lyrics", hit.lyrics);
                 } else {
