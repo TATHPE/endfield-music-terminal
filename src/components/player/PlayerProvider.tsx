@@ -18,6 +18,15 @@ import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 import { shouldLog, type LogLevel } from '@/lib/terminal-config';
 import { useDeviceLibrary } from '@/hooks/use-device-library';
 import { usePlaylists } from '@/hooks/use-playlists';
+import {
+  ACTIONS,
+  STATES,
+  TOASTS,
+  audioLoadFailed,
+  playFailed,
+  playFailedFor,
+  queueSnapshotSaved,
+} from '@/lib/strings';
 
 const VOLUME_KEY = 'endfield-player:volume';
 const MUTED_KEY = 'endfield-player:muted';
@@ -151,7 +160,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         if (!merged.some((p) => p.id === FAVORITES_ID)) {
           const fav: Playlist = {
             id: FAVORITES_ID,
-            name: '收藏',
+            name: ACTIONS.FAVORITE,
             songIds: [],
             createdAt: 0,
           };
@@ -385,7 +394,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
           // instead of dying silently.
           const name = err instanceof Error ? err.name : String(err);
           setIsPlaying(false);
-          toast.error(`播放失败（${name}）：${song.title}`);
+          toast.error(playFailedFor(name, song.title));
         });
       };
       if (song.presetUrl) {
@@ -406,7 +415,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
             void audioRef.current.play().catch((err: unknown) => {
               const name = err instanceof Error ? err.name : String(err);
               setIsPlaying(false);
-              toast.error(`播放失败（${name}）：${song.title}`);
+              toast.error(playFailedFor(name, song.title));
             });
           }
         });
@@ -430,7 +439,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         void audio.play().catch((err: unknown) => {
           const name = err instanceof Error ? err.name : String(err);
           setIsPlaying(false);
-          toast.error(`播放失败（${name}）`);
+          toast.error(playFailed(name));
         });
       } else {
         audio.pause();
@@ -619,7 +628,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   // ---- Queue snapshot ----------------------------------------------------
   const saveQueueSnapshot = useCallback(() => {
     if (queue.length === 0) {
-      toast.info('队列为空，无法保存快照');
+      toast.info(TOASTS.EMPTY_QUEUE_SNAPSHOT);
       return;
     }
     const pl: Playlist = {
@@ -630,7 +639,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     };
     void putPlaylist(pl);
     setPlaylists((prev) => [...prev, pl]);
-    toast.success(`QUEUE SNAPSHOT 已保存：${pl.name}`);
+    toast.success(queueSnapshotSaved(pl.name));
   }, [queue]);
 
   // ---- Playlists ---------------------------------------------------------
@@ -784,7 +793,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
           const el = e.currentTarget;
           const code = el.error?.code ?? 'unknown';
           const src = el.currentSrc || el.src || '';
-          toast.error(`音频加载失败（MEDIA_ERR_${code}）：${src.split('/').pop() || '未知源'}`);
+          toast.error(audioLoadFailed(code, src.split('/').pop() || STATES.UNKNOWN_SOURCE));
         }}
       />
     </PlayerContext.Provider>

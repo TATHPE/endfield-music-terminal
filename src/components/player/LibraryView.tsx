@@ -9,6 +9,17 @@ import { usePlayer } from '@/lib/player-context';
 import { formatClock } from '@/lib/music';
 import { cn } from '@/lib/utils';
 import { MediaScanner } from '@/lib/media-scanner';
+import {
+  ACTIONS,
+  LABELS,
+  PAGES,
+  STATES,
+  TOASTS,
+  scanAdded,
+  scanAllPresent,
+  scanFailed,
+  untaggedMedia,
+} from '@/lib/strings';
 import ImportButton from '@/components/player/ImportButton';
 import TrackRow from '@/components/player/TrackRow';
 import PlaylistAddSheet from '@/components/player/PlaylistAddSheet';
@@ -41,13 +52,13 @@ function TagSheet({ songId, onClose }: { songId: string | null; onClose: () => v
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-background/70" onClick={onClose} role="presentation">
       <div
         role="dialog"
-        aria-label="介质标签"
+        aria-label={PAGES.MEDIA_TAGS}
         onClick={(e) => e.stopPropagation()}
         className="clip-corner w-full max-w-[430px] border-t border-primary/40 bg-card p-4"
       >
         <div className="flex items-center justify-between">
-          <p className="font-mono text-[10px] tracking-[0.28em] text-primary">MEDIA TAGS // 介质标签</p>
-          <button type="button" onClick={onClose} aria-label="关闭" className="p-1 text-muted-foreground hover:text-foreground">
+          <p className="font-mono text-[10px] tracking-[0.28em] text-primary">MEDIA TAGS // {PAGES.MEDIA_TAGS}</p>
+          <button type="button" onClick={onClose} aria-label={ACTIONS.CLOSE} className="p-1 text-muted-foreground hover:text-foreground">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -126,24 +137,24 @@ export default function LibraryView() {
       const r = await scanDeviceSongs();
       if (r.failed > 0) {
         if (r.permissionDenied) {
-          setScanMsg('SCAN FAILED — 存储权限被拒绝');
+          setScanMsg(TOASTS.SCAN_PERMISSION_DENIED);
           // ROMs that suppressed the system dialog land here: offer a direct
           // jump into the app's system permission page instead of dead-ending.
           setPermDialog(true);
         } else {
-          setScanMsg(r.error ? `SCAN FAILED — ${r.error}` : 'SCAN FAILED — 扫描设备音频异常');
+          setScanMsg(r.error ? scanFailed(r.error) : TOASTS.SCAN_DEVICE_FAILED);
         }
       } else {
         setScanMsg(
           r.added > 0
-            ? `SCAN OK — 新增 ${r.added} 首 · 跳过 ${r.skipped} 首 · 本地歌词已读取`
+            ? scanAdded(r.added, r.skipped)
             : r.skipped > 0
-              ? `SCAN OK — 设备歌曲已全部在介质库（${r.skipped} 首）`
-              : 'SCAN OK — 设备中未发现可导入的音频',
+              ? scanAllPresent(r.skipped)
+              : TOASTS.SCAN_EMPTY,
         );
       }
     } catch {
-      setScanMsg('SCAN FAILED — 扫描异常');
+      setScanMsg(TOASTS.SCAN_FAILED);
     } finally {
       setScanning(false);
     }
@@ -163,7 +174,7 @@ export default function LibraryView() {
           <p className="font-mono text-[10px] tracking-[0.28em] text-primary">
             AUDIO TERMINAL // MEDIA NODE [AUD-01]
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-wide text-foreground">介质库</h1>
+          <h1 className="mt-1 text-3xl font-bold tracking-wide text-foreground">{PAGES.LIBRARY}</h1>
           <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 font-mono text-[10px] tracking-widest text-muted-foreground">
             <span className="whitespace-nowrap">ORIGIN NODE</span>
             <span aria-hidden className="whitespace-nowrap opacity-50">—</span>
@@ -184,7 +195,7 @@ export default function LibraryView() {
               ) : (
                 <Radar className="h-4 w-4 text-primary" strokeWidth={2.2} />
               )}
-              扫描设备
+              {ACTIONS.SCAN_DEVICE}
             </button>
           )}
           <ImportButton onClick={() => fileRef.current?.click()} className="mt-1 shrink-0" />
@@ -199,7 +210,7 @@ export default function LibraryView() {
           </span>
           <button
             type="button"
-            aria-label="清除提示"
+            aria-label={LABELS.CLEAR_HINT}
             onClick={() => setScanMsg(null)}
             className="text-muted-foreground hover:text-primary"
           >
@@ -297,7 +308,7 @@ export default function LibraryView() {
             <p className="font-mono text-[10px] tracking-[0.25em] text-primary/80">
               // NO LOCAL DATA
             </p>
-            <p className="text-base font-semibold text-foreground">{tagFilter ? `无「${tagFilter}」标签的介质` : '介质库为空'}</p>
+            <p className="text-base font-semibold text-foreground">{tagFilter ? untaggedMedia(tagFilter) : STATES.EMPTY_LIBRARY}</p>
             <p className="mt-2 font-mono text-[11px] leading-loose tracking-wider text-muted-foreground">
               {tagFilter ? '可切换标签筛选或清除过滤条件' : '未检测到本地音频数据'}
               <br />
@@ -324,7 +335,7 @@ export default function LibraryView() {
                 ) : (
                   <Radar className="h-5 w-5 text-primary" strokeWidth={2.2} />
                 )}
-                扫描设备
+                {ACTIONS.SCAN_DEVICE}
               </button>
             )}
             <ImportButton large onClick={() => fileRef.current?.click()} />
@@ -415,7 +426,7 @@ export default function LibraryView() {
                   onClick={() => setPermDialog(false)}
                   className="clip-corner-sm flex-1 border border-border/80 bg-secondary/50 py-2.5 font-mono text-xs tracking-widest text-muted-foreground transition-colors hover:text-foreground"
                 >
-                  取消
+                  {ACTIONS.CANCEL}
                 </button>
                 <button
                   type="button"

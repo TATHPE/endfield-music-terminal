@@ -6,6 +6,7 @@ import { usePlayer } from '@/lib/player-context';
 import HazardStrip from '@/components/player/HazardStrip';
 import PlaylistAddSheet from '@/components/player/PlaylistAddSheet';
 import { parseQuery, searchLibrary } from '@/lib/search';
+import { ACTIONS, PAGES, STATES, playLabel, playlistAddLabel } from '@/lib/strings';
 
 function fmt(sec: number): string {
   if (!Number.isFinite(sec) || sec <= 0) return '--:--';
@@ -37,7 +38,7 @@ export default function SearchView() {
     <div className="flex h-full flex-col gap-3 px-4 pb-6 pt-4">
       <header className="flex items-center justify-between">
         <h2 className="font-mono text-xs tracking-[0.34em] text-foreground">
-          SEARCH <span className="text-muted-foreground">// 全域检索</span>
+          SEARCH <span className="text-muted-foreground">// {PAGES.SEARCH}</span>
         </h2>
         <span className="font-mono text-[9px] tracking-widest text-muted-foreground">SYS-SEARCH</span>
       </header>
@@ -61,7 +62,7 @@ export default function SearchView() {
         {query && (
           <button
             type="button"
-            aria-label="清空"
+            aria-label={ACTIONS.CLEAR}
             onClick={() => {
               setQuery('');
               inputRef.current?.focus();
@@ -120,7 +121,7 @@ export default function SearchView() {
 
           {results.playlists.length > 0 && (
             <section className="flex flex-col gap-1.5">
-              <h3 className="font-mono text-[10px] tracking-[0.28em] text-accent">PLAYLISTS // 播放序列</h3>
+              <h3 className="font-mono text-[10px] tracking-[0.28em] text-accent">PLAYLISTS // {PAGES.PLAYLISTS}</h3>
               {results.playlists.map((pl) => (
                 <button
                   key={pl.id}
@@ -157,7 +158,7 @@ export default function SearchView() {
                   >
                     <button
                       type="button"
-                      aria-label={`播放 ${s.title}`}
+                      aria-label={playLabel(s.title)}
                       onClick={() => playSong(s.id)}
                       className={cn(
                         'flex h-8 w-8 shrink-0 items-center justify-center border transition-colors',
@@ -177,7 +178,7 @@ export default function SearchView() {
                         {s.title}
                       </span>
                       <span className="block truncate font-mono text-[9px] tracking-wider text-muted-foreground">
-                        {s.artist || '未知艺术家'} · {s.album || '未知专辑'}
+                        {s.artist || STATES.UNKNOWN_ARTIST} · {s.album || STATES.UNKNOWN_ALBUM}
                       </span>
                     </button>
                     <span className="shrink-0 font-mono text-[9px] tracking-widest text-muted-foreground">
@@ -185,7 +186,7 @@ export default function SearchView() {
                     </span>
                     <button
                       type="button"
-                      aria-label={s.favorited ? '取消收藏' : '收藏'}
+                      aria-label={s.favorited ? ACTIONS.UNFAVORITE : ACTIONS.FAVORITE}
                       onClick={() => toggleFavorite(s.id)}
                       className={cn('shrink-0 p-1 transition-colors', s.favorited ? 'text-accent' : 'text-muted-foreground hover:text-foreground')}
                     >
@@ -193,7 +194,7 @@ export default function SearchView() {
                     </button>
                     <button
                       type="button"
-                      aria-label={`把 ${s.title} 加入播放序列`}
+                      aria-label={playlistAddLabel(s.title)}
                       onClick={() => setAddTarget(s.id)}
                       className="shrink-0 p-1 text-muted-foreground transition-colors hover:text-accent"
                     >

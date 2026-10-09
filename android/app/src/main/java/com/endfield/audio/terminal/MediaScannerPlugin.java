@@ -1,6 +1,8 @@
 package com.endfield.audio.terminal;
 
+import com.endfield.audio.terminal.lyrics.LyricsHttp;
 import com.endfield.audio.terminal.lyrics.LyricsParsing;
+import com.endfield.audio.terminal.lyrics.LyricsRepository;
 
 import android.Manifest;
 import android.content.ContentResolver;
@@ -22,12 +24,10 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -57,6 +57,10 @@ public class MediaScannerPlugin extends Plugin {
      *  thread and could stall playback on slow links). */
     private static final ExecutorService IO_POOL =
         Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors() / 2));
+
+    /** Online lyric sources (NetEase -> QQ fallback, with retry) live behind the
+     *  provider/repository split in the lyrics package. */
+    private static final LyricsRepository LYRICS = new LyricsRepository();
 
     static final int REQ_AUDIO = 2001;
     private static PluginCall sPending;
@@ -279,7 +283,11 @@ public class MediaScannerPlugin extends Plugin {
      * Match lyrics online (NetEase first, then QQ Music as a fallback source),
      * executed on the background thread pool so HTTP I/O never blocks the UI
      * thread. Invoked explicitly from the lyrics panel (user-triggered).
-     * Returns {source:'net'|null, lyrics}.
+     *
+     * <p>The lookup itself is delegated to {@link LyricsRepository}; the response
+     * shape is unchanged ({@code source:'net'|null, lyrics}) and {@code source}
+     * stays {@code "net"} for every online source, because the JS side only checks
+     * it for truthiness.
      */
     @PluginMethod
     public void getLyricsOnline(PluginCall call) {
@@ -291,12 +299,11 @@ public class MediaScannerPlugin extends Plugin {
         }
         IO_POOL.execute(() -> {
             try {
-                String net = neteaseLyric(title, artist);
-                if (net == null || net.trim().isEmpty()) net = qqLyric(title, artist);
+                LyricsRepository.Result hit = LYRICS.fetch(title, artist);
                 JSObject ret = new JSObject();
-                if (net != null && !net.trim().isEmpty()) {
+                if (hit != null && hit.lyrics != null && !hit.lyrics.trim().isEmpty()) {
                     ret.put("source", "net");
-                    ret.put("lyrics", net);
+                    ret.put("lyrics", hit.lyrics);
                 } else {
                     ret.put("source", JSObject.NULL);
                     ret.put("lyrics", JSObject.NULL);
@@ -327,82 +334,9 @@ public class MediaScannerPlugin extends Plugin {
         return null;
     }
 
-    /** Search NetEase Cloud Music for the song id, then fetch its LRC lyric. */
-    private String neteaseLyric(String title, String artist) throws IOException {
-        if (title == null || title.isEmpty()) return null;
-        // First try title + artist, then retry with the bare title — the artist
-        // token often contains separators/remix tags that break the search.
-        String lyric = neteaseSearch(title, artist);
-        if (lyric == null) lyric = neteaseSearch(title, null);
-        return lyric;
-    }
-
-    private String neteaseSearch(String title, String artist) throws IOException {
-        String query = (artist == null || artist.isEmpty()) ? title : title + " " + artist;
-        String enc = URLEncoder.encode(query, "UTF-8");
-        String searchUrl = "https://music.163.com/api/search/get/web?csrf_token=&s=" + enc + "&type=1&limit=5";
-        String searchJson = httpGet(searchUrl);
-        // The shape of the search payload lives in LyricsParsing (unit-tested).
-        long id = LyricsParsing.bestNetEaseId(searchJson, title);
-        if (id <= 0) return null;
-        String lyricUrl = "https://music.163.com/api/song/lyric?id=" + id + "&lv=-1&kv=-1&tv=-1";
-        String lyricJson = httpGet(lyricUrl);
-        String lyric = LyricsParsing.netEaseLyric(lyricJson);
-        return (lyric != null && !lyric.trim().isEmpty()) ? lyric : null;
-    }
-
-    /** Tencent Music (QQ) lyric fallback: search by songmid, fetch the LRC. */
-    private String qqLyric(String title, String artist) throws IOException {
-        if (title == null || title.isEmpty()) return null;
-        String query = (artist == null || artist.isEmpty()) ? title : title + " " + artist;
-        String enc = URLEncoder.encode(query, "UTF-8");
-        String searchUrl = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp?format=json&p=1&n=5&w=" + enc;
-        String searchJson = httpGetRef(searchUrl, "https://y.qq.com/");
-        String songmid = LyricsParsing.bestQQSongMid(searchJson, title);
-        if (songmid == null || songmid.isEmpty()) return null;
-        String lyricUrl = "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?format=json&songmid=" + songmid;
-        String lyricJson = httpGetRef(lyricUrl, "https://y.qq.com/");
-        String raw = LyricsParsing.qqLyricRaw(lyricJson);
-        if (raw != null && !raw.isEmpty()) {
-            // Usually base64-encoded LRC; some builds return plain text.
-            try {
-                byte[] dec = Base64.decode(raw, Base64.DEFAULT);
-                String lrc = new String(dec, StandardCharsets.UTF_8);
-                if (!lrc.trim().isEmpty()) return lrc;
-            } catch (IllegalArgumentException ignored) {
-                if (!raw.trim().isEmpty()) return raw;
-            }
-        }
-        return null;
-    }
-
-    // Title normalisation + scoring now live in LyricsParsing (unit-tested).
-
+    /** GET a JSON/text API with the NetEase referer (used by the iTunes cover match). */
     private String httpGet(String urlStr) throws IOException {
-        return httpGetRef(urlStr, "https://music.163.com/");
-    }
-
-    private String httpGetRef(String urlStr, String referer) throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) new URL(urlStr).openConnection();
-        conn.setConnectTimeout(15000);
-        conn.setReadTimeout(15000);
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("User-Agent", UA);
-        if (referer != null) conn.setRequestProperty("Referer", referer);
-        conn.setRequestProperty("Accept", "application/json, text/plain, */*");
-        int code = conn.getResponseCode();
-        if (code != 200) {
-            conn.disconnect();
-            return null;
-        }
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader br = new BufferedReader(
-                new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = br.readLine()) != null) sb.append(line);
-        }
-        conn.disconnect();
-        return sb.toString();
+        return LyricsHttp.get(urlStr, "https://music.163.com/");
     }
 
     /** Read album art for an album id from MediaStore albumart, return base64 PNG/JPEG.

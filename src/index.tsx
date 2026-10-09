@@ -23,6 +23,22 @@ if (navigator.storage?.persist) {
   void navigator.storage.persist().catch(() => undefined);
 }
 
+// Web-only offline shell. The native APK must never register a service worker:
+// Capacitor already serves every asset from the APK, and a worker there would
+// only add a second, stale-able layer in front of the WebView's own loading.
+if (
+  !Capacitor.isNativePlatform() &&
+  import.meta.env.PROD &&
+  'serviceWorker' in navigator
+) {
+  try {
+    // Registration is best-effort: offline support must never block boot.
+    navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+  } catch {
+    // Ignore — some WebViews expose navigator.serviceWorker but reject register.
+  }
+}
+
 // Edge-to-edge immersive status bar (ColorOS 17 / Android 15+): the web layer reserves
 // the top inset via env(safe-area-inset-top); icon style follows the active bg mode.
 if (Capacitor.isNativePlatform()) {
@@ -40,7 +56,7 @@ window.addEventListener('load', resync, { once: true });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename={import.meta.env.MIAODA_CLIENT_BASE_PATH || '/'}>
+    <BrowserRouter basename="/">
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <App />
       </ErrorBoundary>

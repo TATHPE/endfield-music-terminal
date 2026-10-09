@@ -8,6 +8,19 @@ import { formatTime } from '@/lib/music';
 import type { ISong } from '@/lib/music';
 import type { Playlist } from '@/lib/playlists';
 import { cn } from '@/lib/utils';
+import {
+  ACTIONS,
+  LABELS,
+  PAGES,
+  STATES,
+  playLabel,
+  playlistDeleteLabel,
+  playlistExpandLabel,
+  playlistPlayLabel,
+  playlistRemoveLabel,
+  playlistRenameLabel,
+  unfavoriteLabel,
+} from '@/lib/strings';
 import CoverArt from '@/components/player/CoverArt';
 import EqBars from '@/components/player/EqBars';
 
@@ -81,7 +94,7 @@ function PlaylistCard({
               }
             }}
             maxLength={32}
-            aria-label={`重命名播放序列 ${pl.name}`}
+            aria-label={playlistRenameLabel(pl.name)}
             className="clip-corner-sm min-w-0 flex-1 border border-primary/60 bg-secondary px-2 py-1.5 font-mono text-[12px] text-foreground outline-none"
           />
           <button
@@ -109,7 +122,7 @@ function PlaylistCard({
         <button
           type="button"
           onClick={() => onToggleExpand(pl.id)}
-          aria-label={`展开播放序列 ${pl.name}`}
+          aria-label={playlistExpandLabel(pl.name)}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
         >
           <span
@@ -139,7 +152,7 @@ function PlaylistCard({
         <button
           type="button"
           onClick={() => onPlayPlaylist(pl.id)}
-          aria-label={`播放播放序列 ${pl.name}`}
+          aria-label={playlistPlayLabel(pl.name)}
           className="clip-corner-sm flex h-9 w-9 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-transform active:scale-95"
         >
           <Play className="h-4 w-4 translate-x-[1px]" />
@@ -153,7 +166,7 @@ function PlaylistCard({
                 setNameDraft(pl.name);
                 setRenaming(true);
               }}
-              aria-label={`重命名播放序列 ${pl.name}`}
+              aria-label={playlistRenameLabel(pl.name)}
               className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-primary"
             >
               <Pencil className="h-3.5 w-3.5" />
@@ -161,7 +174,7 @@ function PlaylistCard({
             <button
               type="button"
               onClick={() => onDeletePlaylist(pl.id)}
-              aria-label={`删除播放序列 ${pl.name}`}
+              aria-label={playlistDeleteLabel(pl.name)}
               className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -193,7 +206,7 @@ function PlaylistCard({
                     <button
                       type="button"
                       onClick={() => onPlaySong(song.id)}
-                      aria-label={`播放 ${song.title}`}
+                      aria-label={playLabel(song.title)}
                       className="flex min-w-0 flex-1 items-center gap-2 text-left"
                     >
                       <span className="w-5 shrink-0 text-center font-mono text-[9px] text-muted-foreground">
@@ -227,7 +240,7 @@ function PlaylistCard({
                       <button
                         type="button"
                         onClick={() => onToggleFavorite(song.id)}
-                        aria-label={`取消收藏 ${song.title}`}
+                        aria-label={unfavoriteLabel(song.title)}
                         className="shrink-0 p-1 text-primary transition-colors"
                       >
                         <Heart className="h-3 w-3 fill-primary" />
@@ -236,7 +249,7 @@ function PlaylistCard({
                       <button
                         type="button"
                         onClick={() => onRemoveFromPlaylist(pl.id, song.id)}
-                        aria-label={`从播放序列移除 ${song.title}`}
+                        aria-label={playlistRemoveLabel(song.title)}
                         className="shrink-0 p-1 text-muted-foreground/40 transition-colors hover:text-destructive"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -302,7 +315,7 @@ export default function PlaylistsView() {
         <p className="font-mono text-[10px] tracking-[0.28em] text-primary">
           AUDIO TERMINAL // SEQUENCE NODE [AUD-02]
         </p>
-        <h1 className="mt-1 text-3xl font-bold tracking-wide text-foreground">播放序列</h1>
+        <h1 className="mt-1 text-3xl font-bold tracking-wide text-foreground">{PAGES.PLAYLISTS}</h1>
         <p className="mt-1 font-mono text-[10px] tracking-widest text-muted-foreground">
           QUEUE MANIFESTS — 播放队列清单
         </p>
@@ -316,7 +329,7 @@ export default function PlaylistsView() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') submitCreate();
           }}
-          placeholder="新建播放序列名称…"
+          placeholder={LABELS.PLAYLIST_NAME_PLACEHOLDER}
           maxLength={32}
           className="clip-corner-sm min-w-0 flex-1 border border-border bg-secondary px-3 py-2 font-mono text-[13px] text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary"
         />
@@ -324,7 +337,7 @@ export default function PlaylistsView() {
           type="button"
           onClick={submitCreate}
           disabled={!draft.trim()}
-          aria-label="新建播放序列"
+          aria-label={ACTIONS.NEW_PLAYLIST}
           className="clip-corner-sm flex h-10 w-10 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-transform active:scale-95 disabled:opacity-40"
         >
           <Plus className="h-4.5 w-4.5" />
@@ -339,7 +352,7 @@ export default function PlaylistsView() {
         ))}
         {custom.length === 0 && (
           <li className="mt-2 border border-dashed border-border/70 px-4 py-6 text-center font-mono text-[11px] leading-relaxed tracking-wider text-muted-foreground/70">
-            未创建播放序列
+            {STATES.NO_PLAYLISTS}
             <br />
             输入名称创建你的第一个队列清单
           </li>

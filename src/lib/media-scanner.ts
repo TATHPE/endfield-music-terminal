@@ -49,18 +49,34 @@ export function deviceUrl(path: string): string {
   return Capacitor.convertFileSrc(path);
 }
 
-// Album-art cache (albumId|path -> base64 data URL), so the same album is fetched once.
+// Album-art cache (albumId|path -> base64 data URL), so the same album is fetched
+// once. Bounded: every entry holds a base64 JPEG (tens to hundreds of KB), so a long
+// session browsing many albums used to grow this map without limit.
+const ART_CACHE_MAX_ENTRIES = 48;
 const artCache = new Map<string, Promise<string | null>>();
+
+function evictArtCache() {
+  while (artCache.size > ART_CACHE_MAX_ENTRIES) {
+    const oldest = artCache.keys().next().value;
+    if (oldest === undefined) break;
+    artCache.delete(oldest);
+  }
+}
 
 export function albumArtUrl(albumId: number, path?: string, title?: string, artist?: string): Promise<string | null> {
   const key = albumId > 0 ? `a:${albumId}` : `p:${path || ''}`;
-  let p = artCache.get(key);
-  if (!p) {
-    p = MediaScanner.getAlbumArt({ albumId: albumId > 0 ? albumId : 0, path: path || '', title: title || '', artist: artist || '' })
-      .then((r) => (r.base64 ? `data:image/jpeg;base64,${r.base64}` : null))
-      .catch(() => null);
-    artCache.set(key, p);
+  const cached = artCache.get(key);
+  if (cached) {
+    // Refresh the LRU position so the album on screen survives eviction.
+    artCache.delete(key);
+    artCache.set(key, cached);
+    return cached;
   }
+  const p = MediaScanner.getAlbumArt({ albumId: albumId > 0 ? albumId : 0, path: path || '', title: title || '', artist: artist || '' })
+    .then((r) => (r.base64 ? `data:image/jpeg;base64,${r.base64}` : null))
+    .catch(() => null);
+  artCache.set(key, p);
+  evictArtCache();
   return p;
 }
 

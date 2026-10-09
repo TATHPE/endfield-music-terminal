@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type TouchEvent } fr
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ViewId } from '@/lib/nav';
 import { cn } from '@/lib/utils';
+import { LABELS } from '@/lib/strings';
 import { syncSystemBars } from '@/lib/theme';
 import { getConfigSnapshot, subscribeTerminalConfig } from '@/lib/terminal-config';
 import PlayerProvider from '@/components/player/PlayerProvider';
@@ -192,7 +193,7 @@ export default function HomePage() {
               type="button"
               onClick={() => setIdleDim(false)}
               className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-2 bg-background/90 font-mono"
-              aria-label="唤醒终端"
+              aria-label={LABELS.WAKE_TERMINAL}
             >
               <span className="block-cursor inline-block h-4 w-2 bg-primary" />
               <span className="text-xs tracking-[0.4em] text-foreground/80">AWAITING INPUT</span>

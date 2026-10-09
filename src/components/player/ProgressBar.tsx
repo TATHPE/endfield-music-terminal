@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { formatTime } from '@/lib/music';
+import { LABELS } from '@/lib/strings';
 
 interface ProgressBarProps {
   /** seconds */
@@ -53,7 +54,7 @@ export default function ProgressBar({ value, max, onSeek, disabled = false, play
       aria-valuenow={Math.round(value)}
       aria-valuetext={formatTime(Math.round(value))}
       aria-disabled={disabled || undefined}
-      aria-label="播放进度"
+      aria-label={LABELS.PLAY_PROGRESS}
       className={cn(
         'group relative flex h-5 cursor-pointer touch-none items-center',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',

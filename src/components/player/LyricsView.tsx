@@ -4,6 +4,7 @@ import { CloudDownload, FileUp, List, ScrollText } from 'lucide-react';
 import { parseLrc, type LrcLine } from '@/lib/lyrics';
 import { usePlayer } from '@/lib/player-context';
 import { cn } from '@/lib/utils';
+import { LABELS, STATES } from '@/lib/strings';
 
 const OFFSET_KEY = 'endfield-player:lyric-offset';
 const OFFSET_STEPS = [-1, -0.5, 0.5, 1] as const;
@@ -121,7 +122,7 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
         <span className="font-mono text-[10px] tracking-[0.3em] text-destructive">
           LYRIC STREAM NOT FOUND
         </span>
-        <p className="text-base font-semibold text-foreground">这首歌没有歌词</p>
+        <p className="text-base font-semibold text-foreground">{STATES.NO_LYRICS}</p>
         <p className="px-4 font-mono text-[11px] leading-relaxed tracking-wider text-muted-foreground/60">
           文件内嵌歌词与同名 .lrc 均不可用。
           <br />
@@ -193,7 +194,7 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
           <button
             type="button"
             onClick={() => setMode('scroll')}
-            aria-label="滚动模式"
+            aria-label={LABELS.SCROLL_MODE}
             className={cn(
               'clip-corner-sm flex items-center gap-1 border px-2 py-0.5 font-mono text-[9px] tracking-widest transition-colors',
               mode === 'scroll' ? 'border-primary/60 bg-primary/15 text-primary' : 'border-border/70 text-muted-foreground',
@@ -204,7 +205,7 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
           <button
             type="button"
             onClick={() => setMode('log')}
-            aria-label="日志模式"
+            aria-label={LABELS.LOG_MODE}
             className={cn(
               'clip-corner-sm flex items-center gap-1 border px-2 py-0.5 font-mono text-[9px] tracking-widest transition-colors',
               mode === 'log' ? 'border-primary/60 bg-primary/15 text-primary' : 'border-border/70 text-muted-foreground',

@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ACTIONS } from '@/lib/strings';
 
 interface ImportButtonProps {
   onClick: () => void;
@@ -21,7 +22,7 @@ export default function ImportButton({ onClick, className = '', large = false }:
     >
       <span aria-hidden className="hazard-stripe absolute inset-x-0 bottom-0 h-[3px] opacity-70" />
       <Plus className={large ? 'h-5 w-5' : 'h-4 w-4'} strokeWidth={2.6} />
-      导入曲目
+      {ACTIONS.IMPORT}
     </button>
   );
 }

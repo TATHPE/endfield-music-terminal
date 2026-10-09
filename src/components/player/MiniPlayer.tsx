@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Pause, Play, SkipForward } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
 import { formatTime } from '@/lib/music';
+import { ACTIONS, LABELS } from '@/lib/strings';
 import CoverArt from '@/components/player/CoverArt';
 import EqBars from '@/components/player/EqBars';
 
@@ -49,7 +50,7 @@ export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
           type="button"
           onClick={onOpen}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          aria-label="打开音频输出"
+          aria-label={LABELS.OPEN_NOW_PLAYING}
         >
           <CoverArt cover={currentSong.cover} title={currentSong.title} artist={currentSong.artist} deviceAlbumId={currentSong.deviceAlbumId} devicePath={currentSong.devicePath} className="h-9 w-9" />
           <div className="min-w-0">
@@ -65,7 +66,7 @@ export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
         <button
           type="button"
           onClick={togglePlay}
-          aria-label={isPlaying ? '暂停' : '播放'}
+          aria-label={isPlaying ? ACTIONS.PAUSE : ACTIONS.PLAY}
           className="clip-corner-sm flex h-9 w-9 shrink-0 items-center justify-center border border-primary/50 bg-primary/10 text-primary transition-colors active:scale-90"
         >
           {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-[1px]" />}
@@ -73,7 +74,7 @@ export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
         <button
           type="button"
           onClick={playNext}
-          aria-label="下一首"
+          aria-label={ACTIONS.NEXT}
           className="flex h-9 w-8 shrink-0 items-center justify-center text-muted-foreground transition-colors hover:text-primary active:scale-90"
         >
           <SkipForward className="h-4 w-4" />

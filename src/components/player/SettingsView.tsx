@@ -4,6 +4,7 @@ import { BellOff, BellRing, HardDrive, RotateCcw, ScanLine, Trash2 } from 'lucid
 import { usePlayer } from '@/lib/player-context';
 import { refreshStorageUsage, useStorageUsage } from '@/hooks/use-storage-usage';
 import { cn } from '@/lib/utils';
+import { ACTIONS, LABELS, PAGES, presetColor } from '@/lib/strings';
 import {
   DEFAULT_CUSTOM,
   PRESET_COLORS,
@@ -153,7 +154,7 @@ function CustomEditor({ onUse }: { onUse?: () => void }) {
             <button
               key={c}
               type="button"
-              aria-label={`预设色 ${c}`}
+              aria-label={presetColor(c)}
               onClick={() => apply({ ...custom, [channel]: c })}
               className={cn(
                 'aspect-square border transition-transform hover:scale-110',
@@ -264,7 +265,7 @@ function TerminalBehavior() {
             step={1}
             value={cfg.scanSpeed}
             onChange={(e) => patch({ scanSpeed: Number(e.target.value) })}
-            aria-label="扫描线速度"
+            aria-label={LABELS.SCAN_SPEED}
             className="h-1 min-w-0 flex-1 accent-[var(--accent)]"
           />
           <span className="w-6 shrink-0 text-right font-mono text-[8px] tabular-nums text-muted-foreground">
@@ -386,7 +387,7 @@ function StorageSection() {
               disabled={busy}
               className="border border-border bg-card/70 px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground disabled:opacity-50"
             >
-              取消
+              {ACTIONS.CANCEL}
             </button>
             <button
               type="button"
@@ -428,7 +429,7 @@ export default function SettingsView() {
     <div className="flex flex-col gap-2 px-4 pb-3 pt-2">
       <header className="flex items-center justify-between">
         <h2 className="font-mono text-[11px] tracking-[0.3em] text-foreground">
-          SETTINGS <span className="text-muted-foreground">// 系统配置</span>
+          SETTINGS <span className="text-muted-foreground">// {PAGES.SETTINGS}</span>
         </h2>
         <span className="font-mono text-[9px] tracking-widest text-muted-foreground">CFG-04</span>
       </header>

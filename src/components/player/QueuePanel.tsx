@@ -5,6 +5,7 @@ import { Camera, ListX, Play } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
 import { formatTime } from '@/lib/music';
 import { cn } from '@/lib/utils';
+import { LABELS, PAGES, STATES, playLabel, queueRemoveLabel } from '@/lib/strings';
 import CoverArt from '@/components/player/CoverArt';
 import EqBars from '@/components/player/EqBars';
 
@@ -20,7 +21,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
   const activeName =
     activeQueueId === null
       ? '全部曲目'
-      : playlists.find((p) => p.id === activeQueueId)?.name ?? '未知清单';
+      : playlists.find((p) => p.id === activeQueueId)?.name ?? STATES.UNKNOWN_QUEUE;
 
   return createPortal(
     <AnimatePresence>
@@ -44,7 +45,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
             transition={{ type: 'spring', damping: 30, stiffness: 340 }}
             className="fixed inset-x-0 bottom-0 z-[90] mx-auto max-w-[430px]"
             role="dialog"
-            aria-label="播放队列"
+            aria-label={PAGES.QUEUE}
           >
             <div className="clip-corner relative flex max-h-[72vh] flex-col border-t border-primary/40 bg-card">
               {/* header */}
@@ -67,7 +68,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
                   <button
                     type="button"
                     onClick={onClose}
-                    aria-label="关闭队列"
+                    aria-label={LABELS.CLOSE_QUEUE}
                     className="clip-corner-sm flex items-center gap-1.5 border border-border bg-secondary px-2.5 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-foreground"
                   >
                     CLOSE
@@ -80,7 +81,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
                 <div className="flex flex-col items-center gap-3 py-14 text-center">
                   <ListX className="h-8 w-8 text-muted-foreground/40" strokeWidth={1.4} />
                   <p className="font-mono text-xs tracking-widest text-muted-foreground/70">
-                    队列为空 — 请先导入曲目
+                    {STATES.EMPTY_QUEUE}
                   </p>
                 </div>
               ) : (
@@ -92,7 +93,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
                         <button
                           type="button"
                           onClick={() => playSong(song.id)}
-                          aria-label={`播放 ${song.title}`}
+                          aria-label={playLabel(song.title)}
                           className={cn(
                             'flex min-w-0 flex-1 items-center gap-2.5 border-l-2 px-2 py-1.5 text-left transition-colors',
                             current
@@ -131,7 +132,7 @@ export default function QueuePanel({ open, onClose }: QueuePanelProps) {
                         <button
                           type="button"
                           onClick={() => removeFromQueue(song.id)}
-                          aria-label={`从队列移除 ${song.title}`}
+                          aria-label={queueRemoveLabel(song.title)}
                           className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-destructive"
                         >
                           <ListX className="h-3.5 w-3.5" />

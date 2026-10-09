@@ -17,6 +17,7 @@ import {
 import { usePlayer } from '@/lib/player-context';
 import { formatClock, formatCodec, formatTime } from '@/lib/music';
 import { cn } from '@/lib/utils';
+import { ACTIONS, LABELS, PAGES, STATES, playbackMode } from '@/lib/strings';
 import CoverArt from '@/components/player/CoverArt';
 import CornerFrame from '@/components/player/CornerFrame';
 import HazardStrip from '@/components/player/HazardStrip';
@@ -81,7 +82,7 @@ export default function NowPlayingView() {
       <div className="flex flex-col items-center justify-center gap-4 px-6 py-20 text-center">
         <div aria-hidden className="hazard-stripe h-1 w-24 opacity-70" />
         <Music className="h-10 w-10 text-primary/70" strokeWidth={1.4} />
-        <p className="text-base font-semibold text-foreground">没有正在播放的曲目</p>
+        <p className="text-base font-semibold text-foreground">{STATES.NO_TRACK_PLAYING}</p>
         <p className="font-mono text-[11px] tracking-widest text-muted-foreground">
           前往介质库导入本地音频并选择曲目开始播放
         </p>
@@ -105,7 +106,7 @@ export default function NowPlayingView() {
           <p className="font-mono text-[10px] tracking-[0.28em] text-primary">
             AUDIO TERMINAL // OUTPUT STREAM [AUD-03]
           </p>
-          <h1 className="mt-0.5 text-2xl font-bold tracking-wide text-foreground">音频输出</h1>
+          <h1 className="mt-0.5 text-2xl font-bold tracking-wide text-foreground">{PAGES.NOW_PLAYING}</h1>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <button
@@ -126,7 +127,7 @@ export default function NowPlayingView() {
           <button
             type="button"
             onClick={() => setQueueOpen(true)}
-            aria-label="打开播放队列"
+            aria-label={LABELS.OPEN_QUEUE}
             className="clip-corner-sm flex shrink-0 items-center gap-1.5 border border-border bg-secondary px-2.5 py-1.5 font-mono text-[10px] tracking-widest text-muted-foreground transition-colors hover:text-primary"
           >
             <ListOrdered className="h-3.5 w-3.5" />
@@ -255,7 +256,7 @@ export default function NowPlayingView() {
         <button
           type="button"
           onClick={cycleMode}
-          aria-label={`播放模式：${modeLabel}`}
+          aria-label={playbackMode(modeLabel)}
           title={modeLabel}
           className={cn(
             'clip-corner-sm flex h-11 w-11 shrink-0 items-center justify-center border transition-colors active:scale-90',
@@ -270,7 +271,7 @@ export default function NowPlayingView() {
         <button
           type="button"
           onClick={playPrev}
-          aria-label="上一首"
+          aria-label={ACTIONS.PREV}
           className="clip-corner-sm flex h-11 w-11 items-center justify-center border border-border bg-card/60 text-foreground transition-colors hover:text-primary active:scale-90"
         >
           <SkipBack className="h-[22px] w-[22px]" />
@@ -279,7 +280,7 @@ export default function NowPlayingView() {
         <button
           type="button"
           onClick={togglePlay}
-          aria-label={isPlaying ? '暂停' : '播放'}
+          aria-label={isPlaying ? ACTIONS.PAUSE : ACTIONS.PLAY}
           className="clip-corner-lg mx-1 flex h-14 w-14 items-center justify-center bg-primary text-primary-foreground shadow-[0_0_24px_rgba(242,194,0,0.22)] transition-transform active:scale-90"
         >
           {isPlaying ? <Pause className="h-7 w-7" /> : <Play className="h-7 w-7 translate-x-[2px]" />}
@@ -288,7 +289,7 @@ export default function NowPlayingView() {
         <button
           type="button"
           onClick={playNext}
-          aria-label="下一首"
+          aria-label={ACTIONS.NEXT}
           className="clip-corner-sm flex h-11 w-11 items-center justify-center border border-border bg-card/60 text-foreground transition-colors hover:text-primary active:scale-90"
         >
           <SkipForward className="h-[22px] w-[22px]" />
@@ -297,7 +298,7 @@ export default function NowPlayingView() {
         <button
           type="button"
           onClick={toggleMute}
-          aria-label={mutedShown ? '取消静音' : '静音'}
+          aria-label={mutedShown ? ACTIONS.UNMUTE : ACTIONS.MUTE}
           className={cn(
             'clip-corner-sm flex h-11 w-11 items-center justify-center border transition-colors',
             mutedShown
@@ -319,7 +320,7 @@ export default function NowPlayingView() {
           step={0.02}
           value={muted ? 0 : volume}
           onChange={(e) => setVolume(Number(e.target.value))}
-          aria-label="音量"
+          aria-label={LABELS.VOLUME}
           className="h-1.5 w-full cursor-pointer"
         />
         <span className="w-9 text-right font-mono text-[10px] text-muted-foreground">

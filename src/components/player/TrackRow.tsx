@@ -2,6 +2,14 @@ import { Heart, ListPlus, Tag, Trash2 } from 'lucide-react';
 import type { ISong } from '@/lib/music';
 import { formatTime } from '@/lib/music';
 import { cn } from '@/lib/utils';
+import {
+  favoriteLabel,
+  playLabel,
+  playlistAssignLabel,
+  removeLabel,
+  tagEditLabel,
+  unfavoriteLabel,
+} from '@/lib/strings';
 import CoverArt from '@/components/player/CoverArt';
 import EqBars from '@/components/player/EqBars';
 
@@ -39,7 +47,7 @@ export default function TrackRow({
           type="button"
           onClick={onPlay}
           className="flex min-w-0 flex-1 items-center gap-3 text-left"
-          aria-label={`播放 ${song.title}`}
+          aria-label={playLabel(song.title)}
         >
           <span className="w-6 shrink-0 text-center font-mono text-[11px] text-muted-foreground">
             {isCurrent ? (
@@ -70,7 +78,7 @@ export default function TrackRow({
         <button
           type="button"
           onClick={onTag}
-          aria-label={`编辑 ${song.title} 的介质标签`}
+          aria-label={tagEditLabel(song.title)}
           className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-hint"
         >
           <Tag className={cn('h-3.5 w-3.5', song.tags && song.tags.length > 0 && 'text-hint')} />
@@ -78,7 +86,7 @@ export default function TrackRow({
         <button
           type="button"
           onClick={onToggleFavorite}
-          aria-label={song.favorited ? `取消收藏 ${song.title}` : `收藏 ${song.title}`}
+          aria-label={song.favorited ? unfavoriteLabel(song.title) : favoriteLabel(song.title)}
           className={cn(
             'shrink-0 p-1.5 transition-all active:scale-75',
             song.favorited ? 'text-primary' : 'text-muted-foreground/40 hover:text-primary',
@@ -89,7 +97,7 @@ export default function TrackRow({
         <button
           type="button"
           onClick={onAddToPlaylist}
-          aria-label={`将 ${song.title} 加入播放序列`}
+          aria-label={playlistAssignLabel(song.title)}
           className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-primary"
         >
           <ListPlus className="h-3.5 w-3.5" />
@@ -97,7 +105,7 @@ export default function TrackRow({
         <button
           type="button"
           onClick={onRemove}
-          aria-label={`移除 ${song.title}`}
+          aria-label={removeLabel(song.title)}
           className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-destructive"
         >
           <Trash2 className="h-3.5 w-3.5" />

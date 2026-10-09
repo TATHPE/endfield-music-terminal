@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { albumArtUrl, isNative } from '@/lib/media-scanner';
@@ -27,13 +27,19 @@ interface CoverArtProps {
  * MediaStore through the native bridge (cached per album id).
  */
 export default function CoverArt({ cover, title, className = '', framed = false, playing = false, deviceAlbumId, devicePath, artist }: CoverArtProps) {
-  // NOTE: the object URL is intentionally NOT revoked. Revoking in an effect
-  // races with React StrictMode's mount/unmount remount (the memoized URL is
-  // reused after the cleanup revoked it), leaving the <img> with a dead URL.
-  // Object URLs are page-scoped and released when the page unloads, which is
-  // fine for a player holding at most a handful of artwork blobs.
   const url = useMemo(() => (cover ? URL.createObjectURL(cover) : null), [cover]);
   const [deviceCover, setDeviceCover] = useState<string | null>(null);
+
+  // Release the object URL of the *previous* cover once a new one is committed.
+  // Revoking on unmount instead would race React StrictMode's mount/unmount
+  // remount (the memoized URL is reused after cleanup revoked it), so the last
+  // URL is left to the page teardown — at most one per mounted instance.
+  const prevUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    const previous = prevUrlRef.current;
+    prevUrlRef.current = url;
+    if (previous && previous !== url) URL.revokeObjectURL(previous);
+  }, [url]);
 
   useEffect(() => {
     if (url || (!deviceAlbumId && !devicePath) || !isNative()) return;

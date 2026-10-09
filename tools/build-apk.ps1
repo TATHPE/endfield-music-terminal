@@ -58,14 +58,16 @@ if ($pkgText -match '"version"\s*:\s*"([^"]+)"') { $version = $Matches[1] }
 if (-not $version) { throw 'package.json has no "version" field' }
 Write-Host "[build] version $version  |  variant $(if ($NoSongs) {'lite (no preset songs)'} else {'with preset songs'})  |  type $Type"
 
-# --- optional: park the preset songs so the web build excludes them ---------
-$songsDir = Join-Path $repo 'public\songs'
+# --- lite variant: exclude the preset songs from the web build --------------
+# The exclusion happens inside vite.capacitor.config.ts (copyPublicDir = false plus
+# a plugin that copies public/ minus songs/). The source directory is therefore
+# never moved around: an interrupted or concurrent build can no longer lose it.
 $assetSongs = Join-Path $repo 'android\app\src\main\assets\public\songs'
-$parked = Join-Path $env:TEMP ('endfield-songs-' + [guid]::NewGuid().ToString('N'))
-$parkedFlag = $false
 if ($NoSongs) {
-  if (Test-Path -LiteralPath $songsDir) { Move-Item -LiteralPath $songsDir -Destination $parked -Force; $parkedFlag = $true; Write-Host '[build] public/songs parked away (lite)' }
+  $env:ENDFIELD_LITE = '1'
   if (Test-Path -LiteralPath $assetSongs) { Remove-Item -LiteralPath $assetSongs -Recurse -Force; Write-Host '[build] removed stale songs from the Android assets' }
+} else {
+  Remove-Item Env:\ENDFIELD_LITE -ErrorAction SilentlyContinue
 }
 
 try {
@@ -112,9 +114,5 @@ try {
   }
   Write-Host '[build] done'
 } finally {
-  if ($parkedFlag -and (Test-Path -LiteralPath $parked)) {
-    if (Test-Path -LiteralPath $songsDir) { Remove-Item -LiteralPath $songsDir -Recurse -Force }
-    Move-Item -LiteralPath $parked -Destination $songsDir -Force
-    Write-Host '[build] public/songs restored'
-  }
+  Remove-Item Env:\ENDFIELD_LITE -ErrorAction SilentlyContinue
 }
