@@ -166,6 +166,9 @@ gradle assembleDebug
 pwsh tools/build-apk.ps1                  # 完整版（要求 public/songs 内有歌曲资产）
 pwsh tools/build-apk.ps1 -NoSongs         # 无歌曲版（R8 压缩后约 2 MB，无预置曲库）
 pwsh tools/build-apk.ps1 -Type both -OutDir D:\out
+
+# 重新生成应用图标（改 design 参数后覆写 res/mipmap-* 与 public/favicon.png）
+python tools/make-icon.py --out <输出目录> --variant eq
 ```
 
 - 版本号取自 `package.json` 的 `version`，`versionCode` 自动推导为 `主 × 10000 + 次 × 100 + 修`（`1.4.3` → `10403`），也可用 `-PappVersionName=` / `-PappVersionCode=` 覆盖
