@@ -1,9 +1,10 @@
 // EXPORTS: SearchView
 import { useMemo, useRef, useState } from 'react';
-import { ChevronDown, Heart, ListMusic, Play, Search, X } from 'lucide-react';
+import { ChevronDown, Heart, ListMusic, ListPlus, Play, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlayer } from '@/lib/player-context';
 import HazardStrip from '@/components/player/HazardStrip';
+import PlaylistAddSheet from '@/components/player/PlaylistAddSheet';
 import { parseQuery, searchLibrary } from '@/lib/search';
 
 function fmt(sec: number): string {
@@ -19,6 +20,8 @@ export default function SearchView() {
   const { songs, playlists, playSong, playPlaylist, currentId, isPlaying, toggleFavorite } = usePlayer();
   const [query, setQuery] = useState('');
   const [syntaxOpen, setSyntaxOpen] = useState(false);
+  /** song id whose 「加入播放序列」 sheet is open */
+  const [addTarget, setAddTarget] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const q = query.trim();
@@ -188,6 +191,14 @@ export default function SearchView() {
                     >
                       <Heart className="h-3.5 w-3.5" fill={s.favorited ? 'currentColor' : 'none'} />
                     </button>
+                    <button
+                      type="button"
+                      aria-label={`把 ${s.title} 加入播放序列`}
+                      onClick={() => setAddTarget(s.id)}
+                      className="shrink-0 p-1 text-muted-foreground transition-colors hover:text-accent"
+                    >
+                      <ListPlus className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 );
               })}
@@ -195,6 +206,12 @@ export default function SearchView() {
           )}
         </div>
       )}
+
+      <PlaylistAddSheet
+        open={addTarget !== null}
+        songId={addTarget}
+        onClose={() => setAddTarget(null)}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { formatTime } from '@/lib/music';
 
 interface ProgressBarProps {
   /** seconds */
@@ -35,19 +36,45 @@ export default function ProgressBar({ value, max, onSeek, disabled = false, play
     onSeek(r * max);
   };
 
+  /** Keyboard seek: ±5s (Shift ±15s); Home / End jump to the ends. */
+  const nudge = (dir: 1 | -1, big: boolean) => {
+    if (disabled || max <= 0) return;
+    const delta = (big ? 15 : 5) * dir;
+    onSeek(Math.min(max, Math.max(0, value + delta)));
+  };
+
   return (
     <div
       ref={trackRef}
       role="slider"
+      tabIndex={disabled ? -1 : 0}
       aria-valuemin={0}
       aria-valuemax={Math.round(max)}
       aria-valuenow={Math.round(value)}
+      aria-valuetext={formatTime(Math.round(value))}
+      aria-disabled={disabled || undefined}
       aria-label="播放进度"
       className={cn(
         'group relative flex h-5 cursor-pointer touch-none items-center',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
         disabled && 'cursor-default opacity-60',
         className,
       )}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          nudge(-1, e.shiftKey);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          nudge(1, e.shiftKey);
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          onSeek(0);
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          onSeek(max);
+        }
+      }}
       onPointerDown={(e) => {
         if (disabled) return;
         draggingRef.current = true;

@@ -209,12 +209,26 @@ export async function fetchItunesCover(
   if (cleanAlbum) queries.push(cleanAlbum);
   if (title) queries.push(cleanArtist ? `${cleanArtist} ${title}` : title);
 
+  /** Hard timeout on top of the caller's signal — the iTunes API can hang. */
+  const fetchWithTimeout = async (url: string, ms: number): Promise<Response> => {
+    const ctrl = new AbortController();
+    const onAbort = () => ctrl.abort();
+    signal?.addEventListener('abort', onAbort, { once: true });
+    const timer = setTimeout(() => ctrl.abort(), ms);
+    try {
+      return await fetch(url, { signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+    }
+  };
+
   for (const q of queries) {
     try {
       const term = encodeURIComponent(q.slice(0, 120));
-      const res = await fetch(
+      const res = await fetchWithTimeout(
         `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=8`,
-        { signal },
+        8000,
       );
       if (!res.ok) continue;
       const data = (await res.json()) as { results?: ItunesResult[] };
@@ -231,7 +245,7 @@ export async function fetchItunesCover(
       const art = hit?.artworkUrl100;
       if (!art) continue;
       const hiRes = art.replace('100x100bb', '600x600bb');
-      const img = await fetch(hiRes, { signal });
+      const img = await fetchWithTimeout(hiRes, 10000);
       if (!img.ok) continue;
       return await img.blob();
     } catch {

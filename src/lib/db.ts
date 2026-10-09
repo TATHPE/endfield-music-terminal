@@ -35,6 +35,24 @@ function getDb() {
           store.createIndex('createdAt', 'createdAt');
         }
       },
+      // Another context still holds an older version open, so the upgrade waits.
+      // Surfacing it beats hanging silently on a locked database.
+      blocked() {
+        console.warn('[db] upgrade blocked — another context has the database open');
+      },
+      // We are the ones blocking an upgrade elsewhere: release the connection and
+      // drop the cache, so the next call reopens at the newer version.
+      blocking() {
+        console.warn('[db] closing connection so another context can upgrade');
+        const pending = dbPromise;
+        dbPromise = null;
+        void pending?.then((db) => db.close()).catch(() => {});
+      },
+      // The browser closed the connection (storage pressure or eviction).
+      terminated() {
+        console.warn('[db] connection terminated by the browser');
+        dbPromise = null;
+      },
     });
   }
   return dbPromise;
