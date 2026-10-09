@@ -149,7 +149,14 @@ gradle assembleDebug
 - 请自行确保所填地址来源合法、且你有权访问与播放；因来源不当产生的后果由使用者自负
 - 不支持 `m3u8` / `mpd` 播放列表（HLS / DASH）：安卓 WebView 的 `<audio>` 没有原生 HLS 支持，已在输入时直接拦下并给出提示
 - 需要登录 Cookie、防盗链签名，或未开放 CORS 的地址通常无法播放（界面会提示「音频加载失败」）
-- 合法公开资源（自行获取具体直链，本程序不代你检索）：Internet Archive（archive.org）、LibriVox（librivox.org）等公共领域音频
+- **到哪里找可以直接粘贴的地址**（本程序不代你检索、也不内置任何源）：
+  - **Internet Archive**（archive.org）：打开一个条目页 → 右侧「DOWNLOAD OPTIONS」→ 对某个 `.mp3` 右键「复制链接」；直链形如
+    `https://archive.org/download/<条目ID>/<文件名>.mp3`
+  - **LibriVox**（librivox.org）：有声书条目页提供分章 mp3（托管在 archive.org 上），同样右键复制链接即可
+  - **维基共享资源**（commons.wikimedia.org）：公共领域/自由许可的音频文件页有「原始文件」直链，形如
+    `https://upload.wikimedia.org/wikipedia/commons/...`
+  - 以上都是**公共领域或自由许可**资源；具体条目是否可播放取决于该站点当时是否可达、是否允许跨域访问
+- 说明：README 里不列具体曲目直链——链接会失效、也可能被误当成「内置资源」；请按上面的方式自行复制你信任的地址
 
 ### 一键构建脚本（本机）
 

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { PLAY_MODES, formatClock, formatCodec, formatTime, makeId } from '@/lib/music';
+import {
+  PLAY_MODES,
+  formatClock,
+  formatCodec,
+  formatTime,
+  makeId,
+  shouldUpdateDuration,
+} from '@/lib/music';
 
 describe('formatTime (inline readouts)', () => {
   it('formats as m:ss', () => {
@@ -38,6 +45,30 @@ describe('formatCodec', () => {
   it('falls back to an upper-cased, truncated label', () => {
     expect(formatCodec('')).toBe('AUDIO');
     expect(formatCodec('some-unknown-codec')).toBe('SOME-UNKNOWN');
+  });
+});
+
+describe('shouldUpdateDuration', () => {
+  it('fills in an unknown duration', () => {
+    expect(shouldUpdateDuration(0, 231)).toBe(true);
+  });
+
+  it('keeps an already-correct value', () => {
+    expect(shouldUpdateDuration(231, 231)).toBe(false);
+    expect(shouldUpdateDuration(231, 232.5)).toBe(false);
+  });
+
+  it('corrects a value that is clearly off', () => {
+    expect(shouldUpdateDuration(200, 231)).toBe(true);
+    expect(shouldUpdateDuration(231, 200)).toBe(true);
+  });
+
+  it('ignores unusable measurements', () => {
+    expect(shouldUpdateDuration(0, 0)).toBe(false);
+    expect(shouldUpdateDuration(0, Number.NaN)).toBe(false);
+    // 无穷大 / 负数都不是可用时长（直播流常常报 Infinity）
+    expect(shouldUpdateDuration(0, Number.POSITIVE_INFINITY)).toBe(false);
+    expect(shouldUpdateDuration(0, -5)).toBe(false);
   });
 });
 

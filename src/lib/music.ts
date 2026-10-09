@@ -1,4 +1,5 @@
-// EXPORTS: ISong, PlayMode, PLAY_MODES, SONG_STORE_NS, formatTime, formatClock, formatCodec, makeId
+// EXPORTS: ISong, PlayMode, PLAY_MODES, SONG_STORE_NS, formatTime, formatClock, formatCodec,
+//          shouldUpdateDuration, makeId
 export interface ISong {
   id: string;
   title: string;
@@ -68,6 +69,17 @@ export function formatCodec(raw: string): string {
   if (upper.includes('APE')) return 'APE';
   if (upper.includes('WM')) return 'WMA';
   return upper.slice(0, 12) || 'AUDIO';
+}
+
+/**
+ * Decide whether a duration measured by the media element should overwrite the
+ * stored one. Online streams start out unknown (0); label-derived values are
+ * trusted unless they are clearly off, so we never fight good metadata.
+ */
+export function shouldUpdateDuration(stored: number, measured: number): boolean {
+  if (!Number.isFinite(measured) || measured <= 0) return false;
+  if (!Number.isFinite(stored) || stored <= 0) return true;
+  return Math.abs(stored - measured) > 2;
 }
 
 export function makeId(): string {

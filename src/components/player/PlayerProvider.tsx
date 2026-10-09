@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { ISong, PlayMode } from '@/lib/music';
-import { PLAY_MODES, makeId } from '@/lib/music';
+import { PLAY_MODES, makeId, shouldUpdateDuration } from '@/lib/music';
 import type { Playlist } from '@/lib/playlists';
 import { FAVORITES_ID, makePlaylistId } from '@/lib/playlists';
 import {
@@ -712,6 +712,24 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     [appendLog],
   );
 
+  /** 把媒体元素实测到的时长回写进介质库：在线流的时长本来未知（0），播放时才知道。
+   *  只有明显不同（>2s）才覆盖，避免把可靠的标签值改坏。 */
+  const applyMeasuredDuration = useCallback(
+    (seconds: number) => {
+      if (!Number.isFinite(seconds) || seconds <= 0) return;
+      setDuration(seconds);
+      const id = currentIdRef.current;
+      if (!id) return;
+      const song = songs.find((s) => s.id === id);
+      if (!song || !shouldUpdateDuration(song.duration, seconds)) return;
+      const updated = { ...song, duration: Math.round(seconds) };
+      void putSong(updated);
+      setSongs((prev) => prev.map((s) => (s.id === id ? updated : s)));
+      appendLog(`DURATION SYNCED — ${Math.round(seconds)}s`, 'trace');
+    },
+    [appendLog, songs],
+  );
+
   /** Delete every imported / scanned song and drop the device-audio cache.
    *  Bundled preset tracks stay in place, so nothing has to be reloaded. */
   const clearLibrary = useCallback(async () => {
@@ -823,8 +841,8 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
           if (Date.now() - seekGuardRef.current < 400) return;
           setCurrentTime(e.currentTarget.currentTime);
         }}
-        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration || 0)}
-        onDurationChange={(e) => setDuration(e.currentTarget.duration || 0)}
+        onLoadedMetadata={(e) => applyMeasuredDuration(e.currentTarget.duration)}
+        onDurationChange={(e) => applyMeasuredDuration(e.currentTarget.duration)}
         onEnded={handleEnded}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
