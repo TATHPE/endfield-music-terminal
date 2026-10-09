@@ -46,7 +46,9 @@ describe('parseQuery', () => {
   });
 
   it('treats unsupported syntax as a keyword', () => {
-    expect(parseQuery('duration:>120')[0]).toMatchObject({ kind: 'keyword', value: 'duration:>120' });
+    expect(parseQuery('duration:>120')[0]).toMatchObject({ kind: 'duration', value: '>', maxSec: 120 });
+    // a missing comparison operator is not advanced syntax
+    expect(parseQuery('duration:120')[0]).toMatchObject({ kind: 'keyword', value: 'duration:120' });
     expect(parseQuery('artist:')[0]).toMatchObject({ kind: 'keyword', value: 'artist:' });
   });
 
@@ -66,11 +68,14 @@ describe('songMatches', () => {
     expect(songMatches(s, { kind: 'tag', value: '环境音', maxSec: 0 })).toBe(false);
   });
 
-  it('matches duration only for known, shorter tracks', () => {
-    expect(songMatches(s, { kind: 'duration', value: '', maxSec: 300 })).toBe(true);
-    expect(songMatches(s, { kind: 'duration', value: '', maxSec: 60 })).toBe(false);
-    // unknown duration (0) never matches a "shorter than" filter
-    expect(songMatches(song({ duration: 0 }), { kind: 'duration', value: '', maxSec: 600 })).toBe(false);
+  it('matches duration in both directions, for known lengths only', () => {
+    expect(songMatches(s, { kind: 'duration', value: '<', maxSec: 300 })).toBe(true);
+    expect(songMatches(s, { kind: 'duration', value: '<', maxSec: 60 })).toBe(false);
+    expect(songMatches(s, { kind: 'duration', value: '>', maxSec: 120 })).toBe(true);
+    expect(songMatches(s, { kind: 'duration', value: '>', maxSec: 300 })).toBe(false);
+    // unknown duration (0) never matches a length filter
+    expect(songMatches(song({ duration: 0 }), { kind: 'duration', value: '<', maxSec: 600 })).toBe(false);
+    expect(songMatches(song({ duration: 0 }), { kind: 'duration', value: '>', maxSec: 60 })).toBe(false);
   });
 
   it('matches bare keywords against title, artist and album', () => {

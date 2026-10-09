@@ -13,10 +13,10 @@ export interface QueryToken {
  * Split a raw query into advanced-search tokens.
  *
  * - `artist:` / `album:` / `tag:` match substrings (case-insensitive)
- * - `duration:<N` matches tracks shorter than N seconds
+ * - `duration:<N` / `duration:>N` matches tracks shorter / longer than N seconds
  * - bare words match title / artist / album
  *
- * Tokens are ANDed together. Anything else (e.g. `duration:>N`) falls back to a
+ * Tokens are ANDed together. Anything else (e.g. `duration:N`) falls back to a
  * plain keyword so the query still does something sensible.
  */
 export function parseQuery(raw: string): QueryToken[] {
@@ -38,9 +38,10 @@ export function parseQuery(raw: string): QueryToken[] {
       tokens.push({ kind: 'tag', value: tag[1].toLowerCase(), maxSec: 0 });
       continue;
     }
-    const dur = part.match(/^duration:<(\d+)$/i);
+    const dur = part.match(/^duration:([<>])(\d+)$/i);
     if (dur) {
-      tokens.push({ kind: 'duration', value: '', maxSec: Number(dur[1]) });
+      // `value` carries the comparison operator ('<' or '>').
+      tokens.push({ kind: 'duration', value: dur[1], maxSec: Number(dur[2]) });
       continue;
     }
     tokens.push({ kind: 'keyword', value: part.toLowerCase(), maxSec: 0 });
@@ -57,7 +58,9 @@ export function songMatches(song: ISong, token: QueryToken): boolean {
     case 'tag':
       return (song.tags ?? []).some((t) => t.toLowerCase().includes(token.value));
     case 'duration':
-      return song.duration > 0 && song.duration < token.maxSec;
+      // Unknown durations (0) never match a length filter.
+      if (song.duration <= 0) return false;
+      return token.value === '>' ? song.duration > token.maxSec : song.duration < token.maxSec;
     default:
       return (
         song.title.toLowerCase().includes(token.value) ||

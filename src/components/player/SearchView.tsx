@@ -14,7 +14,7 @@ function fmt(sec: number): string {
 }
 
 /** Global search — filters the local media library and playback sequences
- *  by keyword or the advanced syntax (artist:/album:/tag:/duration:<N). */
+ *  by keyword or the advanced syntax (artist:/album:/tag:/duration:<>N). */
 export default function SearchView() {
   const { songs, playlists, playSong, playPlaylist, currentId, isPlaying, toggleFavorite } = usePlayer();
   const [query, setQuery] = useState('');
@@ -87,6 +87,7 @@ export default function SearchView() {
           <p>album:xxx — 按专辑筛选</p>
           <p>tag:战场记录 — 按介质标签筛选</p>
           <p>duration:&lt;120 — 时长小于 120 秒</p>
+          <p>duration:&gt;300 — 时长大于 300 秒</p>
           <p className="mt-1 text-foreground/50">多个条件用空格组合（AND 关系）</p>
         </div>
       )}
