@@ -27,6 +27,7 @@ import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 import { shouldLog, type LogLevel } from '@/lib/terminal-config';
 
 const VOLUME_KEY = 'endfield-player:volume';
+const MUTED_KEY = 'endfield-player:muted';
 const MODE_KEY = 'endfield-player:mode';
 const SPECTRUM_KEY = 'endfield-player:spectrum';
 const PRESET_MANIFEST_URL = '/songs/manifest.json';
@@ -98,7 +99,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [mode, setMode] = useState<PlayMode>(() => readStored<PlayMode>(MODE_KEY, 'sequence'));
   const [volume, setVolumeState] = useState<number>(() => readStored<number>(VOLUME_KEY, 0.8));
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState<boolean>(() => readStored<boolean>(MUTED_KEY, false));
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [scanLogs, setScanLogs] = useState<string[]>([]);
@@ -115,6 +116,13 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     spectrumOnRef.current = spectrumOn;
   }, [spectrumOn]);
+  // Apply the persisted volume / mute to the media element once it exists.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = muted ? 0 : volume;
+    audio.muted = muted;
+  }, [muted, volume]);
   // Guards async playback setup: only applies the result if the same song is
   // still the requested one (user may have tapped another track meanwhile).
   const currentIdRef = useRef<string | null>(null);
@@ -386,9 +394,12 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         // WebViewAssetLoader stream is not reliably Range-capable on ColorOS,
         // which made lock-screen scrubbers snap back. Oversized files fall back
         // to the asset-loader URL.
-        void loadDeviceAudio(song.devicePath).then((src) => {
+        void loadDeviceAudio(song.devicePath).then(({ url, oversized }) => {
+          if (oversized && shouldLog('warn')) {
+            appendLog(`MEDIA > 50 MB — STREAM FALLBACK: ${song.fileName}`, 'warn');
+          }
           if (audioRef.current && currentIdRef.current === id) {
-            audioRef.current.src = src;
+            audioRef.current.src = url;
             void audioRef.current.play().catch((err: unknown) => {
               const name = err instanceof Error ? err.name : String(err);
               setIsPlaying(false);
@@ -404,7 +415,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
     },
-    [songs, playlists, volume, muted],
+    [songs, playlists, volume, muted, appendLog],
   );
 
   const togglePlay = useCallback(() => {
@@ -498,8 +509,15 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current;
     if (audio) audio.volume = clamped;
     setVolumeState(clamped);
-    if (clamped > 0 && audio) audio.muted = false;
-    if (clamped > 0) setMuted(false);
+    if (clamped > 0) {
+      if (audio) audio.muted = false;
+      setMuted(false);
+      try {
+        localStorage.setItem(MUTED_KEY, JSON.stringify(false));
+      } catch {
+        /* storage unavailable */
+      }
+    }
     try {
       localStorage.setItem(VOLUME_KEY, JSON.stringify(clamped));
     } catch {
@@ -508,11 +526,20 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleMute = useCallback(() => {
+    const next = !muted;
+    setMuted(next);
     const audio = audioRef.current;
-    if (!audio) return;
-    audio.muted = !audio.muted;
-    setMuted(audio.muted);
-  }, []);
+    if (audio) {
+      audio.muted = next;
+      // Volume is the single source of truth for loudness, so mute drives it too.
+      audio.volume = next ? 0 : volume;
+    }
+    try {
+      localStorage.setItem(MUTED_KEY, JSON.stringify(next));
+    } catch {
+      /* storage unavailable */
+    }
+  }, [muted, volume]);
 
   const importFiles = useCallback(
     async (files: FileList | File[]) => {

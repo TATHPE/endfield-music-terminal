@@ -1,7 +1,7 @@
 // EXPORTS: PlaylistsView
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronDown, Heart, ListPlus, Play, Plus, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, Heart, ListPlus, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
 import { FAVORITES_ID } from '@/lib/playlists';
 import { formatTime } from '@/lib/music';
@@ -21,6 +21,7 @@ interface PlaylistCardProps {
   onPlaySong: (id: string) => void;
   onPlayPlaylist: (id: string) => void;
   onDeletePlaylist: (id: string) => void;
+  onRenamePlaylist: (id: string, name: string) => void;
   onRemoveFromPlaylist: (playlistId: string, songId: string) => void;
   onToggleFavorite: (id: string) => void;
 }
@@ -35,6 +36,7 @@ function PlaylistCard({
   onPlaySong,
   onPlayPlaylist,
   onDeletePlaylist,
+  onRenamePlaylist,
   onRemoveFromPlaylist,
   onToggleFavorite,
 }: PlaylistCardProps) {
@@ -44,6 +46,14 @@ function PlaylistCard({
     .map((id) => songs.find((s) => s.id === id))
     .filter((s): s is ISong => Boolean(s));
   const isActiveContext = activeQueueId === pl.id;
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState(pl.name);
+
+  const commitRename = () => {
+    const next = nameDraft.trim();
+    if (next && next !== pl.name) onRenamePlaylist(pl.id, next);
+    setRenaming(false);
+  };
 
   return (
     <motion.li
@@ -57,6 +67,44 @@ function PlaylistCard({
         isActiveContext ? 'border-primary' : 'border-transparent',
       )}
     >
+      {renaming ? (
+        <div className="flex items-center gap-2 px-3 py-2.5">
+          <input
+            autoFocus
+            value={nameDraft}
+            onChange={(e) => setNameDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitRename();
+              if (e.key === 'Escape') {
+                setNameDraft(pl.name);
+                setRenaming(false);
+              }
+            }}
+            maxLength={32}
+            aria-label={`重命名播放序列 ${pl.name}`}
+            className="clip-corner-sm min-w-0 flex-1 border border-primary/60 bg-secondary px-2 py-1.5 font-mono text-[12px] text-foreground outline-none"
+          />
+          <button
+            type="button"
+            onClick={commitRename}
+            aria-label="确认重命名"
+            className="clip-corner-sm flex h-9 w-9 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-transform active:scale-95"
+          >
+            <Check className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setNameDraft(pl.name);
+              setRenaming(false);
+            }}
+            aria-label="取消重命名"
+            className="shrink-0 p-1.5 font-mono text-base leading-none text-muted-foreground transition-colors hover:text-foreground"
+          >
+            ×
+          </button>
+        </div>
+      ) : (
       <div className="flex items-center gap-2 px-3 py-2.5">
         <button
           type="button"
@@ -98,16 +146,30 @@ function PlaylistCard({
         </button>
 
         {!isFav && (
-          <button
-            type="button"
-            onClick={() => onDeletePlaylist(pl.id)}
-            aria-label={`删除播放序列 ${pl.name}`}
-            className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setNameDraft(pl.name);
+                setRenaming(true);
+              }}
+              aria-label={`重命名播放序列 ${pl.name}`}
+              className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-primary"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onDeletePlaylist(pl.id)}
+              aria-label={`删除播放序列 ${pl.name}`}
+              className="shrink-0 p-1.5 text-muted-foreground/40 transition-colors hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </>
         )}
       </div>
+      )}
 
       <AnimatePresence initial={false}>
         {isOpen && (
@@ -204,6 +266,7 @@ export default function PlaylistsView() {
     createPlaylist,
     deletePlaylist,
     removeFromPlaylist,
+    renamePlaylist,
     toggleFavorite,
   } = usePlayer();
   const [draft, setDraft] = useState('');
@@ -228,6 +291,7 @@ export default function PlaylistsView() {
     onPlaySong: playSong,
     onPlayPlaylist: playPlaylist,
     onDeletePlaylist: deletePlaylist,
+    onRenamePlaylist: renamePlaylist,
     onRemoveFromPlaylist: removeFromPlaylist,
     onToggleFavorite: toggleFavorite,
   };

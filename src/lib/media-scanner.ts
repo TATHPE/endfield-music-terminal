@@ -75,8 +75,15 @@ export function albumArtUrl(albumId: number, path?: string, title?: string, arti
 // URLs of evicted entries are revoked.
 const AUDIO_CACHE_MAX_BYTES = 96 * 1024 * 1024;
 
+/** What loading a device track produced: a blob URL, or a streaming fallback. */
+export interface DeviceAudioSource {
+  url: string;
+  /** true when the file exceeded the native read-bridge cap (streaming fallback) */
+  oversized: boolean;
+}
+
 interface AudioCacheEntry {
-  promise: Promise<string>;
+  promise: Promise<DeviceAudioSource>;
   /** decoded size in bytes; 0 while unresolved or when falling back to deviceUrl() */
   bytes: number;
   /** true only for object URLs we created and therefore must revoke */
@@ -103,11 +110,11 @@ function evictAudioCache() {
     if (!entry.ownUrl || entry.bytes === 0) continue;
     audioCache.delete(key);
     audioCacheBytes -= entry.bytes;
-    void entry.promise.then((url) => URL.revokeObjectURL(url)).catch(() => {});
+    void entry.promise.then((src) => URL.revokeObjectURL(src.url)).catch(() => {});
   }
 }
 
-export function loadDeviceAudio(path: string): Promise<string> {
+export function loadDeviceAudio(path: string): Promise<DeviceAudioSource> {
   const cached = audioCache.get(path);
   if (cached) {
     // Refresh the LRU position so the track playing right now survives eviction.
@@ -115,18 +122,24 @@ export function loadDeviceAudio(path: string): Promise<string> {
     audioCache.set(path, cached);
     return cached.promise;
   }
-  const entry: AudioCacheEntry = { promise: Promise.resolve(''), bytes: 0, ownUrl: false };
+  const entry: AudioCacheEntry = {
+    promise: Promise.resolve({ url: '', oversized: false }),
+    bytes: 0,
+    ownUrl: false,
+  };
   entry.promise = MediaScanner.getAudioData({ path })
     .then((r) => {
-      if (!r.base64 || !r.mime || r.tooLarge) return deviceUrl(path);
+      if (!r.base64 || !r.mime) return { url: deviceUrl(path), oversized: false };
+      // Above the native cap the player streams the file instead of buffering it.
+      if (r.tooLarge) return { url: deviceUrl(path), oversized: true };
       const bytes = base64ToBytes(r.base64);
       entry.bytes = bytes.byteLength;
       entry.ownUrl = true;
       audioCacheBytes += entry.bytes;
       evictAudioCache();
-      return URL.createObjectURL(new Blob([bytes], { type: r.mime }));
+      return { url: URL.createObjectURL(new Blob([bytes], { type: r.mime })), oversized: false };
     })
-    .catch(() => deviceUrl(path));
+    .catch(() => ({ url: deviceUrl(path), oversized: false }));
   audioCache.set(path, entry);
   return entry.promise;
 }
@@ -135,7 +148,7 @@ export function loadDeviceAudio(path: string): Promise<string> {
 export function clearDeviceAudioCache() {
   for (const entry of audioCache.values()) {
     if (!entry.ownUrl) continue;
-    void entry.promise.then((url) => URL.revokeObjectURL(url)).catch(() => {});
+    void entry.promise.then((src) => URL.revokeObjectURL(src.url)).catch(() => {});
   }
   audioCache.clear();
   audioCacheBytes = 0;
