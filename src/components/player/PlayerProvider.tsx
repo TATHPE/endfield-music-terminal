@@ -207,8 +207,36 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         return;
       }
       const tracks = manifest;
+      // A build may ship the manifest without the audio files (a fresh clone has
+      // no song assets). Probe every track so the library never lists dead
+      // entries, and fall back to "no preset songs" when nothing is playable.
+      const available = await Promise.all(
+        tracks.map(async (t) => {
+          try {
+            const res = await fetch(`/songs/${encodeURIComponent(t.file)}`, {
+              method: 'HEAD',
+              cache: 'no-store',
+            });
+            return res.ok;
+          } catch {
+            return false;
+          }
+        }),
+      );
+      const missing = available.filter((ok) => !ok).length;
+      if (missing > 0 && shouldLog('warn')) {
+        setScanLogs((prev) => [
+          ...prev.slice(-80),
+          `PRESET AUDIO MISSING — ${missing}/${tracks.length} SKIPPED`,
+        ]);
+      }
+      if (missing === tracks.length) {
+        dropStalePresets();
+        return;
+      }
       const preset: ISong[] = [];
-      for (const t of tracks) {
+      for (const [index, t] of tracks.entries()) {
+        if (!available[index]) continue;
         let cover: Blob | null = null;
           if (t.cover) {
             try {

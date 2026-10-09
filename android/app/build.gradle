@@ -6,6 +6,18 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
+// --- version: package.json is the single source of truth ---------------------
+// versionCode derives as major*10000 + minor*100 + patch (1.4.2 -> 10402);
+// both values can be overridden from CI:
+//   ./gradlew assembleRelease -PappVersionName=1.4.3 -PappVersionCode=10403
+def appVersionName = (project.findProperty('appVersionName') ?: new groovy.json.JsonSlurper().parseText(file('../../package.json').text).version ?: '0.0.0').toString()
+def appVersionParts = appVersionName.tokenize('.').collect { part ->
+    def n = 0
+    try { n = Integer.parseInt(part.trim()) } catch (NumberFormatException ignored) { n = 0 }
+    n
+}
+def appVersionCode = (project.findProperty('appVersionCode') ?: ((appVersionParts[0] ?: 0) * 10000 + (appVersionParts[1] ?: 0) * 100 + (appVersionParts[2] ?: 0))).toString().toInteger()
+
 android {
     namespace = "com.endfield.audio.terminal"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -13,8 +25,8 @@ android {
         applicationId "com.endfield.audio.terminal"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 20
-        versionName "1.4.2"
+        versionCode appVersionCode
+        versionName appVersionName
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

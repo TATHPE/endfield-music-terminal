@@ -111,6 +111,7 @@ endfield-player/
 ├── android/                 # Capacitor Android 原生工程（MediaScannerPlugin / SystemBarsPlugin、自绘启动页与图标）
 ├── public/                  # 静态资源（图标、预置曲库 manifest）
 ├── docs/                    # 界面截图与功能说明
+├── tools/                   # 本机构建脚本 build-apk.ps1 与歌曲索引生成器 gen-song-manifest.mjs
 ├── capacitor.config.ts      # Capacitor 配置（appId: com.endfield.audio.terminal）
 ├── vite.config.ts           # Web 构建配置
 └── vite.capacitor.config.ts # APK 专用构建配置（输出 dist/apk）
@@ -139,6 +140,18 @@ cd android
 gradle assembleDebug
 ```
 
+### 一键构建脚本（本机）
+
+```powershell
+pwsh tools/build-apk.ps1                  # 完整版（要求 public/songs 内有歌曲资产）
+pwsh tools/build-apk.ps1 -NoSongs         # 无歌曲版（约 4 MB，无预置曲库）
+pwsh tools/build-apk.ps1 -Type both -OutDir D:\out
+```
+
+- 版本号取自 `package.json` 的 `version`，`versionCode` 自动推导为 `主 × 10000 + 次 × 100 + 修`（`1.4.2` → `10402`），也可用 `-PappVersionName=` / `-PappVersionCode=` 覆盖
+- 预置曲库索引 `public/songs/manifest.json` **不入库**，由 `node tools/gen-song-manifest.mjs` 从本地歌曲资产生成（歌曲资产见 Release 资产包 `EndfieldSongs-v1.0.zip`）
+- `-NoSongs` 会先把 `public/songs` 临时移开再构建，因此产出的包不含预置曲库与索引
+
 ### GitHub Actions 自动构建
 
 每次 push 到 `main` 会先做类型检查与 ESLint 检查，再自动构建 debug APK，产物上传为 Actions Artifact（仓库 Actions 页面可下载最新版）。
@@ -153,12 +166,16 @@ gradle assembleDebug
 
 配置后，每次 push 的 `release` job 会自动用该密钥构建并上传正式签名 APK。
 
+### 打标签自动发版
+
+推送形如 `v1.4.3` 的标签（或在 Actions 页面手动运行 `Release` 工作流并填标签）会依次执行：类型检查与 ESLint → 用 secrets 还原签名密钥 → 构建签名 APK（版本号取自标签）→ 创建或更新对应 Release，并上传 `EndfieldMusicTerminal-v1.4.3.apk`。
+
 ## 应用信息
 
 - 应用名：终末地音乐终端
 - 包名 / applicationId：`com.endfield.audio.terminal`
 - minSdk 24 / targetSdk 36
-- Android 版本：v1.4.2（versionCode 20；锁屏拖动进度条 seek 修复 / 频谱渲染链路修复 / 终端行为开关实时生效 / 歌词瞬时精确吸附 / HyperOS·OriginOS 系统栏双通道适配）；历史版本 v1.4.1 / v1.4.0 / v1.3.9 / v1.3.8 保留在对应 Release 可下载
+- Android 版本：v1.4.2（`versionCode` 由 `package.json` 的版本推导：`1.4.2` → `10402`；锁屏拖动进度条 seek 修复 / 频谱渲染链路修复 / 终端行为开关实时生效 / 歌词瞬时精确吸附 / HyperOS·OriginOS 系统栏双通道适配）；历史版本 v1.4.1 / v1.4.0 / v1.3.9 / v1.3.8 保留在对应 Release 可下载
 
 ## License
 
