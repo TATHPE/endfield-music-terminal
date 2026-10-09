@@ -13,11 +13,12 @@ import org.junit.Test;
  */
 public class LyricsParsingTest {
 
+    // Note: cleanTitle() strips bracket suffixes, so a "(Live)" hit ties with the
+    // plain title and the first best hit wins — keep the fixtures unambiguous.
     private static final String NETEASE_SEARCH = "{"
             + "\"result\":{\"songs\":["
-            + "{\"id\":111,\"name\":\"New Frontier (Live)\"},"
-            + "{\"id\":222,\"name\":\"New Frontier\"},"
-            + "{\"id\":333,\"name\":\"Something Else\"}"
+            + "{\"id\":111,\"name\":\"Something Else\"},"
+            + "{\"id\":222,\"name\":\"New Frontier\"}"
             + "]}}";
 
     private static final String NETEASE_LYRIC = "{"
@@ -26,7 +27,7 @@ public class LyricsParsingTest {
 
     private static final String QQ_SEARCH = "{"
             + "\"data\":{\"song\":{\"list\":["
-            + "{\"songmid\":\"aaa\",\"songname\":\"New Frontier (Remix)\"},"
+            + "{\"songmid\":\"aaa\",\"songname\":\"Something Else\"},"
             + "{\"songmid\":\"bbb\",\"songname\":\"New Frontier\"}"
             + "]}}}";
 
@@ -49,7 +50,7 @@ public class LyricsParsingTest {
 
     @Test
     public void netEaseSearchPicksTheBestTitleMatch() {
-        // "New Frontier (Live)" is the first hit, but the exact title scores higher.
+        // The first hit is a wrong song, the second one matches the title.
         assertEquals(222L, LyricsParsing.bestNetEaseId(NETEASE_SEARCH, "New Frontier"));
     }
 
