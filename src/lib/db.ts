@@ -1,5 +1,6 @@
-// EXPORTS: getAllSongs, putSong, deleteSong, getAllPlaylists, putPlaylist, deletePlaylist
-import { openDB, type DBSchema } from 'idb';
+// EXPORTS: getAllSongs, putSong, deleteSong, getAllPlaylists, putPlaylist, deletePlaylist,
+//          deleteMusicDatabase
+import { deleteDB, openDB, type DBSchema } from 'idb';
 import type { ISong } from '@/lib/music';
 import type { Playlist } from '@/lib/playlists';
 
@@ -67,4 +68,17 @@ export async function putPlaylist(playlist: Playlist): Promise<void> {
 export async function deletePlaylist(id: string): Promise<void> {
   const db = await getDb();
   await db.delete('playlists', id);
+}
+
+/** Drop the whole database (used by "clear all data"). */
+export async function deleteMusicDatabase(): Promise<void> {
+  if (dbPromise) {
+    try {
+      (await dbPromise).close();
+    } catch {
+      /* already closed */
+    }
+    dbPromise = null;
+  }
+  await deleteDB(DB_NAME);
 }

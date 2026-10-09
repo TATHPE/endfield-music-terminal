@@ -1,5 +1,7 @@
 package com.endfield.audio.terminal;
 
+import com.endfield.audio.terminal.lyrics.LyricsParsing;
+
 import android.Manifest;
 import android.content.ContentResolver;
 import android.content.ContentUris;
@@ -340,51 +342,13 @@ public class MediaScannerPlugin extends Plugin {
         String enc = URLEncoder.encode(query, "UTF-8");
         String searchUrl = "https://music.163.com/api/search/get/web?csrf_token=&s=" + enc + "&type=1&limit=5";
         String searchJson = httpGet(searchUrl);
-        long id = -1;
-        if (searchJson != null) {
-            try {
-                org.json.JSONObject root = new org.json.JSONObject(searchJson);
-                org.json.JSONObject result = root.optJSONObject("result");
-                if (result != null) {
-                    org.json.JSONArray songs = result.optJSONArray("songs");
-                    if (songs != null && songs.length() > 0) {
-                        // Pick the hit whose title matches the query best instead of
-                        // blindly taking the first result (search can return wrong
-                        // albums/remixes at the top).
-                        String cleanTitle = cleanTitle(title);
-                        double best = -1;
-                        for (int i = 0; i < songs.length(); i++) {
-                            org.json.JSONObject s = songs.getJSONObject(i);
-                            String hit = s.optString("name", "");
-                            double score = titleScore(cleanTitle, cleanTitle(hit));
-                            if (score > best) {
-                                best = score;
-                                id = s.optLong("id", -1);
-                            }
-                        }
-                        if (id <= 0) {
-                            id = songs.getJSONObject(0).optLong("id", -1);
-                        }
-                    }
-                }
-            } catch (org.json.JSONException ignored) {
-            }
-        }
+        // The shape of the search payload lives in LyricsParsing (unit-tested).
+        long id = LyricsParsing.bestNetEaseId(searchJson, title);
         if (id <= 0) return null;
         String lyricUrl = "https://music.163.com/api/song/lyric?id=" + id + "&lv=-1&kv=-1&tv=-1";
         String lyricJson = httpGet(lyricUrl);
-        if (lyricJson != null) {
-            try {
-                org.json.JSONObject root = new org.json.JSONObject(lyricJson);
-                org.json.JSONObject lrc = root.optJSONObject("lrc");
-                if (lrc != null) {
-                    String lyric = lrc.optString("lyric", "");
-                    if (!lyric.isEmpty()) return lyric;
-                }
-            } catch (org.json.JSONException ignored) {
-            }
-        }
-        return null;
+        String lyric = LyricsParsing.netEaseLyric(lyricJson);
+        return (lyric != null && !lyric.trim().isEmpty()) ? lyric : null;
     }
 
     /** Tencent Music (QQ) lyric fallback: search by songmid, fetch the LRC. */
@@ -394,82 +358,25 @@ public class MediaScannerPlugin extends Plugin {
         String enc = URLEncoder.encode(query, "UTF-8");
         String searchUrl = "https://c.y.qq.com/soso/fcgi-bin/client_search_cp?format=json&p=1&n=5&w=" + enc;
         String searchJson = httpGetRef(searchUrl, "https://y.qq.com/");
-        String songmid = null;
-        if (searchJson != null) {
-            try {
-                org.json.JSONObject root = new org.json.JSONObject(searchJson);
-                org.json.JSONObject data = root.optJSONObject("data");
-                if (data != null) {
-                    org.json.JSONObject song = data.optJSONObject("song");
-                    if (song != null) {
-                        org.json.JSONArray list = song.optJSONArray("list");
-                        if (list != null && list.length() > 0) {
-                            String cleanTitle = cleanTitle(title);
-                            double best = -1;
-                            for (int i = 0; i < list.length(); i++) {
-                                org.json.JSONObject s = list.getJSONObject(i);
-                                String hit = s.optString("songname", "");
-                                double score = titleScore(cleanTitle, cleanTitle(hit));
-                                if (score > best) {
-                                    best = score;
-                                    songmid = s.optString("songmid", "");
-                                }
-                            }
-                            if (songmid == null || songmid.isEmpty()) {
-                                songmid = list.getJSONObject(0).optString("songmid", "");
-                            }
-                        }
-                    }
-                }
-            } catch (org.json.JSONException ignored) {
-            }
-        }
+        String songmid = LyricsParsing.bestQQSongMid(searchJson, title);
         if (songmid == null || songmid.isEmpty()) return null;
         String lyricUrl = "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg?format=json&songmid=" + songmid;
         String lyricJson = httpGetRef(lyricUrl, "https://y.qq.com/");
-        if (lyricJson != null) {
+        String raw = LyricsParsing.qqLyricRaw(lyricJson);
+        if (raw != null && !raw.isEmpty()) {
+            // Usually base64-encoded LRC; some builds return plain text.
             try {
-                org.json.JSONObject root = new org.json.JSONObject(lyricJson);
-                String lyric = root.optString("lyric", "");
-                if (!lyric.isEmpty()) {
-                    // Usually base64-encoded LRC; some builds return plain text.
-                    try {
-                        byte[] dec = Base64.decode(lyric, Base64.DEFAULT);
-                        String lrc = new String(dec, StandardCharsets.UTF_8);
-                        if (!lrc.trim().isEmpty()) return lrc;
-                    } catch (IllegalArgumentException ignored) {
-                        if (!lyric.trim().isEmpty()) return lyric;
-                    }
-                }
-            } catch (org.json.JSONException ignored) {
+                byte[] dec = Base64.decode(raw, Base64.DEFAULT);
+                String lrc = new String(dec, StandardCharsets.UTF_8);
+                if (!lrc.trim().isEmpty()) return lrc;
+            } catch (IllegalArgumentException ignored) {
+                if (!raw.trim().isEmpty()) return raw;
             }
         }
         return null;
     }
 
-    /** Normalize a title for matching: strip track numbers, brackets and extension noise. */
-    private String cleanTitle(String raw) {        if (raw == null) return "";
-        String t = raw.trim();
-        // strip leading track numbers like "01." / "01 -" / "01、"
-        t = t.replaceAll("^\\d{1,3}[.\\-、\\s]+", "");
-        // strip bracketed/parenthesized annotations at the end (remix, feat, live...)
-        t = t.replaceAll("\\s*[(\\[].*?[)\\]].*$", "");
-        // collapse whitespace
-        t = t.replaceAll("\\s+", " ").trim();
-        return t.toLowerCase();
-    }
-
-    /** Simple title similarity in [0,1]: exact=1, containment=0.8+, else char-overlap ratio. */
-    private double titleScore(String a, String b) {
-        if (a.isEmpty() || b.isEmpty()) return 0;
-        if (a.equals(b)) return 1;
-        if (a.contains(b) || b.contains(a)) return 0.8;
-        int common = 0;
-        for (int i = 0; i < a.length() && i < b.length(); i++) {
-            if (a.charAt(i) == b.charAt(i)) common++;
-        }
-        return (double) common / Math.max(a.length(), b.length());
-    }
+    // Title normalisation + scoring now live in LyricsParsing (unit-tested).
 
     private String httpGet(String urlStr) throws IOException {
         return httpGetRef(urlStr, "https://music.163.com/");
@@ -563,12 +470,12 @@ public class MediaScannerPlugin extends Plugin {
             org.json.JSONObject root = new org.json.JSONObject(searchJson);
             org.json.JSONArray results = root.optJSONArray("results");
             if (results != null && results.length() > 0) {
-                String cleanTitle = cleanTitle(title);
+                String cleanTitle = LyricsParsing.cleanTitle(title);
                 double best = -1;
                 for (int i = 0; i < results.length(); i++) {
                     org.json.JSONObject r = results.getJSONObject(i);
                     String hit = r.optString("trackName", "");
-                    double score = titleScore(cleanTitle, cleanTitle(hit));
+                    double score = LyricsParsing.titleScore(cleanTitle, LyricsParsing.cleanTitle(hit));
                     if (score > best) {
                         best = score;
                         artUrl = r.optString("artworkUrl100", "");

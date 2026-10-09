@@ -73,6 +73,11 @@ export interface PlayerContextState {
   setActiveQueue: (id: string | null) => void;
   /** remove a song from the active queue (library mode removes the song entirely) */
   removeFromQueue: (id: string) => void;
+
+  /** delete every imported / scanned song; bundled preset tracks stay */
+  clearLibrary: () => Promise<void>;
+  /** wipe all local data (library, sequences, preferences) and restart the app */
+  clearAllData: () => Promise<void>;
 }
 
 export const PlayerContext = createContext<PlayerContextState | null>(null);

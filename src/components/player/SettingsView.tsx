@@ -1,6 +1,8 @@
 // EXPORTS: SettingsView
 import { useState } from 'react';
-import { BellOff, BellRing, RotateCcw, ScanLine } from 'lucide-react';
+import { BellOff, BellRing, HardDrive, RotateCcw, ScanLine, Trash2 } from 'lucide-react';
+import { usePlayer } from '@/lib/player-context';
+import { refreshStorageUsage, useStorageUsage } from '@/hooks/use-storage-usage';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_CUSTOM,
@@ -306,6 +308,101 @@ function TerminalBehavior() {
   );
 }
 
+/** Storage readout + destructive maintenance actions. */
+function StorageSection() {
+  const { songs, clearLibrary, clearAllData } = usePlayer();
+  const usage = useStorageUsage();
+  const [confirming, setConfirming] = useState<'library' | 'all' | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const mb = (bytes: number) =>
+    bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(2)} GB` : `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+
+  const run = async (which: 'library' | 'all') => {
+    setBusy(true);
+    try {
+      if (which === 'library') await clearLibrary();
+      else await clearAllData();
+    } finally {
+      setBusy(false);
+      setConfirming(null);
+      refreshStorageUsage();
+    }
+  };
+
+  return (
+    <section className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
+        <span className="text-accent">▸</span> 存储 STORAGE
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border border-border/70 bg-card/60 px-2 py-1.5">
+        <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-widest text-muted-foreground">
+          <HardDrive className="h-3.5 w-3.5" /> 本机占用
+        </span>
+        <span className="font-mono text-[9px] tracking-widest text-foreground">
+          {usage ? `${mb(usage.used)} / ${mb(usage.quota)}` : '--'}
+          {usage && !usage.persisted && (
+            <span className="ml-1 text-muted-foreground">（未持久化）</span>
+          )}
+        </span>
+      </div>
+
+      <div className="flex items-center justify-between gap-2 border border-border/70 bg-card/60 px-2 py-1.5">
+        <span className="font-mono text-[9px] tracking-widest text-muted-foreground">曲目数</span>
+        <span className="font-mono text-[9px] tracking-widest text-foreground">{songs.length}</span>
+      </div>
+
+      {confirming === null ? (
+        <div className="grid grid-cols-2 gap-1.5">
+          <button
+            type="button"
+            onClick={() => setConfirming('library')}
+            disabled={busy}
+            className="flex items-center justify-center gap-1.5 border border-border bg-card/70 px-2 py-1.5 font-mono text-[9px] tracking-widest text-foreground transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> 清空介质库
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming('all')}
+            disabled={busy}
+            className="flex items-center justify-center gap-1.5 border border-destructive/50 bg-destructive/10 px-2 py-1.5 font-mono text-[9px] tracking-widest text-destructive transition-colors hover:bg-destructive/20 disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> 清空全部数据
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1.5 border border-destructive/50 bg-destructive/5 px-2 py-1.5">
+          <span className="font-mono text-[9px] leading-relaxed tracking-wider text-foreground">
+            {confirming === 'library'
+              ? '将删除导入与扫描的全部曲目，并清理播放序列里的引用（内置预置曲库保留）。'
+              : '将删除曲库、播放序列与全部偏好设置，随后应用自动重启。此操作不可撤销。'}
+          </span>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setConfirming(null)}
+              disabled={busy}
+              className="border border-border bg-card/70 px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground disabled:opacity-50"
+            >
+              取消
+            </button>
+            <button
+              type="button"
+              onClick={() => void run(confirming)}
+              disabled={busy}
+              className="border border-destructive/60 bg-destructive/15 px-2 py-1 font-mono text-[9px] tracking-widest text-destructive disabled:opacity-50"
+            >
+              {busy ? '处理中…' : '确认清空'}
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /** Settings — background shell, terminal behavior, theme + custom editor. */
 export default function SettingsView() {
   const [theme, setLocalTheme] = useState<ThemeId>(() => getTheme());
@@ -360,6 +457,8 @@ export default function SettingsView() {
       </section>
 
       <TerminalBehavior />
+
+      <StorageSection />
     </div>
   );
 }

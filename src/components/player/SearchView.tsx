@@ -4,71 +4,13 @@ import { ChevronDown, Heart, ListMusic, Play, Search, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlayer } from '@/lib/player-context';
 import HazardStrip from '@/components/player/HazardStrip';
-import type { ISong } from '@/lib/music';
+import { parseQuery, searchLibrary } from '@/lib/search';
 
 function fmt(sec: number): string {
   if (!Number.isFinite(sec) || sec <= 0) return '--:--';
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
-interface QueryToken {
-  kind: 'keyword' | 'artist' | 'album' | 'tag' | 'duration';
-  value: string;
-  /** duration max in seconds */
-  maxSec: number;
-}
-
-/** Split the raw query into advanced-search tokens.
- *  artist:/album:/tag: match substrings; duration:<N matches tracks shorter
- *  than N seconds; bare words match title/artist/album. Tokens AND together. */
-function parseQuery(raw: string): QueryToken[] {
-  const tokens: QueryToken[] = [];
-  for (const part of raw.split(/\s+/)) {
-    if (!part) continue;
-    const artist = part.match(/^artist:(.+)$/i);
-    if (artist) {
-      tokens.push({ kind: 'artist', value: artist[1].toLowerCase(), maxSec: 0 });
-      continue;
-    }
-    const album = part.match(/^album:(.+)$/i);
-    if (album) {
-      tokens.push({ kind: 'album', value: album[1].toLowerCase(), maxSec: 0 });
-      continue;
-    }
-    const tag = part.match(/^tag:(.+)$/i);
-    if (tag) {
-      tokens.push({ kind: 'tag', value: tag[1].toLowerCase(), maxSec: 0 });
-      continue;
-    }
-    const dur = part.match(/^duration:<(\d+)$/i);
-    if (dur) {
-      tokens.push({ kind: 'duration', value: '', maxSec: Number(dur[1]) });
-      continue;
-    }
-    tokens.push({ kind: 'keyword', value: part.toLowerCase(), maxSec: 0 });
-  }
-  return tokens;
-}
-
-function songMatches(song: ISong, token: QueryToken): boolean {
-  switch (token.kind) {
-    case 'artist':
-      return song.artist.toLowerCase().includes(token.value);
-    case 'album':
-      return song.album.toLowerCase().includes(token.value);
-    case 'tag':
-      return (song.tags ?? []).some((t) => t.toLowerCase().includes(token.value));
-    case 'duration':
-      return song.duration > 0 && song.duration < token.maxSec;
-    default:
-      return (
-        song.title.toLowerCase().includes(token.value) ||
-        song.artist.toLowerCase().includes(token.value) ||
-        song.album.toLowerCase().includes(token.value)
-      );
-  }
 }
 
 /** Global search — filters the local media library and playback sequences
@@ -83,17 +25,8 @@ export default function SearchView() {
   const tokens = parseQuery(q);
   const hasSyntax = tokens.some((t) => t.kind !== 'keyword');
 
-  const results = useMemo(() => {
-    if (!q) return { songs: [], playlists: [] };
-    const songHits = songs.filter((s) => tokens.every((t) => songMatches(s, t)));
-    const keywordOnly = tokens.every((t) => t.kind === 'keyword');
-    const plHits = keywordOnly
-      ? playlists.filter((p) =>
-          tokens.some((t) => p.name.toLowerCase().includes(t.value)),
-        )
-      : [];
-    return { songs: songHits, playlists: plHits };
-  }, [q, tokens, songs, playlists]);
+  // Query parsing and matching live in src/lib/search.ts so they stay unit-tested.
+  const results = useMemo(() => searchLibrary(q, songs, playlists), [q, songs, playlists]);
 
   const total = results.songs.length + results.playlists.length;
 

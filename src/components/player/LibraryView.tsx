@@ -1,5 +1,6 @@
 // EXPORTS: LibraryView
 import { useRef, useState } from 'react';
+import { useWindowedList } from '@/hooks/use-windowed-list';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { FileAudio, Loader2, Radar, Settings, Tags, Upload, X } from 'lucide-react';
@@ -147,6 +148,12 @@ export default function LibraryView() {
       setScanning(false);
     }
   };
+
+  // Long libraries render a window of rows instead of the whole list; short ones
+  // keep the original animated list (see useWindowedList).
+  const listRef = useRef<HTMLUListElement | null>(null);
+  const windowed = useWindowedList(filtered.length, listRef);
+  const visibleSongs = windowed.active ? filtered.slice(windowed.start, windowed.end) : filtered;
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-6 pt-4">
@@ -323,6 +330,28 @@ export default function LibraryView() {
             <ImportButton large onClick={() => fileRef.current?.click()} />
           </div>
         </div>
+      ) : windowed.active ? (
+        <ul ref={listRef} className="flex flex-col gap-1">
+          {windowed.topPad > 0 && <li aria-hidden style={{ height: windowed.topPad }} />}
+          {visibleSongs.map((song, i) => {
+            const index = windowed.start + i;
+            return (
+              <li key={song.id} ref={i === 0 ? windowed.measureRow : undefined}>
+                <TrackRow
+                  song={song}
+                  index={index}
+                  isCurrent={song.id === currentId}
+                  onPlay={() => playSong(song.id)}
+                  onRemove={() => removeSong(song.id)}
+                  onToggleFavorite={() => toggleFavorite(song.id)}
+                  onAddToPlaylist={() => setAddTarget(song.id)}
+                  onTag={() => setTagTarget(song.id)}
+                />
+              </li>
+            );
+          })}
+          {windowed.bottomPad > 0 && <li aria-hidden style={{ height: windowed.bottomPad }} />}
+        </ul>
       ) : (
         <motion.ul
           variants={listVariants}

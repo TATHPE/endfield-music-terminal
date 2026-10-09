@@ -6,6 +6,7 @@ import type { Playlist } from '@/lib/playlists';
 import { FAVORITES_ID, makePlaylistId, normalizePlaylistName } from '@/lib/playlists';
 import {
   deleteSong,
+  deleteMusicDatabase,
   getAllPlaylists,
   getAllSongs,
   putPlaylist,
@@ -15,7 +16,13 @@ import {
 import { fetchItunesCover, parseAudioFile, toSong } from '@/lib/parser';
 import { md5Hex } from '@/lib/md5';
 import { PlayerContext, type PlayerContextState } from '@/lib/player-context';
-import { MediaScanner, loadDeviceAudio, isNative, type DeviceSong } from '@/lib/media-scanner';
+import {
+  MediaScanner,
+  clearDeviceAudioCache,
+  loadDeviceAudio,
+  isNative,
+  type DeviceSong,
+} from '@/lib/media-scanner';
 import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 import { shouldLog, type LogLevel } from '@/lib/terminal-config';
 
@@ -902,6 +909,56 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     [activeQueueId, removeSong, removeFromPlaylist],
   );
 
+  /** Delete every imported / scanned song and drop the device-audio cache.
+   *  Bundled preset tracks stay in place, so nothing has to be reloaded. */
+  const clearLibrary = useCallback(async () => {
+    const all = await getAllSongs();
+    const remaining = all.filter((s) => s.id.startsWith('preset:'));
+    for (const s of all) {
+      if (!s.id.startsWith('preset:')) await deleteSong(s.id);
+    }
+    clearDeviceAudioCache();
+    if (urlRef.current) {
+      URL.revokeObjectURL(urlRef.current);
+      urlRef.current = null;
+    }
+    audioRef.current?.pause();
+    setCurrentId(null);
+    setIsPlaying(false);
+    // Playback sequences must not keep pointing at songs that no longer exist.
+    const kept = new Set(remaining.map((s) => s.id));
+    setPlaylists((prev) =>
+      prev.map((pl) => {
+        const songIds = pl.songIds.filter((id) => kept.has(id));
+        if (songIds.length === pl.songIds.length) return pl;
+        const next = { ...pl, songIds };
+        void putPlaylist(next);
+        return next;
+      }),
+    );
+    setSongs(remaining);
+    const removed = all.length - remaining.length;
+    appendLog(`LIBRARY CLEARED — ${removed} TRACK${removed === 1 ? '' : 'S'} REMOVED`, 'warn');
+  }, [appendLog]);
+
+  /** Wipe the library, the sequences and every preference, then restart so the
+   *  app comes back exactly like a fresh install (presets included). */
+  const clearAllData = useCallback(async () => {
+    try {
+      await deleteMusicDatabase();
+    } catch {
+      /* the database may already be gone */
+    }
+    try {
+      for (const key of Object.keys(localStorage)) {
+        if (key.startsWith('endfield-player')) localStorage.removeItem(key);
+      }
+    } catch {
+      /* storage unavailable */
+    }
+    window.location.reload();
+  }, []);
+
   const value: PlayerContextState = {
     songs,
     currentId,
@@ -943,6 +1000,8 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     playPlaylist,
     setActiveQueue,
     removeFromQueue,
+    clearLibrary,
+    clearAllData,
   };
 
   return (
