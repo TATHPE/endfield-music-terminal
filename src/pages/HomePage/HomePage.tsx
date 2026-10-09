@@ -147,9 +147,10 @@ export default function HomePage() {
                          control lives strictly above the floating dock */
                       'h-full overflow-hidden pb-[124px]'
                     : view === 'settings'
-                      ? /* fixed page: padding covers BOTH the floating MiniPlayer
-                           and the dock, so the IDLE controls are never covered */
-                        'h-full overflow-hidden pb-[182px]'
+                      ? /* scrollable page: padding still covers BOTH the floating
+                           MiniPlayer and the dock, but the content may scroll, so
+                           new settings rows never squeeze the controls */
+                        'h-full overflow-y-auto pb-[182px]'
                       : /* browse pages: content scrolls behind the frosted
                            dock and shows through it blurred; bottom padding
                            still lets the last row rest above the dock buttons */

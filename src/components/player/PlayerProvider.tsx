@@ -103,7 +103,11 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const spectrumOnRef = useRef(spectrumOn);
-  spectrumOnRef.current = spectrumOn;
+  // Sync outside render: writing a ref during render breaks the concurrent
+  // rendering contract (react-hooks/refs) and can be read as a stale value.
+  useEffect(() => {
+    spectrumOnRef.current = spectrumOn;
+  }, [spectrumOn]);
   // Guards async playback setup: only applies the result if the same song is
   // still the requested one (user may have tapped another track meanwhile).
   const currentIdRef = useRef<string | null>(null);

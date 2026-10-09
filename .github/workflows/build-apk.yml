@@ -21,6 +21,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint & typecheck
+        run: |
+          npx tsc -p tsconfig.app.json --noEmit
+          npx eslint src
+
       - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
@@ -84,6 +89,12 @@ jobs:
       - name: Install dependencies
         if: steps.check.outputs.skip != 'true'
         run: npm ci
+
+      - name: Lint & typecheck
+        if: steps.check.outputs.skip != 'true'
+        run: |
+          npx tsc -p tsconfig.app.json --noEmit
+          npx eslint src
 
       - name: Setup JDK 21
         if: steps.check.outputs.skip != 'true'

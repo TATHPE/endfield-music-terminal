@@ -1,6 +1,6 @@
 // EXPORTS: SettingsView
 import { useState } from 'react';
-import { BellOff, BellRing, Moon, RotateCcw, ScanLine } from 'lucide-react';
+import { BellOff, BellRing, RotateCcw, ScanLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DEFAULT_CUSTOM,
@@ -18,7 +18,6 @@ import {
   type ThemeId,
 } from '@/lib/theme';
 import {
-  DEFAULT_CONFIG,
   getTerminalConfig,
   setTerminalConfig,
   type LogLevel,
@@ -29,7 +28,6 @@ import HazardStrip from '@/components/player/HazardStrip';
 const LOG_LEVELS: LogLevel[] = ['trace', 'info', 'warn', 'error'];
 
 function ThemeCard({
-  id,
   name,
   code,
   desc,
@@ -37,7 +35,6 @@ function ThemeCard({
   active,
   onSelect,
 }: {
-  id: ThemeId;
   name: string;
   code: string;
   desc: string;
@@ -88,15 +85,17 @@ const CHANNELS: ReadonlyArray<{ key: Channel; label: string }> = [
   { key: 'tertiary', label: '点缀色 TERTIARY' },
 ];
 
-/** Custom theme editor: channel row + title + 12 preset swatches, all fully
- *  visible above the dock with no scrolling. */
-function CustomEditor() {
+/** Custom theme editor: always visible under the theme cards — channel row,
+ *  title + 12 preset swatches (the page scrolls instead of squeezing it). */
+function CustomEditor({ onUse }: { onUse?: () => void }) {
   const [custom, setCustom] = useState<CustomColors>(() => getCustomTheme());
   const [channel, setChannel] = useState<Channel>('primary');
 
   const apply = (next: CustomColors) => {
     setCustom(next);
     setCustomTheme(next);
+    // Editing a swatch implies the custom theme: keep the T-03 card in sync.
+    onUse?.();
   };
 
   return (
@@ -326,9 +325,10 @@ export default function SettingsView() {
   };
 
   return (
-    /* Fixed layout: the page never scrolls; content lives strictly above
-       the dock (outer bottom padding), nothing is ever covered. */
-    <div className="flex h-full flex-col gap-2 overflow-hidden px-4 pb-4 pt-2">
+    /* Scrollable layout: the shell already reserves bottom padding for the
+       floating MiniPlayer + dock, so the whole page scrolls and any number of
+       settings rows can be added without squeezing the controls below. */
+    <div className="flex flex-col gap-2 px-4 pb-3 pt-2">
       <header className="flex items-center justify-between">
         <h2 className="font-mono text-[11px] tracking-[0.3em] text-foreground">
           SETTINGS <span className="text-muted-foreground">// 系统配置</span>
@@ -339,7 +339,7 @@ export default function SettingsView() {
 
       <BgModePicker />
 
-      <section className="flex min-h-0 flex-1 flex-col gap-2">
+      <section className="flex flex-col gap-2">
         <div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
           <span className="text-accent">▸</span> 主题 THEME
         </div>
@@ -347,7 +347,6 @@ export default function SettingsView() {
           {THEMES.map((t) => (
             <ThemeCard
               key={t.id}
-              id={t.id}
               name={t.name}
               code={t.code}
               desc={t.desc}
@@ -357,7 +356,7 @@ export default function SettingsView() {
             />
           ))}
         </div>
-        {theme === 'custom' && <CustomEditor />}
+        <CustomEditor onUse={() => pick('custom')} />
       </section>
 
       <TerminalBehavior />

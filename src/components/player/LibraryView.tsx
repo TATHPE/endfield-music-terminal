@@ -12,7 +12,7 @@ import ImportButton from '@/components/player/ImportButton';
 import TrackRow from '@/components/player/TrackRow';
 import PlaylistAddSheet from '@/components/player/PlaylistAddSheet';
 
-export const MEDIA_TAGS = ['战场记录', '通讯日志', 'BGM', '环境音'] as const;
+const MEDIA_TAGS = ['战场记录', '通讯日志', 'BGM', '环境音'] as const;
 
 const listVariants = {
   hidden: {},
