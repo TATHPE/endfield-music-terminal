@@ -21,6 +21,8 @@ export interface ISong {
   favorited?: boolean;
   /** in-app asset URL for preset (bundled) tracks; plays directly, no blob needed */
   presetUrl?: string;
+  /** user-supplied http(s) audio stream; played directly by <audio>, never proxied or cached */
+  streamUrl?: string;
   /** absolute device path for scanned songs; played via _capacitor_file_ bridge */
   devicePath?: string;
   /** MediaStore album id for lazily loading album art on device songs */

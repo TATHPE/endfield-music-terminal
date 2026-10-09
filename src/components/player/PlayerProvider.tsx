@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import type { ISong, PlayMode } from '@/lib/music';
-import { PLAY_MODES } from '@/lib/music';
+import { PLAY_MODES, makeId } from '@/lib/music';
 import type { Playlist } from '@/lib/playlists';
 import { FAVORITES_ID, makePlaylistId } from '@/lib/playlists';
 import {
@@ -16,6 +16,7 @@ import { PlayerContext, type PlayerContextState } from '@/lib/player-context';
 import { clearDeviceAudioCache, loadDeviceAudio, isNative } from '@/lib/media-scanner';
 import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 import { shouldLog, type LogLevel } from '@/lib/terminal-config';
+import { streamCodecFromUrl, streamTitleFromUrl, validateStreamUrl } from '@/lib/stream';
 import { useDeviceLibrary } from '@/hooks/use-device-library';
 import { usePlaylists } from '@/hooks/use-playlists';
 import {
@@ -419,6 +420,9 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
             });
           }
         });
+      } else if (song.streamUrl) {
+        // 在线地址：直接交给 <audio> 播放用户提供的流，不解析、不代理、不缓存。
+        start(song.streamUrl);
       } else if (song.audio) {
         const url = URL.createObjectURL(song.audio);
         urlRef.current = url;
@@ -674,6 +678,40 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     [activeQueueId, removeSong, removeFromPlaylist],
   );
 
+  /** 在线地址（流媒体）：把用户粘贴的 http(s) 音频流加入介质库。
+   *  只做技术校验与保存——不搜索、不下载、不解密、不代理任何资源。 */
+  const addStreamSong = useCallback(
+    async (rawUrl: string): Promise<{ ok: boolean; reason?: string }> => {
+      const check = validateStreamUrl(rawUrl);
+      if (!check.ok) {
+        appendLog(`STREAM REJECTED — ${check.reason}`, 'warn');
+        return { ok: false, reason: check.reason };
+      }
+      const title = streamTitleFromUrl(check.url);
+      const song: ISong = {
+        id: `stream:${makeId()}`,
+        title,
+        artist: '在线流媒体',
+        album: '',
+        duration: 0,
+        codec: streamCodecFromUrl(check.url),
+        sampleRate: 0,
+        bitrate: 0,
+        fileName: title,
+        cover: null,
+        audio: null,
+        streamUrl: check.url,
+        addedAt: Date.now(),
+      };
+      await putSong(song);
+      setSongs((prev) => [...prev, song]);
+      appendLog(`STREAM ADDED — ${title}`, 'trace');
+      toast.success('已加入介质库（在线地址）');
+      return { ok: true };
+    },
+    [appendLog],
+  );
+
   /** Delete every imported / scanned song and drop the device-audio cache.
    *  Bundled preset tracks stay in place, so nothing has to be reloaded. */
   const clearLibrary = useCallback(async () => {
@@ -765,6 +803,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     playPlaylist,
     setActiveQueue,
     removeFromQueue,
+    addStreamSong,
     clearLibrary,
     clearAllData,
   };

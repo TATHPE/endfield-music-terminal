@@ -23,6 +23,7 @@ import {
 import ImportButton from '@/components/player/ImportButton';
 import TrackRow from '@/components/player/TrackRow';
 import PlaylistAddSheet from '@/components/player/PlaylistAddSheet';
+import StreamAddRow from '@/components/player/StreamAddRow';
 
 const MEDIA_TAGS = ['战场记录', '通讯日志', 'BGM', '环境音'] as const;
 
@@ -201,6 +202,9 @@ export default function LibraryView() {
           <ImportButton onClick={() => fileRef.current?.click()} className="mt-1 shrink-0" />
         </div>
       </header>
+
+      {/* 在线地址（流媒体）入口 */}
+      <StreamAddRow />
 
       {/* Scan status readout */}
       {scanMsg && (
