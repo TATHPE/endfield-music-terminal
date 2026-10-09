@@ -522,7 +522,16 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       appendLog(`FOUND ${list.length} MEDIA FILE${list.length === 1 ? '' : 'S'}`);
       let ok = 0;
       let fail = 0;
+      let duplicate = 0;
+      let quotaHit = false;
       for (const file of list) {
+        // Same name + same byte size is already in the library: importing it
+        // again would only create a duplicate row.
+        if (songs.some((s) => s.fileName === file.name && s.audio?.size === file.size)) {
+          duplicate += 1;
+          appendLog(`SKIP DUPLICATE ${file.name}`, 'trace');
+          continue;
+        }
         try {
           const meta = await parseAudioFile(file);
           const song = toSong(meta, file, makeId(), Date.now());
@@ -552,19 +561,32 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
               });
             });
           }
-        } catch {
+        } catch (err) {
           fail += 1;
-          appendLog(`LOAD TRACK ${file.name} FAILED — FORMAT UNSUPPORTED`, 'warn');
+          if (err instanceof Error && err.name === 'QuotaExceededError') {
+            quotaHit = true;
+            appendLog(`LOAD TRACK ${file.name} FAILED — STORAGE QUOTA EXCEEDED`, 'error');
+          } else {
+            appendLog(`LOAD TRACK ${file.name} FAILED — FORMAT UNSUPPORTED`, 'warn');
+          }
         }
       }
       if (ok > 0) {
-        appendLog(`IMPORT COMPLETE: ${ok} OK / ${fail} FAILED`);
-        toast.success(`已导入 ${ok} 首曲目${fail > 0 ? `，${fail} 首解析失败` : ''}`);
+        appendLog(
+          `IMPORT COMPLETE: ${ok} OK / ${fail} FAILED${duplicate > 0 ? ` / ${duplicate} DUPLICATE` : ''}`,
+        );
+        toast.success(
+          `已导入 ${ok} 首曲目${fail > 0 ? `，${fail} 首解析失败` : ''}${duplicate > 0 ? `，跳过 ${duplicate} 首重复` : ''}`,
+        );
+      } else if (quotaHit) {
+        toast.error('存储空间不足，导入失败——请清理介质库后重试');
+      } else if (fail === 0 && duplicate > 0) {
+        toast.info(`这 ${duplicate} 首已在介质库中，已跳过`);
       } else if (fail > 0) {
         toast.error('导入失败，请检查音频文件格式');
       }
     },
-    [appendLog],
+    [appendLog, songs],
   );
 
   /** Read the same-directory sidecar lyric (.lrc/.txt) for a device song.

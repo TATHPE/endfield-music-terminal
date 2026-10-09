@@ -1,0 +1,48 @@
+# Line-ending policy for this repository.
+#
+# Source files are stored with LF; Windows-only scripts keep CRLF so cmd.exe and
+# Windows PowerShell behave. (The repository used to accumulate CRLF blobs when
+# files were edited from a Windows checkout — this file prevents that.)
+* text=auto
+
+*.ts      text eol=lf
+*.tsx     text eol=lf
+*.js      text eol=lf
+*.mjs     text eol=lf
+*.cjs     text eol=lf
+*.css     text eol=lf
+*.html    text eol=lf
+*.json    text eol=lf
+*.md      text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+*.xml     text eol=lf
+*.gradle  text eol=lf
+*.java    text eol=lf
+*.kt      text eol=lf
+*.sh      text eol=lf
+*.properties text eol=lf
+
+*.ps1     text eol=crlf
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+
+# Binaries — never touch these.
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.webp    binary
+*.gif     binary
+*.ico     binary
+*.ttf     binary
+*.woff    binary
+*.woff2   binary
+*.mp3     binary
+*.flac    binary
+*.wav     binary
+*.zip     binary
+*.apk     binary
+*.aab     binary
+*.jar     binary
+*.keystore binary
+*.jks     binary

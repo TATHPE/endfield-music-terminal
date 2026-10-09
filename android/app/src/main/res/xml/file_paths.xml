@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  The app never shares device files out, so the provider deliberately exposes
+  only empty, app-private directories instead of the whole external storage
+  (external-path path="." used to hand out every file on the device).
+  Add narrower entries here if a sharing feature ever lands.
+-->
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
-    <external-path name="my_images" path="." />
-    <cache-path name="my_cache_images" path="." />
+    <cache-path name="shared_cache" path="shared/" />
+    <files-path name="shared_files" path="shared/" />
 </paths>

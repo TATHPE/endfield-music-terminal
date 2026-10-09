@@ -1,0 +1,45 @@
+name: 问题反馈 / Bug report
+description: 崩溃、播放异常、界面显示问题等
+title: '[Bug] '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量填完整——本项目的适配问题大多跟具体 ROM 有关，机型与系统版本很关键。
+  - type: input
+    id: version
+    attributes:
+      label: 应用版本
+      description: 系统设置 → 应用 → 终末地音乐终端 里的版本号（例如 1.4.2 / versionCode 10402）
+      placeholder: 1.4.2 (10402)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: 机型 / 系统
+      placeholder: 一加 12 / ColorOS 17（Android 16）
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 现象与复现步骤
+      description: 做了什么 → 期望结果 → 实际结果；能稳定复现最好
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: SYSTEM LOG（可选）
+      description: 介质库页顶部的日志面板内容，截图或文字都可以
+    validations:
+      required: false
+  - type: input
+    id: source
+    attributes:
+      label: 安装包来源（可选）
+      description: Release 资产包 / Actions 构件 / 自行构建
+    validations:
+      required: false

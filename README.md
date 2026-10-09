@@ -177,6 +177,19 @@ pwsh tools/build-apk.ps1 -Type both -OutDir D:\out
 - minSdk 24 / targetSdk 36
 - Android 版本：v1.4.2（`versionCode` 由 `package.json` 的版本推导：`1.4.2` → `10402`；锁屏拖动进度条 seek 修复 / 频谱渲染链路修复 / 终端行为开关实时生效 / 歌词瞬时精确吸附 / HyperOS·OriginOS 系统栏双通道适配）；历史版本 v1.4.1 / v1.4.0 / v1.3.9 / v1.3.8 保留在对应 Release 可下载
 
+## 权限与隐私
+
+| 权限 | 用途 |
+| --- | --- |
+| `READ_MEDIA_AUDIO`（Android 13+）/ `READ_EXTERNAL_STORAGE`（≤ Android 12） | 「扫描设备」读取手机中的音频文件，只读取音频 |
+| `POST_NOTIFICATIONS` | 通知栏媒体控制（Android 13+ 首次安装时请求） |
+| `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_MEDIA_PLAYBACK` / `WAKE_LOCK` | 后台播放与锁屏媒体控制 |
+| `INTERNET` | 仅在用户主动发起时使用：联网获取歌词（网易云 → QQ 音乐）、封面匹配（iTunes） |
+
+- 曲库、播放序列、主题与偏好全部**保存在本机**（IndexedDB / localStorage），不上传任何服务器
+- 应用**不包含**统计、广告或崩溃上报 SDK
+- 为避免媒体库被同步到云端或被迁移到其它设备，应用已关闭系统备份与设备间迁移
+
 ## License
 
 本项目以 [MIT License](LICENSE) 开源，可自由使用、修改与分发（含商用），须保留版权声明。

@@ -17,6 +17,12 @@ import { applyTheme, getTheme, applyBgMode, getBgMode, syncSystemBars } from '@/
 applyTheme(getTheme());
 applyBgMode(getBgMode()); // also syncs the native system bars via syncSystemBars()
 
+// Ask for persistent storage: IndexedDB holds imported audio blobs, and an
+// eviction under storage pressure would silently drop the whole library.
+if (navigator.storage?.persist) {
+  void navigator.storage.persist().catch(() => undefined);
+}
+
 // Edge-to-edge immersive status bar (ColorOS 17 / Android 15+): the web layer reserves
 // the top inset via env(safe-area-inset-top); icon style follows the active bg mode.
 if (Capacitor.isNativePlatform()) {

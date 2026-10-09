@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 下载与更新日志
+    url: https://github.com/TATHPE/endfield-music-terminal/releases
+    about: 最新安装包、歌曲资产包与每个版本的说明都在这里

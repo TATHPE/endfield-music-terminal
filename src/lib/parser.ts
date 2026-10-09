@@ -1,5 +1,5 @@
 // EXPORTS: ParsedMeta, parseAudioFile, fetchItunesCover, fallbackMeta
-import { parseBlob, type IAudioMetadata, type IPicture, type ILyricsTag } from 'music-metadata';
+import type { IAudioMetadata, IPicture, ILyricsTag } from 'music-metadata';
 import type { ISong } from '@/lib/music';
 
 export interface ParsedMeta {
@@ -147,6 +147,9 @@ function extractPictureNative(md: IAudioMetadata): IPicture | undefined {
  */
 export async function parseAudioFile(file: File): Promise<ParsedMeta> {
   let md: IAudioMetadata;
+  // Loaded on demand: music-metadata's core is only needed while importing, so
+  // keeping it out of the initial chunk shrinks the boot payload.
+  const { parseBlob } = await import('music-metadata');
   try {
     md = await parseBlob(file, { duration: true });
   } catch {
