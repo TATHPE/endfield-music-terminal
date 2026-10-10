@@ -17,6 +17,7 @@ import { clearDeviceAudioCache, loadDeviceAudio, isNative } from '@/lib/media-sc
 import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 import { shouldLog, type LogLevel } from '@/lib/terminal-config';
 import { streamCodecFromUrl, streamTitleFromUrl, validateStreamUrl } from '@/lib/stream';
+import { MseMp3Stream } from '@/lib/mse-stream';
 import { useDeviceLibrary } from '@/hooks/use-device-library';
 import { usePlaylists } from '@/hooks/use-playlists';
 import {
@@ -49,6 +50,15 @@ interface AudioGraph {
   analyser: AnalyserNode;
 }
 let sharedGraph: AudioGraph | null = null;
+
+/**
+ * The live MSE stream currently feeding the <audio> element, if any.
+ *
+ * Module scope (like the audio graph) because an <audio> element can only have
+ * one stream attached: starting a new track must tear the previous one down,
+ * and an unmount/Clear must not leave a fetch + SourceBuffer filling memory.
+ */
+let mseStream: MseMp3Stream | null = null;
 
 function acquireAudioGraph(audio: HTMLAudioElement): AudioGraph | null {
   if (sharedGraph) return sharedGraph;
@@ -360,7 +370,12 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const version = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
     // 放到 rAF 里：避免在 effect 体内直接 setState（hooks 规则）
-    const frame = requestAnimationFrame(() => appendLog(`APP BOOT — v${version}`));
+    // MSE(MP3) 支持情况也一起报出来：在线流能否播放完全取决于它，
+    // 真机上开机即可确认，不必先试一次流再猜。
+    const mseOk = MseMp3Stream.isSupported() ? 'YES' : 'NO';
+    const frame = requestAnimationFrame(() =>
+      appendLog(`APP BOOT — v${version} · MSE(MP3)=${mseOk}`),
+    );
     return () => cancelAnimationFrame(frame);
   }, [appendLog]);
 
@@ -369,7 +384,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     usePlaylists({ setPlaylists, setActiveQueueId });
 
   const playSong = useCallback(
-    (id: string) => {
+    async (id: string) => {
       const song = songs.find((s) => s.id === id);
       const audio = audioRef.current;
       if (!song || !audio) return;
@@ -382,6 +397,11 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         const pl = playlists.find((p) => p.id === cur);
         return pl && pl.songIds.includes(id) ? cur : null;
       });
+      // 任何一次切歌都先拆掉上一条 MSE 在线流：旧的 fetch 与 SourceBuffer
+      // 不会自己停下来，留着重播会持续占用内存并和新曲目抢同一个 <audio>。
+      // 若本次仍是流媒体，下面会重新 start() 一条新的。
+      mseStream?.stop();
+      mseStream = null;
       if (urlRef.current) {
         URL.revokeObjectURL(urlRef.current);
         urlRef.current = null;
@@ -440,7 +460,44 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       } else if (song.streamUrl) {
         // 在线地址：直接交给 <audio> 播放用户提供的流，不解析、不代理、不缓存。
         // 必须带 crossOrigin：流是跨域的，不声明就会被频谱图静音/阻断。
-        start(song.streamUrl, { crossOrigin: true });
+        const streamUrl = song.streamUrl;
+        // http 明文流在 https 页面里会被混合内容策略拦截，且无法通过任何前端
+        // 手段绕过：这里直接失败并把原因写清楚，连请求都不发（也就不会走 MSE）。
+        if (/^http:\/\//i.test(streamUrl)) {
+          const reason = '不支持 http 明文流（混合内容限制），请改用 https 地址';
+          appendLog(`STREAM REJECTED — ${reason}`, 'error');
+          toast.error(reason);
+          return;
+        }
+        if (MseMp3Stream.isSupported()) {
+          // ICY / Shoutcast 流：安卓 WebView 的原生解码器会报 code=4 Format
+          // error，改用 fetch + MSE 自己拉流喂给 <audio>（fetch 不发
+          // Icy-MetaData，服务端会回干净的 HTTP 200 + 纯 MP3）。失败则回退原生。
+          const stream = new MseMp3Stream(audio, streamUrl, {
+            onError: (m) => appendLog('STREAM ERROR — ' + m, 'error'),
+            onLog: (m) => appendLog(m, 'trace'),
+          });
+          if (currentIdRef.current !== id) {
+            // 用户已经切到别的曲目：这条流不该再绑到 <audio> 上。
+            stream.stop();
+            return;
+          }
+          mseStream = stream;
+          try {
+            await stream.start();
+          } catch (err) {
+            // start() 已经通过 onError 写清原因，这里只补一条回退说明。
+            if (mseStream === stream) mseStream = null;
+            const cancelled = stream.isStopped();
+            stream.stop();
+            // 主动停止（切歌 / 卸载）不算失败，不能再去拉一次原生流。
+            if (cancelled || currentIdRef.current !== id) return;
+            appendLog('MSE 回退到原生 — ' + (err instanceof Error ? err.message : String(err)), 'warn');
+            start(streamUrl, { crossOrigin: true });
+          }
+          return;
+        }
+        start(streamUrl, { crossOrigin: true });
       } else if (song.audio) {
         const url = URL.createObjectURL(song.audio);
         urlRef.current = url;
@@ -451,6 +508,15 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     },
     [songs, playlists, volume, muted, appendLog],
   );
+
+  // The module-scoped MSE stream outlives a single render, so it must be torn
+  // down explicitly when this provider goes away.
+  useEffect(() => {
+    return () => {
+      mseStream?.stop();
+      mseStream = null;
+    };
+  }, []);
 
   const togglePlay = useCallback(() => {
     const audio = audioRef.current;
