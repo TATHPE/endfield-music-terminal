@@ -15,7 +15,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
-import { formatClock, formatCodec, formatTime } from '@/lib/music';
+import { formatClock, formatCodec, formatTime, isLiveStream } from '@/lib/music';
 import { cn } from '@/lib/utils';
 import { ACTIONS, LABELS, PAGES, STATES, playbackMode } from '@/lib/strings';
 import CoverArt from '@/components/player/CoverArt';
@@ -243,7 +243,9 @@ export default function NowPlayingView() {
         <ProgressBar value={currentTime} max={duration} onSeek={seek} disabled={duration <= 0} playing={isPlaying} />
         <div className="mt-1 flex items-center justify-between font-mono text-[10px] tracking-widest">
           <span className="text-primary">{formatTime(currentTime)}</span>
-          <span className="text-muted-foreground">{formatClock(duration)}</span>
+          <span className="text-muted-foreground">
+            {isLiveStream(song) ? '● LIVE' : formatClock(duration)}
+          </span>
         </div>
       </div>
 

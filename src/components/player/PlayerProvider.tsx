@@ -382,14 +382,23 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       audio.volume = muted ? 0 : volume;
       setCurrentTime(0);
       setDuration(song.duration || 0);
-      const start = (src: string) => {
+      // crossOrigin 必须在赋 src 之前设置：跨域流带上它才会被当成 CORS-clean，
+      // 否则音频一旦被接入 WebAudio 频谱图，浏览器会静音甚至拒绝播放
+      // （表现为本地歌正常、在线流全部播不了）。
+      const start = (src: string, opts?: { crossOrigin?: boolean }) => {
+        if (opts?.crossOrigin) audio.crossOrigin = 'anonymous';
+        else audio.removeAttribute('crossOrigin');
         audio.src = src;
         void audio.play().catch((err: unknown) => {
           // Surface the real failure (autoplay block, missing file, codec, ...)
           // instead of dying silently.
           const name = err instanceof Error ? err.name : String(err);
           setIsPlaying(false);
-          toast.error(playFailedFor(name, song.title));
+          toast.error(
+            opts?.crossOrigin
+              ? `${playFailedFor(name, song.title)}（该在线流可能不支持跨域播放）`
+              : playFailedFor(name, song.title),
+          );
         });
       };
       if (song.presetUrl) {
@@ -416,7 +425,8 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         });
       } else if (song.streamUrl) {
         // 在线地址：直接交给 <audio> 播放用户提供的流，不解析、不代理、不缓存。
-        start(song.streamUrl);
+        // 必须带 crossOrigin：流是跨域的，不声明就会被频谱图静音/阻断。
+        start(song.streamUrl, { crossOrigin: true });
       } else if (song.audio) {
         const url = URL.createObjectURL(song.audio);
         urlRef.current = url;

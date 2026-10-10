@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
 import { Pause, Play, SkipForward } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
-import { formatTime } from '@/lib/music';
+import { formatTime, isLiveStream } from '@/lib/music';
+import { useKeyboardOpen } from '@/hooks/use-keyboard-open';
+import { cn } from '@/lib/utils';
 import { ACTIONS, LABELS } from '@/lib/strings';
 import CoverArt from '@/components/player/CoverArt';
 import EqBars from '@/components/player/EqBars';
@@ -17,18 +19,25 @@ interface MiniPlayerProps {
  */
 export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
   const { currentSong, isPlaying, togglePlay, playNext, currentTime, duration } = usePlayer();
+  // 键盘弹起时收起，避免浮在屏幕中间压住输入面板
+  const keyboardOpen = useKeyboardOpen();
 
   if (!currentSong) return null;
 
-  const ratio = duration > 0 ? Math.min(1, currentTime / duration) : 0;
+  const live = isLiveStream(currentSong);
+  // 直播流没有可用总时长，进度比例按 0 处理（改用 LIVE 提示代替时间轴）
+  const ratio = !live && duration > 0 ? Math.min(1, currentTime / duration) : 0;
 
   return (
     <motion.div
       initial={{ y: 40, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
+      animate={{ y: keyboardOpen ? 72 : 0, opacity: keyboardOpen ? 0 : 1 }}
       exit={{ y: 40, opacity: 0 }}
       transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-      className="clip-corner relative z-20 mx-3 overflow-hidden border backdrop-blur-2xl"
+      className={cn(
+        'clip-corner relative z-20 mx-3 overflow-hidden border backdrop-blur-2xl',
+        keyboardOpen && 'pointer-events-none',
+      )}
       style={{
         background: 'var(--glass-bg)',
         borderColor: 'var(--glass-border)',
@@ -58,7 +67,8 @@ export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
               NOW PLAYING // <span className="text-primary">{currentSong.title}</span>
             </p>
             <p className="truncate font-mono text-[9px] tracking-widest text-muted-foreground">
-              {currentSong.artist} · {formatTime(currentTime)} / {formatTime(duration)}
+              {currentSong.artist} · {formatTime(currentTime)}
+              {live ? ' · ● LIVE' : ` / ${formatTime(duration)}`}
             </p>
           </div>
           {isPlaying && <EqBars className="ml-auto hidden shrink-0 pr-1 sm:flex" />}

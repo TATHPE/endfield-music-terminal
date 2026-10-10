@@ -4,6 +4,7 @@ import {
   formatClock,
   formatCodec,
   formatTime,
+  isLiveStream,
   makeId,
   shouldUpdateDuration,
 } from '@/lib/music';
@@ -69,6 +70,23 @@ describe('shouldUpdateDuration', () => {
     // 无穷大 / 负数都不是可用时长（直播流常常报 Infinity）
     expect(shouldUpdateDuration(0, Number.POSITIVE_INFINITY)).toBe(false);
     expect(shouldUpdateDuration(0, -5)).toBe(false);
+  });
+});
+
+describe('isLiveStream', () => {
+  it('把时长未知的在线流当作直播', () => {
+    expect(isLiveStream({ streamUrl: 'https://a/b', duration: 0 })).toBe(true);
+    expect(isLiveStream({ streamUrl: 'https://a/b', duration: Number.POSITIVE_INFINITY })).toBe(true);
+  });
+
+  it('有已知时长的在线流仍按可拖动处理', () => {
+    expect(isLiveStream({ streamUrl: 'https://a/b', duration: 231 })).toBe(false);
+  });
+
+  it('本地曲目与空值都不是直播', () => {
+    expect(isLiveStream({ duration: 0 })).toBe(false);
+    expect(isLiveStream(null)).toBe(false);
+    expect(isLiveStream(undefined)).toBe(false);
   });
 });
 

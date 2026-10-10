@@ -3,6 +3,7 @@ import { Disc3, List, ListMusic, Search, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ViewId } from '@/lib/nav';
 import { NAV_ITEMS } from '@/lib/nav';
+import { useKeyboardOpen } from '@/hooks/use-keyboard-open';
 
 const ICONS: Record<ViewId, typeof ListMusic> = {
   library: ListMusic,
@@ -23,9 +24,16 @@ interface BottomNavProps {
  * never touching the screen edge; glass adapts to dark/light backgrounds.
  */
 export default function BottomNav({ view, onChange }: BottomNavProps) {
+  // 键盘弹起时收起，避免压住正在编辑的输入面板
+  const keyboardOpen = useKeyboardOpen();
+
   return (
     <nav
-      className="pointer-events-auto shrink-0 pb-[calc(max(env(safe-area-inset-bottom),20px)+16px)] pt-1"
+      className={cn(
+        'pointer-events-auto shrink-0 pb-[calc(max(env(safe-area-inset-bottom),20px)+16px)] pt-1',
+        'transition-[transform,opacity] duration-200',
+        keyboardOpen && 'pointer-events-none translate-y-full opacity-0',
+      )}
       style={{
         paddingLeft: 'calc(env(safe-area-inset-left) + 12px)',
         paddingRight: 'calc(env(safe-area-inset-right) + 12px)',

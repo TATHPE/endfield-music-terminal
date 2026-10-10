@@ -1,5 +1,5 @@
 // EXPORTS: ISong, PlayMode, PLAY_MODES, SONG_STORE_NS, formatTime, formatClock, formatCodec,
-//          shouldUpdateDuration, makeId
+//          shouldUpdateDuration, isLiveStream, makeId
 export interface ISong {
   id: string;
   title: string;
@@ -80,6 +80,16 @@ export function shouldUpdateDuration(stored: number, measured: number): boolean 
   if (!Number.isFinite(measured) || measured <= 0) return false;
   if (!Number.isFinite(stored) || stored <= 0) return true;
   return Math.abs(stored - measured) > 2;
+}
+
+/**
+ * 直播流判定：用户提供的在线流若没有已知时长（duration 为 0；直播流的
+ * duration 是 Infinity，被 shouldUpdateDuration 忽略），就按直播流呈现——
+ * 界面显示已播时长 + LIVE，而不是 0:00 / 0:00。
+ */
+export function isLiveStream(song: { streamUrl?: string; duration: number } | null | undefined): boolean {
+  if (!song?.streamUrl) return false;
+  return !Number.isFinite(song.duration) || song.duration <= 0;
 }
 
 export function makeId(): string {
