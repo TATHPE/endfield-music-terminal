@@ -402,11 +402,16 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
           // Surface the real failure (autoplay block, missing file, codec, ...)
           // instead of dying silently.
           const name = err instanceof Error ? err.name : String(err);
+          const mediaErr = audio.error;
+          const detail = mediaErr
+            ? `${name} · media code=${mediaErr.code}${mediaErr.message ? ' ' + mediaErr.message : ''}`
+            : name;
+          appendLog(`PLAY FAILED — ${detail}`, 'error');
           setIsPlaying(false);
           toast.error(
             opts?.crossOrigin
-              ? `${playFailedFor(name, song.title)}（该在线流可能不支持跨域播放）`
-              : playFailedFor(name, song.title),
+              ? `${playFailedFor(detail, song.title)}（该在线流可能不支持跨域播放）`
+              : playFailedFor(detail, song.title),
           );
         });
       };
@@ -872,9 +877,13 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onError={(e) => {
+          // 媒体元素自身的错误（解码失败 / 流类型不支持 / 网络中断）不会让 play() 抛错，
+          // 所以必须同时写进 SYSTEM LOG，否则真机上"点了没反应"却毫无线索。
           const el = e.currentTarget;
           const code = el.error?.code ?? 'unknown';
+          const message = el.error?.message || '';
           const src = el.currentSrc || el.src || '';
+          appendLog(`MEDIA ERROR — code=${code}${message ? ' ' + message : ''} (${src.slice(0, 60)})`, 'error');
           toast.error(audioLoadFailed(code, src.split('/').pop() || STATES.UNKNOWN_SOURCE));
         }}
       />
