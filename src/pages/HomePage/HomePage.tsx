@@ -88,6 +88,13 @@ export default function HomePage() {
   };
 
   const handleTouchStart = (e: TouchEvent) => {
+    // 手势起点落在滑块类控件上时，整段手势都不参与翻页判定。
+    // 否则拖动进度条/音量条（本身就是横向位移）会被当成左右滑动而意外切页。
+    const el = e.target as HTMLElement | null;
+    if (el && typeof el.closest === 'function' && el.closest('[role="slider"], input[type="range"], [data-no-swipe]')) {
+      swipeStart.current = null;
+      return;
+    }
     const t = e.touches[0];
     swipeStart.current = { x: t.clientX, y: t.clientY };
   };
@@ -99,8 +106,8 @@ export default function HomePage() {
     const t = e.changedTouches[0];
     const dx = t.clientX - start.x;
     const dy = t.clientY - start.y;
-    // horizontal-dominant swipe past threshold; ignore vertical scrolls
-    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+    // 横向占优且超过阈值才翻页；纵向滚动、轻微抖动都忽略
+    if (Math.abs(dx) < 80 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
     const idx = VIEW_ORDER.indexOf(view);
     if (dx < 0 && idx < VIEW_ORDER.length - 1) go(VIEW_ORDER[idx + 1]);
     else if (dx > 0 && idx > 0) go(VIEW_ORDER[idx - 1]);

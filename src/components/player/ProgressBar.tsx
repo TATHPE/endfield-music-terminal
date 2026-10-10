@@ -76,6 +76,9 @@ export default function ProgressBar({ value, max, onSeek, disabled = false, play
           onSeek(max);
         }
       }}
+      // 触摸事件与指针事件是两条独立事件流：只屏蔽 pointer 不足以阻止父级翻页，
+      // 这里再把 touch 流也截断（父级只在 touchstart/touchend 上做翻页判定）。
+      onTouchStart={(e) => e.stopPropagation()}
       onPointerDown={(e) => {
         if (disabled) return;
         draggingRef.current = true;
