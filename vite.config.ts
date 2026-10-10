@@ -11,6 +11,18 @@ import { manualChunksFor } from './vite.chunks';
 // 不再依赖构建期注入的环境变量。
 const basePath = '/';
 
+/** 版本号单一来源：package.json */
+const appVersion: string = (() => {
+  try {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf8'),
+    ) as { version?: string };
+    return pkg.version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+})();
+
 // 产物分层：vite 原生产物（dist/client，中间产物，整理后删除）→ 妙搭托管产物结构：
 //   dist/output/           index.html + public 同源资源 + routes.json（走应用权限校验）
 //   dist/output_resource/  assets JS/CSS（推 CDN，公开）
@@ -84,6 +96,10 @@ export default defineConfig(({ command }) => ({
   plugins: [react(), tailwindcss(), miaodaOutputPlugin()],
   // 生产构建与 dev 都挂在根路径（资源前缀与路由 basename 解耦）
   base: command === 'build' ? basePath : '/',
+  define: {
+    // 与 capacitor 配置保持一致（Web 版也要能编译）
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),

@@ -1,6 +1,6 @@
 {
   "name": "endfield-music-terminal",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "终末地风格本地音乐播放器（Android APK / Web）",
   "private": true,
   "type": "module",

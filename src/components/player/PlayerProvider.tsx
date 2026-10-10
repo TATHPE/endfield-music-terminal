@@ -355,6 +355,15 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     setScanLogs((prev) => [...prev.slice(-80), line]);
   }, []);
 
+  // 启动时把构建版本写进 SYSTEM LOG：便于真机上确认"装的到底是哪个构建"
+  // （同一个 versionCode 反复覆盖安装时，这一点非常关键）。
+  useEffect(() => {
+    const version = typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : 'dev';
+    // 放到 rAF 里：避免在 effect 体内直接 setState（hooks 规则）
+    const frame = requestAnimationFrame(() => appendLog(`APP BOOT — v${version}`));
+    return () => cancelAnimationFrame(frame);
+  }, [appendLog]);
+
   // Playlist CRUD: src/hooks/use-playlists.ts
   const { createPlaylist, renamePlaylist, deletePlaylist, addToPlaylist, removeFromPlaylist } =
     usePlaylists({ setPlaylists, setActiveQueueId });

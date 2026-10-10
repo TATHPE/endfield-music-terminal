@@ -11,6 +11,18 @@ import { manualChunksFor } from './vite.chunks';
 // 临时挪走再还原"的旧做法（那种做法在构建被中断或并发时会丢源文件）。
 const lite = process.env.ENDFIELD_LITE === '1';
 
+/** 版本号单一来源：package.json */
+const appVersion: string = (() => {
+  try {
+    const pkg = JSON.parse(
+      fs.readFileSync(path.resolve(import.meta.dirname, 'package.json'), 'utf8'),
+    ) as { version?: string };
+    return pkg.version || '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+})();
+
 /** lite 构建：拷贝 public/ 下除 songs/ 之外的一切，保证产物里没有预置曲库。 */
 function publicWithoutSongs(): Plugin {
   return {
@@ -35,6 +47,10 @@ export default defineConfig({
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
     },
+  },
+  define: {
+    // 把版本号编进包里：启动时写进 SYSTEM LOG，方便确认"装的是哪个构建"
+    __APP_VERSION__: JSON.stringify(appVersion),
   },
   build: {
     outDir: 'dist/apk',
