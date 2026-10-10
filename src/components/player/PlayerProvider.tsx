@@ -18,6 +18,7 @@ import MediaSessionBridge from '@/components/player/MediaSessionBridge';
 import { shouldLog, type LogLevel } from '@/lib/terminal-config';
 import { streamCodecFromUrl, streamTitleFromUrl, validateStreamUrl } from '@/lib/stream';
 import { MseMp3Stream } from '@/lib/mse-stream';
+import { preferredStreamChannel } from '@/lib/stream-source';
 import { useDeviceLibrary } from '@/hooks/use-device-library';
 import { usePlaylists } from '@/hooks/use-playlists';
 import {
@@ -373,9 +374,12 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     // MSE(MP3) 支持情况也一起报出来：在线流能否播放完全取决于它，
     // 真机上开机即可确认，不必先试一次流再猜。
     const mseOk = MseMp3Stream.isSupported() ? 'YES' : 'NO';
-    const frame = requestAnimationFrame(() =>
-      appendLog(`APP BOOT — v${version} · MSE(MP3)=${mseOk}`),
-    );
+    // 在线流的取流通道：原生可用时走插件（不带 Origin，绕开热链保护 403），
+    // web 构建回退 fetch。真机上开机即可确认当前走哪条，不必先试一次流。
+    const streamSrc = preferredStreamChannel();
+    const frame = requestAnimationFrame(() => {
+      appendLog(`APP BOOT — v${version} · MSE(MP3)=${mseOk} · STREAM SRC=${streamSrc}`);
+    });
     return () => cancelAnimationFrame(frame);
   }, [appendLog]);
 
@@ -471,11 +475,13 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
         }
         if (MseMp3Stream.isSupported()) {
           // ICY / Shoutcast 流：安卓 WebView 的原生解码器会报 code=4 Format
-          // error，改用 fetch + MSE 自己拉流喂给 <audio>（fetch 不发
-          // Icy-MetaData，服务端会回干净的 HTTP 200 + 纯 MP3）。失败则回退原生。
+          // error，改用 MSE 自己拉流喂给 <audio>。取流通道由 stream-source 定：
+          // 原生插件优先（fetch 必带 Origin，会被电台热链保护回 403），
+          // web 构建回退 fetch。MSE 失败仍回退到原生 <audio>。
           const stream = new MseMp3Stream(audio, streamUrl, {
             onError: (m) => appendLog('STREAM ERROR — ' + m, 'error'),
             onLog: (m) => appendLog(m, 'trace'),
+            channel: preferredStreamChannel(),
           });
           if (currentIdRef.current !== id) {
             // 用户已经切到别的曲目：这条流不该再绑到 <audio> 上。

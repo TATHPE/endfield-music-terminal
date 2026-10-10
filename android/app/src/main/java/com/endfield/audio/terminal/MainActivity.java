@@ -27,6 +27,9 @@ public class MainActivity extends BridgeActivity {
         // "X plugin is not implemented on android".
         registerPlugin(SystemBarsPlugin.class);
         registerPlugin(MediaScannerPlugin.class);
+        // 在线流的原生取流通道：WebView 的 fetch 必带 Origin，会被电台热链保护
+        // 回 403；这条通道自己发请求、把字节推给现有 MSE 播放器。
+        registerPlugin(StreamFetcherPlugin.class);
         super.onCreate(savedInstanceState);
         // Force edge-to-edge on EVERY Android version (not just 15+): with the
         // decor not fitting the system bars, the status/navigation bar areas are

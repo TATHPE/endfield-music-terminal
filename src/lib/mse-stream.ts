@@ -15,12 +15,23 @@
 // playhead evicted periodically. The window math lives in src/lib/mse-window.ts.
 
 import { evictionRange, shouldPauseAppend, type BufferedRange } from '@/lib/mse-window';
+import {
+  createStreamSource,
+  describeStreamSourceError,
+  type StreamChannel,
+  type StreamSource,
+} from '@/lib/stream-source';
 
 export interface MseStreamOptions {
   /** Receives a Chinese, end-user readable failure reason. */
   onError?: (msg: string) => void;
   /** Receives trace lines for the in-app SYSTEM LOG. */
   onLog?: (msg: string) => void;
+  /**
+   * 字节来源：`native` 走原生取流插件（绕开 WebView 的 Origin 头，避免被
+   * 热链保护回 403），`fetch` 走浏览器 fetch。缺省按 stream-source 的策略选。
+   */
+  channel?: StreamChannel;
 }
 
 /** Assumed codec when the server sends no usable Content-Type. */
@@ -46,21 +57,12 @@ const SOURCE_OPEN_TIMEOUT_MS = 8000;
 /** Give playback this long to actually start before reporting failure. */
 const START_TIMEOUT_MS = 15000;
 
-/** `Icy-MetaData` is deliberately never sent — it is what mangles the body. */
-const FETCH_INIT: RequestInit = {
-  method: 'GET',
-  cache: 'no-store',
-  redirect: 'follow',
-  credentials: 'omit',
-  headers: { Accept: 'audio/mpeg, audio/*;q=0.9, */*;q=0.8' },
-};
-
 function describe(error: unknown): string {
   if (error instanceof Error) return `${error.name}: ${error.message}`;
   return String(error);
 }
 
-function normalizeMime(raw: string | null, url: string): string {
+function normalizeMime(raw: string | undefined, url: string): string {
   const value = String(raw || '')
     .split(';')[0]
     .trim()
@@ -98,12 +100,14 @@ export class MseMp3Stream {
   private readonly url: string;
   private readonly onError?: (msg: string) => void;
   private readonly onLog?: (msg: string) => void;
+  private readonly channel?: StreamChannel;
 
   private readonly abort = new AbortController();
   private mediaSource: MediaSource | null = null;
   private sourceBuffer: SourceBuffer | null = null;
   private objectUrl: string | null = null;
-  private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  /** 字节来源（native 插件或浏览器 fetch），由 src/lib/stream-source.ts 提供。 */
+  private source: StreamSource | null = null;
 
   /** The one queued chunk waiting for the SourceBuffer to become free. */
   private pending: ArrayBuffer | null = null;
@@ -132,6 +136,7 @@ export class MseMp3Stream {
     this.url = url;
     this.onError = opts?.onError;
     this.onLog = opts?.onLog;
+    this.channel = opts?.channel;
   }
 
   /** True once `stop()` has run — lets the caller ignore late media events. */
@@ -167,9 +172,14 @@ export class MseMp3Stream {
     }
     this.clearTimers();
 
-    const reader = this.reader;
-    this.reader = null;
-    if (reader) void reader.cancel().catch(() => undefined);
+    // 幂等：source 的 stop 会取消 fetch body / 通知原生关闭连接 + ack 回收。
+    const source = this.source;
+    this.source = null;
+    try {
+      source?.stop();
+    } catch {
+      /* 连接可能早已断开 */
+    }
 
     this.audio.removeEventListener('error', this.onAudioError);
 
@@ -248,15 +258,9 @@ export class MseMp3Stream {
     return code === undefined ? '' : `（媒体 code=${code}）`;
   }
 
-  /** Preflight + fetch + MediaSource wiring. */
+  /** Preflight + 打开字节来源 + MediaSource wiring. */
   private async setup(): Promise<void> {
-    const controller = new AbortController();
-    const onOuterAbort = () => controller.abort();
     if (this.abort.signal.aborted) return;
-    // AbortSignal.any() is missing on the WebView kernels this targets, so the
-    // two signals are chained by hand.
-    this.abort.signal.addEventListener('abort', onOuterAbort);
-
     try {
       if (/^http:\/\//i.test(this.url)) {
         // Requesting it would only produce an opaque net error, so report the
@@ -267,27 +271,27 @@ export class MseMp3Stream {
         throw new Error('浏览器不支持 MSE 播放 MP3');
       }
 
-      let response: Response;
+      // 唯一的改动点：字节来源换成 stream-source（native 优先，fetch 回退）。
+      // 其余逻辑（窗口 / 淘汰 / 看门狗 / 错误面 / stop 幂等）一概未动。
+      let source: StreamSource;
       try {
-        response = await fetch(this.url, { ...FETCH_INIT, signal: controller.signal });
+        source = await createStreamSource(this.url, this.abort.signal, { prefer: this.channel });
       } catch (err) {
         if (this.stopped) return;
-        throw new Error(`该电台流拉取失败（可能不支持跨域或网络不可达）— ${describe(err)}`);
+        throw new Error(describeStreamSourceError(err));
       }
-      if (this.stopped) return;
-      if (!response.ok) {
-        throw new Error(`该电台流返回错误状态 HTTP ${response.status} ${response.statusText}`.trim());
+      if (this.stopped) {
+        source.stop();
+        return;
       }
-      const body = response.body;
-      if (!body) throw new Error('该电台流没有返回可读取的数据体');
-
-      const rawMime = response.headers.get('content-type');
+      this.source = source;
+      // MIME 决策仍留在本类里（与历史一致）：来源只报服务端给的类型。
       this.mime =
-        normalizeMime(rawMime, this.url) ||
+        normalizeMime(source.type, this.url) ||
         MIME_FALLBACKS.find((m) => MediaSource.isTypeSupported(m)) ||
         DEFAULT_MIME;
       this.log(
-        `MSE OPEN — HTTP ${response.status} · type=${rawMime || 'unknown'} · mime=${this.mime}`,
+        `MSE OPEN — HTTP ${source.channel} · type=${source.type || 'unknown'} · mime=${this.mime} · via=${source.channel}`,
       );
 
       const media = new MediaSource();
@@ -319,15 +323,12 @@ export class MseMp3Stream {
 
       this.playRequested = true;
       if (this.stopped) return;
-      this.reader = body.getReader();
       // Kick playback immediately; a rejected promise here is normal (no data
       // yet) and is retried from every `updateend` via maybeStartPlayback().
       void this.tryPlay();
     } catch (err) {
       if (this.stopped) return;
       this.fail(err instanceof Error ? err.message : String(err));
-    } finally {
-      this.abort.signal.removeEventListener('abort', onOuterAbort);
     }
   }
 
@@ -371,19 +372,13 @@ export class MseMp3Stream {
     if (this.pending !== null) this.flush();
   };
 
-  /** Read the fetched body and feed it to the SourceBuffer. */
+  /** 从字节来源逐批取数据，喂给 SourceBuffer。 */
   private async readLoop(): Promise<void> {
-    const reader = this.reader;
-    if (!reader) return;
+    const source = this.source;
+    if (!source) return;
     try {
-      for (;;) {
-        const { done, value } = await reader.read();
+      for await (const value of source.values()) {
         if (this.stopped) return;
-        if (done) {
-          this.log('MSE EOF — 在线流已结束');
-          this.endStream();
-          return;
-        }
         if (!value || value.byteLength === 0) continue;
         if (shouldPauseAppend(this.readBuffered(), this.audio.currentTime, AHEAD_SEC)) {
           // Over the look-ahead window: drop the chunk so the mount depth stays
@@ -393,6 +388,9 @@ export class MseMp3Stream {
         }
         await this.append(value);
       }
+      if (this.stopped) return;
+      this.log('MSE EOF — 在线流已结束');
+      this.endStream();
     } catch (err) {
       if (this.stopped) return;
       this.fail(`读取在线流数据失败（连接可能已中断）— ${describe(err)}`);
