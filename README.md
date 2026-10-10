@@ -11,7 +11,7 @@
 
 | 版本 | 说明 | 下载 |
 | --- | --- | --- |
-| v1.4.3 (release · 正式版) | 正式签名版，**应用图标重设计（信息终端 × 音乐 × 终末地）+ R8 压缩瘦身（无歌曲版 4.09 MB → 1.84 MB）+ 在线流媒体（自填合法 http/https 音频流）+ 界面文案集中管理 + 单元测试与 CI + 长列表窗口化 + 存储管理 + 歌词 provider 化与失败提示区分**；不含预置歌曲（通过扫描设备从手机导入） | [EndfieldMusicTerminal-v1.4.3-release-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.3/EndfieldMusicTerminal-v1.4.3-release-lite.apk) · [完整版 97.68 MB](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.3/EndfieldMusicTerminal-v1.4.3-release-full.apk) |
+| v1.4.3 (release · 正式版) | 正式签名版，**应用图标重设计（信息终端 × 音乐 × 终末地）+ R8 压缩瘦身（无歌曲版 4.09 MB → 1.84 MB）+ 在线流媒体（自填合法 http/https 音频流）+ 界面文案集中管理 + 单元测试与 CI + 长列表窗口化 + 存储管理 + 歌词 provider 化与失败提示区分**；不含预置歌曲（通过扫描设备从手机导入） | [EndfieldMusicTerminal-v1.4.3-release-lite.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.3/EndfieldMusicTerminal-v1.4.3-release-lite.apk) · [完整版 97.63 MB](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.3/EndfieldMusicTerminal-v1.4.3-release-full.apk) |
 | v1.4.2 (release · 正式版) | 正式签名版，**锁屏拖动进度条回弹修复 + 频谱 / 终端行为开关 / 布局 / 歌词同步 / 多 ROM 适配修复**（详见 [更新日志](docs/更新日志.md) 的 v1.4.2 更新内容）；不含预置歌曲（通过扫描设备从手机导入） | [EndfieldMusicTerminal-v1.4.2.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.2/EndfieldMusicTerminal-v1.4.2.apk) |
 | v1.4.1 (release · 正式版) | 正式签名版，**歌词获取流程重构**：扫描歌曲仅读取本地同名 .lrc/.txt、**不自动联网匹配**；无歌词歌曲在歌词页自主选择「联网获取歌词」或「导入歌词文件」；封面在线匹配改为后台线程池异步执行；修复曲库副标题 ORIGIN NODE — 本地音频存储 在安卓上的错误断行；不含预置歌曲（通过扫描设备从手机导入） | [EndfieldMusicTerminal-v1.4.1.apk](https://github.com/TATHPE/endfield-music-terminal/releases/download/v1.4.1/EndfieldMusicTerminal-v1.4.1.apk) |
 
