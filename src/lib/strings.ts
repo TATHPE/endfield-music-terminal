@@ -69,6 +69,8 @@ export const LABELS = {
   SCROLL_MODE: '滚动模式',
   LOG_MODE: '日志模式',
   PLAYLIST_NAME_PLACEHOLDER: '新建播放序列名称…',
+  /** 导入按钮下方的操作提示：安卓文件选择器需长按第一个文件才能多选 */
+  IMPORT_HINT: '可长按多选，或直接拖入多个文件；也支持 .m3u / .pls 歌单',
 } as const;
 
 /** 提示语 / 系统状态回执。 */

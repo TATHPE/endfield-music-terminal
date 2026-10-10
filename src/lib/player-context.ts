@@ -75,7 +75,8 @@ export interface PlayerContextState {
   removeFromQueue: (id: string) => void;
 
   /** 在线地址：把用户自己提供的 http(s) 音频流加入介质库（只播放，不解析/不代理/不内置源） */
-  addStreamSong: (url: string) => Promise<{ ok: boolean; reason?: string }>;
+  /** opts.silent：批量导入（如歌单）时静默，不逐条弹提示，由调用方汇总 */
+  addStreamSong: (url: string, opts?: { silent?: boolean }) => Promise<{ ok: boolean; reason?: string }>;
   /** delete every imported / scanned song; bundled preset tracks stay */
   clearLibrary: () => Promise<void>;
   /** wipe all local data (library, sequences, preferences) and restart the app */

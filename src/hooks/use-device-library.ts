@@ -8,6 +8,13 @@ import { fetchItunesCover, parseAudioFile, toSong } from '@/lib/parser';
 import { md5Hex } from '@/lib/md5';
 import { MediaScanner, isNative, type DeviceSong } from '@/lib/media-scanner';
 import type { LogLevel } from '@/lib/terminal-config';
+import {
+  baseNameOf,
+  classifyEntry,
+  isPlaylistFileName,
+  parsePlaylistFile,
+  type ParsedPlaylist,
+} from '@/lib/playlist-file';
 
 interface DeviceLibraryDeps {
   /** current library — used to resolve the song when fetching its lyrics */
@@ -15,96 +22,206 @@ interface DeviceLibraryDeps {
   setSongs: Dispatch<SetStateAction<ISong[]>>;
   /** terminal log sink (level-gated by the 系统配置 LOG level) */
   appendLog: (line: string, level?: LogLevel) => void;
+  /** 在线地址入库（PlayerProvider 的 addStreamSong）——歌单里的 http(s) 条目走这里 */
+  addStream: (url: string, opts?: { silent?: boolean }) => Promise<{ ok: boolean; reason?: string }>;
+  /** 播放序列 CRUD（usePlaylists 提供）——歌单文件会落成一个新的播放序列 */
+  createPlaylist: (name: string) => string;
+  addToPlaylist: (playlistId: string, songId: string) => void;
 }
 
 /**
  * Import / scan / lyrics domain, extracted from PlayerProvider (the code is
  * moved verbatim — behaviour is unchanged). Covers:
  * - `importFiles`  : user-picked files → parse metadata/cover → IndexedDB
+ *                    （同时支持 .m3u / .m3u8 / .pls 歌单：在线流入库，本地条目
+ *                     匹配曲库后落成一个新的播放序列）
  * - `scanDeviceSongs`: native MediaStore scan (dedupes by device path)
  * - `fetchLyricsOnline` / `importLyrics` / sidecar read: the lyric entry points
  */
-export function useDeviceLibrary({ songs, setSongs, appendLog }: DeviceLibraryDeps) {
+export function useDeviceLibrary({
+  songs,
+  setSongs,
+  appendLog,
+  addStream,
+  createPlaylist,
+  addToPlaylist,
+}: DeviceLibraryDeps) {
   const importFiles = useCallback(
     async (files: FileList | File[]) => {
-      const list = Array.from(files).filter(
+      const picked = Array.from(files);
+      // 歌单文件（.m3u / .m3u8 / .pls）不参与音频解析：它们的 MIME 也可能声明为
+      // audio/x-mpegurl，必须显式排除，改走下面的歌单分支。
+      const playlistFiles = picked.filter((f) => isPlaylistFileName(f.name));
+      const list = picked.filter(
         (f) =>
-          f.type.startsWith('audio/') ||
-          /\.(mp3|flac|m4a|wav|ogg|aac|opus|ape|wma|aiff)$/i.test(f.name),
+          !isPlaylistFileName(f.name) &&
+          (f.type.startsWith('audio/') ||
+            /\.(mp3|flac|m4a|wav|ogg|aac|opus|ape|wma|aiff)$/i.test(f.name)),
       );
-      if (list.length === 0) {
+      if (list.length === 0 && playlistFiles.length === 0) {
         toast.error('未检测到音频文件');
         return;
       }
-      appendLog(`SCAN DIR: /MEDIA/USB0`, 'trace');
-      appendLog(`FOUND ${list.length} MEDIA FILE${list.length === 1 ? '' : 'S'}`);
-      let ok = 0;
-      let fail = 0;
-      let duplicate = 0;
-      let quotaHit = false;
-      for (const file of list) {
-        // Same name + same byte size is already in the library: importing it
-        // again would only create a duplicate row.
-        if (songs.some((s) => s.fileName === file.name && s.audio?.size === file.size)) {
-          duplicate += 1;
-          appendLog(`SKIP DUPLICATE ${file.name}`, 'trace');
-          continue;
-        }
-        try {
-          const meta = await parseAudioFile(file);
-          const song = toSong(meta, file, makeId(), Date.now());
-          await putSong(song);
-          setSongs((prev) => [...prev, song]);
-          ok += 1;
-          appendLog(`LOAD TRACK ${file.name} OK (${formatCodec(song.codec)})`, 'trace');
-          // Media integrity hash — computed off the critical path so large
-          // files don't block the import loop.
-          void (async () => {
-            try {
-              const buf = await file.arrayBuffer();
-              const hash = md5Hex(buf);
-              const updated = { ...song, hash };
-              await putSong(updated);
-              setSongs((prev) => prev.map((s) => (s.id === song.id ? updated : s)));
-            } catch {
-              /* hash is best-effort */
-            }
-          })();
-          if (!song.cover) {
-            void fetchItunesCover(song.artist, song.title, song.album).then((cover) => {
-              if (!cover) return;
-              const updated = { ...song, cover };
-              void putSong(updated).then(() => {
+
+      // ---- 音频文件：过滤规则、日志与提示均保持原样 ----------------------
+      if (list.length > 0) {
+        appendLog(`SCAN DIR: /MEDIA/USB0`, 'trace');
+        appendLog(`FOUND ${list.length} MEDIA FILE${list.length === 1 ? '' : 'S'}`);
+        let ok = 0;
+        let fail = 0;
+        let duplicate = 0;
+        let quotaHit = false;
+        for (const file of list) {
+          // Same name + same byte size is already in the library: importing it
+          // again would only create a duplicate row.
+          if (songs.some((s) => s.fileName === file.name && s.audio?.size === file.size)) {
+            duplicate += 1;
+            appendLog(`SKIP DUPLICATE ${file.name}`, 'trace');
+            continue;
+          }
+          try {
+            const meta = await parseAudioFile(file);
+            const song = toSong(meta, file, makeId(), Date.now());
+            await putSong(song);
+            setSongs((prev) => [...prev, song]);
+            ok += 1;
+            appendLog(`LOAD TRACK ${file.name} OK (${formatCodec(song.codec)})`, 'trace');
+            // Media integrity hash — computed off the critical path so large
+            // files don't block the import loop.
+            void (async () => {
+              try {
+                const buf = await file.arrayBuffer();
+                const hash = md5Hex(buf);
+                const updated = { ...song, hash };
+                await putSong(updated);
                 setSongs((prev) => prev.map((s) => (s.id === song.id ? updated : s)));
+              } catch {
+                /* hash is best-effort */
+              }
+            })();
+            if (!song.cover) {
+              void fetchItunesCover(song.artist, song.title, song.album).then((cover) => {
+                if (!cover) return;
+                const updated = { ...song, cover };
+                void putSong(updated).then(() => {
+                  setSongs((prev) => prev.map((s) => (s.id === song.id ? updated : s)));
+                });
               });
-            });
+            }
+          } catch (err) {
+            fail += 1;
+            if (err instanceof Error && err.name === 'QuotaExceededError') {
+              quotaHit = true;
+              appendLog(`LOAD TRACK ${file.name} FAILED — STORAGE QUOTA EXCEEDED`, 'error');
+            } else {
+              appendLog(`LOAD TRACK ${file.name} FAILED — FORMAT UNSUPPORTED`, 'warn');
+            }
           }
-        } catch (err) {
-          fail += 1;
-          if (err instanceof Error && err.name === 'QuotaExceededError') {
-            quotaHit = true;
-            appendLog(`LOAD TRACK ${file.name} FAILED — STORAGE QUOTA EXCEEDED`, 'error');
-          } else {
-            appendLog(`LOAD TRACK ${file.name} FAILED — FORMAT UNSUPPORTED`, 'warn');
-          }
+        }
+        if (ok > 0) {
+          appendLog(
+            `IMPORT COMPLETE: ${ok} OK / ${fail} FAILED${duplicate > 0 ? ` / ${duplicate} DUPLICATE` : ''}`,
+          );
+          toast.success(
+            `已导入 ${ok} 首曲目${fail > 0 ? `，${fail} 首解析失败` : ''}${duplicate > 0 ? `，跳过 ${duplicate} 首重复` : ''}`,
+          );
+        } else if (quotaHit) {
+          toast.error('存储空间不足，导入失败——请清理介质库后重试');
+        } else if (fail === 0 && duplicate > 0) {
+          toast.info(`这 ${duplicate} 首已在介质库中，已跳过`);
+        } else if (fail > 0) {
+          toast.error('导入失败，请检查音频文件格式');
         }
       }
-      if (ok > 0) {
+
+      // ---- 歌单文件：在线流入库 / 本地条目匹配成新的播放序列 --------------
+      if (playlistFiles.length > 0) {
+        // 本地条目按「文件名 / 歌名」与现有曲库比对（忽略大小写与扩展名）。
+        const byName = new Map<string, ISong>();
+        for (const song of songs) {
+          for (const raw of [song.title, song.fileName]) {
+            const key = baseNameOf(raw).toLowerCase();
+            if (key && !byName.has(key)) byName.set(key, song);
+          }
+        }
+        let streams = 0;
+        let streamFailed = 0;
+        let matched = 0;
+        let unmatched = 0;
+        let ignored = 0;
+        for (const file of playlistFiles) {
+          let parsed: ParsedPlaylist;
+          try {
+            parsed = parsePlaylistFile(file.name, await file.text());
+          } catch {
+            appendLog(`PLAYLIST ${file.name} FAILED — READ ERROR`, 'warn');
+            continue;
+          }
+          ignored += parsed.skipped;
+          if (parsed.entries.length === 0) {
+            appendLog(`PLAYLIST ${file.name} — NO USABLE ENTRY`, 'warn');
+            continue;
+          }
+          // 在线流：交给 addStream 入库（地址校验在该函数内部完成）
+          let addedStreams = 0;
+          for (const entry of parsed.entries) {
+            if (classifyEntry(entry.url) !== 'stream') continue;
+            // 歌单可能一次带很多条流：静默入库，最后只留一条汇总提示
+            const r = await addStream(entry.url, { silent: true });
+            if (r.ok) {
+              streams += 1;
+              addedStreams += 1;
+            } else {
+              streamFailed += 1;
+            }
+          }
+          if (addedStreams > 0) appendLog(`PLAYLIST STREAM +${addedStreams}`);
+          // 本地条目：命中曲库的收进一个新建的播放序列（有命中才创建）
+          let playlistId: string | null = null;
+          const added = new Set<string>();
+          let fileMatched = 0;
+          for (const entry of parsed.entries) {
+            if (classifyEntry(entry.url) === 'stream') continue;
+            const song = byName.get(baseNameOf(entry.url).toLowerCase());
+            if (!song) {
+              unmatched += 1;
+              continue;
+            }
+            if (added.has(song.id)) continue;
+            if (playlistId === null) {
+              playlistId = createPlaylist(baseNameOf(file.name) || '导入歌单');
+            }
+            addToPlaylist(playlistId, song.id);
+            added.add(song.id);
+            matched += 1;
+            fileMatched += 1;
+          }
+          if (fileMatched > 0) {
+            appendLog(
+              `PLAYLIST ${file.name} — ${fileMatched} TRACK${fileMatched === 1 ? '' : 'S'} MATCHED`,
+              'trace',
+            );
+          }
+        }
         appendLog(
-          `IMPORT COMPLETE: ${ok} OK / ${fail} FAILED${duplicate > 0 ? ` / ${duplicate} DUPLICATE` : ''}`,
+          `PLAYLIST IMPORT: ${streams} STREAM / ${matched} MATCHED / ${unmatched} UNMATCHED`,
         );
-        toast.success(
-          `已导入 ${ok} 首曲目${fail > 0 ? `，${fail} 首解析失败` : ''}${duplicate > 0 ? `，跳过 ${duplicate} 首重复` : ''}`,
-        );
-      } else if (quotaHit) {
-        toast.error('存储空间不足，导入失败——请清理介质库后重试');
-      } else if (fail === 0 && duplicate > 0) {
-        toast.info(`这 ${duplicate} 首已在介质库中，已跳过`);
-      } else if (fail > 0) {
-        toast.error('导入失败，请检查音频文件格式');
+        const parts: string[] = [];
+        if (streams > 0) parts.push(`${streams} 条在线流`);
+        if (matched > 0) parts.push(`${matched} 首匹配入库`);
+        if (unmatched > 0) parts.push(`${unmatched} 条未匹配`);
+        if (streamFailed > 0) parts.push(`${streamFailed} 条在线流无效`);
+        if (ignored > 0) parts.push(`${ignored} 行已忽略`);
+        if (parts.length === 0) {
+          toast.info('歌单中没有可导入的条目');
+        } else if (streams === 0 && matched === 0) {
+          toast.info(`歌单导入：${parts.join('、')}`);
+        } else {
+          toast.success(`歌单导入：${parts.join('、')}`);
+        }
       }
     },
-    [appendLog, songs, setSongs],
+    [addStream, addToPlaylist, appendLog, createPlaylist, songs, setSongs],
   );
 
   /** Read the same-directory sidecar lyric (.lrc/.txt) for a device song.

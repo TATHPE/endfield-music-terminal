@@ -247,3 +247,20 @@
 .bg-scan-anim {
   animation: bg-scan-move linear infinite;
 }
+
+/* Thin terminal-style scrollbar (used by the lyrics LOG readout). */
+@utility thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 9999px;
+  }
+}

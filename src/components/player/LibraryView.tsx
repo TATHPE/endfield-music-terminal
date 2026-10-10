@@ -203,6 +203,11 @@ export default function LibraryView() {
         </div>
       </header>
 
+      {/* 导入提示：安卓文件选择器必须长按第一个文件才能多选，之前没有任何说明 */}
+      <p className="font-mono text-[10px] leading-relaxed tracking-[0.14em] text-muted-foreground">
+        {LABELS.IMPORT_HINT}
+      </p>
+
       {/* 在线地址（流媒体）入口 */}
       <StreamAddRow />
 
@@ -449,10 +454,12 @@ export default function LibraryView() {
         )}
 
       {/* Shared hidden file input */}
+      {/* accept 追加歌单扩展名：否则安卓选择器会把 .m3u / .pls 一并过滤掉，
+          用户根本选不到歌单文件（拖拽导入不受 accept 影响）。 */}
       <input
         ref={fileRef}
         type="file"
-        accept="audio/*"
+        accept="audio/*,.m3u,.m3u8,.pls"
         multiple
         className="hidden"
         onChange={(e) => {

@@ -355,12 +355,6 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     setScanLogs((prev) => [...prev.slice(-80), line]);
   }, []);
 
-  // Import / scan / lyrics: src/hooks/use-device-library.ts
-  const { importFiles, scanDeviceSongs, fetchLyricsOnline, importLyrics } = useDeviceLibrary({
-    songs,
-    setSongs,
-    appendLog,
-  });
   // Playlist CRUD: src/hooks/use-playlists.ts
   const { createPlaylist, renamePlaylist, deletePlaylist, addToPlaylist, removeFromPlaylist } =
     usePlaylists({ setPlaylists, setActiveQueueId });
@@ -681,7 +675,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   /** 在线地址（流媒体）：把用户粘贴的 http(s) 音频流加入介质库。
    *  只做技术校验与保存——不搜索、不下载、不解密、不代理任何资源。 */
   const addStreamSong = useCallback(
-    async (rawUrl: string): Promise<{ ok: boolean; reason?: string }> => {
+    async (rawUrl: string, opts?: { silent?: boolean }): Promise<{ ok: boolean; reason?: string }> => {
       const check = validateStreamUrl(rawUrl);
       if (!check.ok) {
         appendLog(`STREAM REJECTED — ${check.reason}`, 'warn');
@@ -706,11 +700,23 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
       await putSong(song);
       setSongs((prev) => [...prev, song]);
       appendLog(`STREAM ADDED — ${title}`, 'trace');
-      toast.success('已加入介质库（在线地址）');
+      if (!opts?.silent) toast.success('已加入介质库（在线地址）');
       return { ok: true };
     },
     [appendLog],
   );
+
+  // Import / scan / lyrics: src/hooks/use-device-library.ts
+  // 放在 addStreamSong 与 usePlaylists 之后：歌单导入需要 addStream /
+  // createPlaylist / addToPlaylist，通过参数传入，不跨 hook 读状态。
+  const { importFiles, scanDeviceSongs, fetchLyricsOnline, importLyrics } = useDeviceLibrary({
+    songs,
+    setSongs,
+    appendLog,
+    addStream: addStreamSong,
+    createPlaylist,
+    addToPlaylist,
+  });
 
   /** 把媒体元素实测到的时长回写进介质库：在线流的时长本来未知（0），播放时才知道。
    *  只有明显不同（>2s）才覆盖，避免把可靠的标签值改坏。 */

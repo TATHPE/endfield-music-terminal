@@ -45,6 +45,8 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
     [currentSong?.lyrics, offset],
   );
   const scrollerRef = useRef<HTMLDivElement | null>(null);
+  /** LOG 模式的滚动容器：全量铺开但可滚动，并把当前行自动滚入视野 */
+  const logRef = useRef<HTMLDivElement | null>(null);
   const activeLineRef = useRef<HTMLDivElement | null>(null);
   const lastIdxRef = useRef(-1);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -85,6 +87,18 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
     const target = el.offsetTop - scroller.clientHeight / 2 + el.clientHeight / 2;
     scroller.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
   }, [activeIdx]);
+
+  // LOG 模式：整首铺开，但把当前行滚入视野（此前容器 overflow-hidden，
+  // 歌词一长就会被裁掉、当前行也可能看不见）。
+  useEffect(() => {
+    if (mode !== 'log') return;
+    const scroller = logRef.current;
+    if (!scroller) return;
+    const active = scroller.querySelector<HTMLElement>(`[data-log-line="${activeIdx}"]`);
+    if (!active) return;
+    const target = active.offsetTop - scroller.clientHeight / 2 + active.clientHeight / 2;
+    scroller.scrollTo({ top: Math.max(0, target), behavior: 'auto' });
+  }, [mode, activeIdx]);
 
   /** User explicitly opted in to an online lyric lookup for this track. */
   const handleFetchOnline = async () => {
@@ -217,14 +231,18 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
       </div>
 
       {mode === 'log' ? (
-        /* Fixed full-stream readout: every line visible, active line highlighted. */
-        <div className="relative min-h-0 flex-1 overflow-hidden px-3 py-2">
+        /* Full-stream readout: every line rendered, active line highlighted.
+           Scrollable, and the active line is kept in view (long lyrics used to be
+           clipped with no way to scroll). */
+        <div className="relative min-h-0 flex-1 px-3 py-2">
+          <div ref={logRef} className="thin-scrollbar h-full overflow-y-auto pr-1">
           <div className="flex flex-col">
             {lines.map((line, i) => {
               const active = i === activeIdx;
               return (
                 <div
                   key={`${i}-${line.time}`}
+                  data-log-line={i}
                   className={cn(
                     'flex items-center gap-2 border-l-2 py-[3px] pl-2 transition-colors',
                     active ? 'border-primary bg-primary/10' : 'border-transparent',
@@ -246,8 +264,9 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
               );
             })}
           </div>
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-background to-transparent" />
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-background to-transparent" />
+          </div>
+          <div aria-hidden className="pointer-events-none absolute inset-x-3 top-0 h-10 bg-gradient-to-b from-background to-transparent" />
+          <div aria-hidden className="pointer-events-none absolute inset-x-3 bottom-0 h-10 bg-gradient-to-t from-background to-transparent" />
         </div>
       ) : (
         <div
