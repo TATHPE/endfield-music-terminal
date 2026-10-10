@@ -10,14 +10,15 @@ function focusInEditable(): boolean {
 }
 
 /**
- * 安卓软键盘弹起检测（真机验证过两种 WebView 行为都要覆盖）。
+ * 软键盘弹起检测（用于输入时收起 MiniPlayer / Dock）。
  *
- * 之前的写法只比较 `innerHeight - visualViewport.height`，在 Capacitor 默认的
- * `adjustResize` 下**布局视口本身就跟着键盘缩小**，差值≈0 → 永远检测不到 ✗。
- *
- * 现在改为：
- *  - 维护一个"无键盘时"的布局视口高度基线（无输入焦点时持续校准，兼容旋转）
- *  - 判据 = **有输入焦点** 且（布局视口比基线矮 / 可视视口与布局视口有明显差值）
+ * 判据演进（踩过两次坑，注释留证）：
+ *  1. 只比 `innerHeight - visualViewport.height` → Capacitor 默认 `adjustResize` 下
+ *     布局视口本身就随键盘缩小，差值≈0，**永远检测不到** ✗
+ *  2. 等视口收缩再收起 → 收起动作被推迟到键盘动画之后，观感是"闪一下没了" ✗
+ *  3. 现在：**一有输入焦点就先收起**（早于键盘动画完成，收起动画与键盘弹出同步，
+ *     看起来是顺滑滑出），失焦立即恢复；视口变化只作为兜底触发（例如某些内核
+ *     不派发 focus 事件时）。
  */
 export function useKeyboardOpen(threshold = 120): boolean {
     const [open, setOpen] = useState(false);
@@ -32,32 +33,40 @@ export function useKeyboardOpen(threshold = 120): boolean {
             frame = requestAnimationFrame(() => {
                 const focused = focusInEditable();
                 if (!focused) {
-                    // 没有输入焦点时一切高度变化都视为正常（旋转 / 系统栏变化），校准基线
+                    // 没有输入焦点：一切高度变化都算正常（旋转 / 系统栏），校准基线后恢复
                     baseline = window.innerHeight;
                     setOpen(false);
                     return;
                 }
-                const layoutShrink = baseline - window.innerHeight;
-                const visualGap = vv ? window.innerHeight - vv.height : 0;
-                setOpen(layoutShrink > threshold || visualGap > threshold);
+                // 有焦点就立刻收起：不等待视口收缩，避免"闪一下"
+                setOpen(true);
             });
+        };
+
+        // 兜底：某些内核不派发 focusin，但视口会真的收缩
+        const checkViewport = () => {
+            const gap = vv ? window.innerHeight - vv.height : 0;
+            const shrink = baseline - window.innerHeight;
+            if (gap > threshold || shrink > threshold) setOpen(true);
         };
 
         check();
         window.addEventListener('resize', check);
+        window.addEventListener('resize', checkViewport);
         window.addEventListener('orientationchange', check);
         document.addEventListener('focusin', check);
         document.addEventListener('focusout', check);
         vv?.addEventListener('resize', check);
-        vv?.addEventListener('scroll', check);
+        vv?.addEventListener('resize', checkViewport);
         return () => {
             cancelAnimationFrame(frame);
             window.removeEventListener('resize', check);
+            window.removeEventListener('resize', checkViewport);
             window.removeEventListener('orientationchange', check);
             document.removeEventListener('focusin', check);
             document.removeEventListener('focusout', check);
             vv?.removeEventListener('resize', check);
-            vv?.removeEventListener('scroll', check);
+            vv?.removeEventListener('resize', checkViewport);
         };
     }, [threshold]);
 

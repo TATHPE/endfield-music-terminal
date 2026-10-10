@@ -52,9 +52,10 @@ public class StreamFetcherPlugin extends Plugin {
     private static final int TIMEOUT_MS = 15000;
 
     /** 攒够这么多字节就推一批（128kbps 下约 1s 音频）。 */
-    private static final int FLUSH_BYTES = 16 * 1024;
+    // 攒批越小/越频繁 → 起播越快（在线流有明显起播延迟，见 docs/在线流媒体.md）
+    private static final int FLUSH_BYTES = 8 * 1024;
     /** 或者攒够这么久也推一批，避免低码率流起播迟滞。 */
-    private static final long FLUSH_INTERVAL_MS = 500L;
+    private static final long FLUSH_INTERVAL_MS = 250L;
 
     /** 未确认字节超过这个量就暂停读取（背压高水位）。 */
     private static final long HIGH_WATER_BYTES = 256 * 1024;

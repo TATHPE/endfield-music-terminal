@@ -33,7 +33,7 @@ export default function MiniPlayer({ onOpen }: MiniPlayerProps) {
       initial={{ y: 40, opacity: 0 }}
       animate={{ y: keyboardOpen ? 72 : 0, opacity: keyboardOpen ? 0 : 1 }}
       exit={{ y: 40, opacity: 0 }}
-      transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+      transition={{ type: 'spring', damping: 26, stiffness: 260 }}
       className={cn(
         'clip-corner relative z-20 mx-3 overflow-hidden border backdrop-blur-2xl',
         keyboardOpen && 'pointer-events-none',

@@ -31,7 +31,7 @@ export default function BottomNav({ view, onChange }: BottomNavProps) {
     <nav
       className={cn(
         'pointer-events-auto shrink-0 pb-[calc(max(env(safe-area-inset-bottom),20px)+16px)] pt-1',
-        'transition-[transform,opacity] duration-200',
+        'transition-[transform,opacity] duration-300 ease-out',
         keyboardOpen && 'pointer-events-none translate-y-full opacity-0',
       )}
       style={{

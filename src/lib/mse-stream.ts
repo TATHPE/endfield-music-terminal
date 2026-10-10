@@ -154,6 +154,9 @@ export class MseMp3Stream {
     await attempt;
   }
 
+  /** 追加通道已废弃（媒体元素进入错误态）：不再喂数据，避免重复刷屏报错。 */
+  private appendHalted = false;
+
   stop(): void {
     if (this.stopped) return;
     this.stopped = true;
@@ -429,6 +432,7 @@ export class MseMp3Stream {
    */
   private append(chunk: Uint8Array): Promise<void> {
     if (this.stopped) return Promise.resolve();
+    if (this.stopped || this.appendHalted) return Promise.resolve();
     if (this.skipChunk) {
       this.skipChunk = false;
       return Promise.resolve();
@@ -444,7 +448,15 @@ export class MseMp3Stream {
 
   /** Hand the queued chunk to the SourceBuffer when it is free. */
   private flush(): void {
-    if (this.stopped || this.pending === null || this.chunkInFlight) return;
+    if (this.stopped || this.appendHalted || this.pending === null || this.chunkInFlight) return;
+    // 元素一旦进入错误态，继续 append 只会不断抛 InvalidStateError（真机刷屏十几行），
+    // 这里直接判定这条流失败，由调用方决定是否回退到原生通道。
+    if (this.audio.error) {
+      this.appendHalted = true;
+      this.pending = null;
+      this.fail(`在线流播放失败（媒体元素报错 code=${this.audio.error.code}）`);
+      return;
+    }
     const buffer = this.sourceBuffer;
     if (!buffer || buffer.updating) return;
     const media = this.mediaSource;
@@ -464,6 +476,14 @@ export class MseMp3Stream {
   private handleAppendError(err: unknown): void {
     if (this.stopped) return;
     const name = err instanceof Error ? err.name : '';
+    if (name === 'InvalidStateError') {
+      // 元素已损坏：重复报同一个错没有意义（真机刷屏），只报一次并停止追加。
+      if (!this.appendHalted) {
+        this.appendHalted = true;
+        this.fail('追加音频数据失败 — 媒体元素已进入错误态，已停止该在线流');
+      }
+      return;
+    }
     if (name === 'QuotaExceededError') {
       // Buffer full: evict harder and drop this chunk. Losing a slice of a live
       // stream is harmless, but killing playback is not.
