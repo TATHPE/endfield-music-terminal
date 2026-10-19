@@ -48,9 +48,21 @@ if (Capacitor.isNativePlatform()) {
 // Re-sync the system bars once the native bridge is guaranteed ready and again
 // after React mounts, so the icon appearance lands even if the module-top call
 // ran before the bridge was up.
-const resync = () => syncSystemBars();
+const resync = () => {
+  // Re-resolve "跟随系统" too: the native shell may have published uiMode after
+  // the first paint, and a light/dark flip must repaint the shell as well.
+  if (getBgMode() === 'system') applyBgMode('system');
+  else syncSystemBars();
+};
 if (Capacitor.isNativePlatform()) {
   window.addEventListener('DOMContentLoaded', resync, { once: true });
+  // "跟随系统": MainActivity sets window.__endfieldSystemDark and fires this event
+  // on boot and on uiMode changes (WebViews don't always emit matchMedia changes).
+  window.addEventListener('endfield:system-scheme-changed', () => {
+    if (getBgMode() === 'system') applyBgMode('system');
+  });
+  // Belt and braces: native publishes the global ~500 ms after document load.
+  window.setTimeout(resync, 1500);
 }
 window.addEventListener('load', resync, { once: true });
 

@@ -191,8 +191,13 @@ public class MainActivity extends BridgeActivity {
                     attempts[0]++;
                     // Only report a real value once the document is fully loaded;
                     // otherwise (pre-load / about:blank) return null to keep retrying.
+                    // The uiMode boolean is pushed into JS as well: some WebView builds
+                    // do not emit prefers-color-scheme changes, so "跟随系统" listens
+                    // for this native event instead of relying on matchMedia alone.
                     wv.evaluateJavascript(
                             "(function(){try{ if(document.readyState!=='complete') return 'null'; " +
+                                    "window.__endfieldSystemDark=" + isSystemDark() + ";" +
+                                    "window.dispatchEvent(new Event('endfield:system-scheme-changed'));" +
                                     "return localStorage.getItem('endfield-player:bgmode')||'dark'; }catch(e){return 'null';}})()",
                             value -> {
                                 if (value != null && !value.equals("null") && !value.isEmpty()) {
@@ -208,12 +213,15 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    /** True when the OS is currently in dark mode (uiMode night bit). */
+    private boolean isSystemDark() {
+        int night = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        return night == Configuration.UI_MODE_NIGHT_YES;
+    }
+
     /** Resolve the stored mode ('light' | 'dark' | 'system') to a bar appearance. */
     private boolean isLightMode(String mode) {
-        if ("system".equals(mode)) {
-            int night = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
-            return night != Configuration.UI_MODE_NIGHT_YES;
-        }
+        if ("system".equals(mode)) return !isSystemDark();
         return "light".equals(mode);
     }
 

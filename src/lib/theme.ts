@@ -213,7 +213,13 @@ export function resolveBgModeValue(mode: BgMode, systemDark: boolean): 'dark' | 
 /** Whether the OS currently prefers a dark color scheme (false if unsupported). */
 export function systemPrefersDark(): boolean {
   try {
-    return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+    if (typeof window === 'undefined') return false;
+    // The native shell pushes uiMode into this global (see MainActivity): some
+    // WebView builds never emit prefers-color-scheme changes, so matchMedia
+    // alone is not reliable on Android.
+    const native = (window as { __endfieldSystemDark?: unknown }).__endfieldSystemDark;
+    if (typeof native === 'boolean') return native;
+    return typeof window.matchMedia === 'function'
       ? window.matchMedia('(prefers-color-scheme: dark)').matches
       : false;
   } catch {

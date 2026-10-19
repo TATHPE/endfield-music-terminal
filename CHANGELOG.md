@@ -10,6 +10,12 @@
 - 界面文案集中管理（`src/lib/strings.ts`）
 - 联网歌词来源抽成 provider，带超时与降级提示
 
+## [1.5.1] — 2026-10-19
+
+### 修复
+- **播放无声 / 无法播放**：`PlaybackGuard` 插件不再自行申请 `AUDIOFOCUS_GAIN` —— WebView（Chromium）本身持有音频焦点，同进程二次申请会让 Chromium 收到 LOSS 并暂停播放。插件现在只保留 WakeLock；来电/其他应用/拔耳机仍由 WebView 自己处理。
+- **「跟随系统」不生效**：部分 WebView 不会派发 `prefers-color-scheme` 变化。改为原生在启动与 `onConfigurationChanged` 时把 `uiMode` 写入 `window.__endfieldSystemDark` 并派发 `endfield:system-scheme-changed`，JS 监听后重新解析主题；首帧后再补一次解析。
+
 ## [1.5.0] — 2026-10-19
 
 ### 新增
