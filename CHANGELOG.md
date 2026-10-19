@@ -10,6 +10,17 @@
 - 界面文案集中管理（`src/lib/strings.ts`）
 - 联网歌词来源抽成 provider，带超时与降级提示
 
+## [1.5.3] — 2026-10-19
+
+### 修复
+- 设置页「跟随系统」的状态提示（当前系统外观 → 浅色/深色）在系统切换后不刷新：改为同时监听原生 `endfield:system-scheme-changed` 事件并重渲染。
+- 「后台与锁屏」说明文案去掉“音频焦点”（插件已不再申请音频焦点，来电/拔耳机由系统与 WebView 处理）。
+
+## [1.5.2] — 2026-10-19
+
+### 修复
+- **息屏 / 切后台时崩溃并断播**：`MainActivity.onPause()` 为保持后台播放而跳过 `super.onPause()`，Android 会抛 `SuperNotCalledException` 直接杀进程。改为正常调用 `super.onPause()`——Capacitor 的 `KeepRunning` 默认 true，`bridge.onPause()` 本来就不会暂停 WebView，播放可继续；WakeLock 仍由 `PlaybackGuard` 持有。
+
 ## [1.5.1] — 2026-10-19
 
 ### 修复

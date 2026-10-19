@@ -191,15 +191,22 @@ function BgModePicker() {
   const [, setSystemTick] = useState(0);
 
   // While on 'system', flip live when the OS switches light/dark — no restart.
-  useEffect(
-    () =>
-      watchSystemScheme(() => {
-        if (getBgMode() !== 'system') return;
-        applyBgMode('system');
-        setSystemTick((n) => n + 1);
-      }),
-    [],
-  );
+  // Two sources: matchMedia (where the WebView supports it) and the native
+  // `endfield:system-scheme-changed` event (Android WebViews often don't emit
+  // prefers-color-scheme changes, so the shell pushes uiMode itself).
+  useEffect(() => {
+    const onScheme = () => {
+      if (getBgMode() !== 'system') return;
+      applyBgMode('system');
+      setSystemTick((n) => n + 1);
+    };
+    const off = watchSystemScheme(onScheme);
+    window.addEventListener('endfield:system-scheme-changed', onScheme);
+    return () => {
+      off();
+      window.removeEventListener('endfield:system-scheme-changed', onScheme);
+    };
+  }, []);
 
   const pick = (m: BgMode) => {
     setBgMode(m);
@@ -458,8 +465,8 @@ function BackgroundSection() {
         电池优化设置（保持后台播放）
       </button>
       <p className="font-mono text-[8px] leading-relaxed tracking-wider text-muted-foreground">
-        播放中已启用 WakeLock 与音频焦点：锁屏/熄屏继续播放，来电或拔耳机自动暂停。部分 ROM（ColorOS /
-        HyperOS）还需在系统设置里允许自启与后台运行。
+        播放中已启用 WakeLock：锁屏/熄屏继续播放；来电、其他应用播放与拔耳机由系统与 WebView 自动暂停。部分
+        ROM（ColorOS / HyperOS）还需在系统设置里允许自启与后台运行。
       </p>
     </section>
   );

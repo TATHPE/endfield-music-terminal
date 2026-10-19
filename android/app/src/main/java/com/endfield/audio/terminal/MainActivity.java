@@ -27,14 +27,14 @@ public class MainActivity extends BridgeActivity {
     private Object backCallback;
 
     /**
-     * While audio is playing, do NOT pause the WebView: Capacitor's default
-     * onPause() calls webView.onPause(), which suspends the page and can stop
-     * screen-off playback. The PlaybackGuard plugin holds a wake lock and the
-     * capgo MediaSession service keeps the process foreground.
+     * Background playback: Capacitor's KeepRunning preference defaults to true,
+     * so bridge.onPause() does NOT pause the WebView — the <audio> element keeps
+     * playing with the screen off (the PlaybackGuard plugin holds a wake lock).
+     * Never skip super.onPause(): Android kills the process with
+     * SuperNotCalledException if an activity does.
      */
     @Override
     public void onPause() {
-        if (PlaybackGuardPlugin.isPlaying()) return;
         super.onPause();
     }
 
