@@ -1,6 +1,7 @@
 // EXPORTS: ThemeId, ThemeMeta, CustomColors, THEMES, PRESET_COLORS, getTheme,
 //          getCustomTheme, applyTheme, setTheme, applyCustomTheme, setCustomTheme,
-//          BgMode, getBgMode, applyBgMode, setBgMode, syncSystemBars
+//          BgMode, getBgMode, applyBgMode, setBgMode, syncSystemBars,
+//          resolveBgMode, resolveBgModeValue, systemPrefersDark, watchSystemScheme
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
 
@@ -183,23 +184,78 @@ export function setCustomTheme(c: CustomColors) {
   applyCustomTheme(c);
 }
 
-// ---- Background mode: solid black / solid white shell ----
+// ---- Background mode: solid black / solid white shell, or follow the system ----
 
-export type BgMode = 'dark' | 'light';
+export type BgMode = 'dark' | 'light' | 'system';
+/** Raw persisted choice (may be 'system'). */
 export const BG_MODE_KEY = 'endfield-player:bgmode';
+/**
+ * Last resolved value ('dark' | 'light'). The native shell reads this before the
+ * web layer boots, so a 'system' choice still paints the right bars on cold start.
+ */
+export const BG_MODE_RESOLVED_KEY = 'endfield-player:bgmode-resolved';
 
 export function getBgMode(): BgMode {
   try {
-    return localStorage.getItem(BG_MODE_KEY) === 'light' ? 'light' : 'dark';
+    const v = localStorage.getItem(BG_MODE_KEY);
+    return v === 'light' || v === 'system' ? v : 'dark';
   } catch {
     return 'dark';
   }
 }
 
+/** Pure resolution: 'system' follows the OS preference, everything else is itself. */
+export function resolveBgModeValue(mode: BgMode, systemDark: boolean): 'dark' | 'light' {
+  if (mode === 'system') return systemDark ? 'dark' : 'light';
+  return mode;
+}
+
+/** Whether the OS currently prefers a dark color scheme (false if unsupported). */
+export function systemPrefersDark(): boolean {
+  try {
+    return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : false;
+  } catch {
+    return false;
+  }
+}
+
+/** Effective 'dark' | 'light' after resolving a 'system' choice. */
+export function resolveBgMode(mode: BgMode = getBgMode()): 'dark' | 'light' {
+  return resolveBgModeValue(mode, systemPrefersDark());
+}
+
+/** Subscribe to OS light/dark changes. Returns an unsubscribe function. */
+export function watchSystemScheme(onChange: () => void): () => void {
+  try {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return () => {};
+    }
+    const mql = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => onChange();
+    if (typeof mql.addEventListener === 'function') {
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    }
+    // Legacy WebView (< Android 5-ish) only has the deprecated API.
+    mql.addListener(handler);
+    return () => mql.removeListener(handler);
+  } catch {
+    return () => {};
+  }
+}
+
 export function applyBgMode(mode: BgMode) {
   const el = document.documentElement;
-  if (mode === 'light') el.dataset.bgmode = 'light';
+  const resolved = resolveBgMode(mode);
+  if (resolved === 'light') el.dataset.bgmode = 'light';
   else delete el.dataset.bgmode;
+  try {
+    localStorage.setItem(BG_MODE_RESOLVED_KEY, resolved);
+  } catch {
+    /* storage unavailable */
+  }
   syncSystemBars();
 }
 
@@ -219,7 +275,7 @@ export function setBgMode(mode: BgMode) {
  */
 export function syncSystemBars() {
   if (!Capacitor.isNativePlatform()) return;
-  const light = getBgMode() === 'light';
+  const light = resolveBgMode() === 'light';
   // Primary path: our native plugin (paints bar backgrounds on Android < 15,
   // drives icon appearance on all versions).
   void SystemBars.setAppearance({ lightStatus: light, lightNav: light }).catch(() => {

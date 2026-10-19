@@ -2,12 +2,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CloudDownload, FileUp, List, ScrollText } from 'lucide-react';
 import { parseLrc, type LrcLine } from '@/lib/lyrics';
+import { getEffectiveOffset, setSongOffset } from '@/lib/lyric-offset';
 import { usePlayer } from '@/lib/player-context';
 import { cn } from '@/lib/utils';
 import { LABELS, STATES } from '@/lib/strings';
 
-const OFFSET_KEY = 'endfield-player:lyric-offset';
-const OFFSET_STEPS = [-1, -0.5, 0.5, 1] as const;
+const OFFSET_STEPS = [-0.5, -0.1, 0.1, 0.5] as const;
 type LyricMode = 'scroll' | 'log';
 
 interface LyricsViewProps {
@@ -31,14 +31,13 @@ function findActive(lines: LrcLine[], time: number): number {
  *  steps and persists across tracks. */
 export default function LyricsView({ className = '' }: LyricsViewProps) {
   const { currentSong, currentTime, fetchLyricsOnline, importLyrics } = usePlayer();
-  const [offset, setOffset] = useState<number>(() => {
-    try {
-      const v = Number(localStorage.getItem(OFFSET_KEY));
-      return Number.isFinite(v) ? v : 0;
-    } catch {
-      return 0;
-    }
-  });
+  const songId = currentSong?.id ?? null;
+  // Offset is derived per track: a local override wins only while it belongs to
+  // the current song, otherwise read that track's stored value (no effect needed).
+  const [offsetOverride, setOffsetOverride] = useState<{ songId: string | null; value: number } | null>(
+    null,
+  );
+  const offset = offsetOverride?.songId === songId ? offsetOverride.value : getEffectiveOffset(songId);
   const [mode, setMode] = useState<LyricMode>('scroll');
   const parsed = useMemo(
     () => parseLrc(currentSong?.lyrics ?? '', offset),
@@ -52,20 +51,24 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fetching, setFetching] = useState(false);
 
+  const persistOffset = (next: number) => {
+    if (songId) setSongOffset(songId, next);
+    setOffsetOverride({ songId, value: next });
+  };
+
   const adjustOffset = (delta: number) => {
-    setOffset((prev) => {
-      const next = Math.round((prev + delta) * 10) / 10;
-      try {
-        localStorage.setItem(OFFSET_KEY, String(next));
-      } catch {
-        /* storage unavailable */
-      }
-      return next;
-    });
+    persistOffset(Math.round((offset + delta) * 10) / 10);
   };
 
   // Derived from render: the active line is a pure function of currentTime.
   const activeIdx = parsed?.kind === 'timed' ? findActive(parsed.lines, currentTime) : -1;
+
+  /** One-tap: shift the timeline so the highlighted line lands on the playhead. */
+  const calibrateOffset = () => {
+    if (!songId || parsed?.kind !== 'timed' || activeIdx < 0) return;
+    const line = parsed.lines[activeIdx];
+    persistOffset(Math.round((offset + (currentTime - line.time)) * 10) / 10);
+  };
 
   // Reset scroll tracking when the track / lyric shape changes.
   useEffect(() => {
@@ -188,7 +191,7 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
   return (
     <div className={cn('relative flex h-full flex-col overflow-hidden', className)}>
       {/* timeline sync + view mode toolbar */}
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/70 bg-background/80 px-2 py-1.5">
+      <div className="flex shrink-0 flex-col gap-1 border-b border-border/70 bg-background/80 px-2 py-1.5">
         <div className="flex items-center gap-1">
           {OFFSET_STEPS.map((step) => (
             <button
@@ -200,34 +203,70 @@ export default function LyricsView({ className = '' }: LyricsViewProps) {
               {step > 0 ? `+${step}s` : `${step}s`}
             </button>
           ))}
+          <span
+            className={cn(
+              'ml-auto font-mono text-[9px] tracking-[0.16em]',
+              offset === 0 ? 'text-muted-foreground' : 'text-primary',
+            )}
+          >
+            {offsetLabel} · 本曲
+          </span>
         </div>
-        <span className={cn('font-mono text-[9px] tracking-[0.16em]', offset === 0 ? 'text-muted-foreground' : 'text-primary')}>
-          {offsetLabel}
-        </span>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => setMode('scroll')}
-            aria-label={LABELS.SCROLL_MODE}
-            className={cn(
-              'clip-corner-sm flex items-center gap-1 border px-2 py-0.5 font-mono text-[9px] tracking-widest transition-colors',
-              mode === 'scroll' ? 'border-primary/60 bg-primary/15 text-primary' : 'border-border/70 text-muted-foreground',
-            )}
+            onClick={calibrateOffset}
+            disabled={activeIdx < 0}
+            className="clip-corner-sm border border-primary/50 bg-primary/10 px-1.5 py-0.5 font-mono text-[9px] tracking-widest text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
           >
-            <ScrollText className="h-3 w-3" /> SCROLL
+            对齐
           </button>
           <button
             type="button"
-            onClick={() => setMode('log')}
-            aria-label={LABELS.LOG_MODE}
-            className={cn(
-              'clip-corner-sm flex items-center gap-1 border px-2 py-0.5 font-mono text-[9px] tracking-widest transition-colors',
-              mode === 'log' ? 'border-primary/60 bg-primary/15 text-primary' : 'border-border/70 text-muted-foreground',
-            )}
+            onClick={() => persistOffset(0)}
+            className="clip-corner-sm border border-border/70 bg-secondary/60 px-1.5 py-0.5 font-mono text-[9px] tracking-widest text-muted-foreground transition-colors hover:text-primary"
           >
-            <List className="h-3 w-3" /> LOG
+            归零
           </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="clip-corner-sm flex items-center gap-1 border border-border/70 bg-secondary/60 px-1.5 py-0.5 font-mono text-[9px] tracking-widest text-muted-foreground transition-colors hover:text-primary"
+          >
+            <FileUp className="h-3 w-3" /> LRC
+          </button>
+          <div className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setMode('scroll')}
+              aria-label={LABELS.SCROLL_MODE}
+              className={cn(
+                'clip-corner-sm flex items-center gap-1 border px-2 py-0.5 font-mono text-[9px] tracking-widest transition-colors',
+                mode === 'scroll' ? 'border-primary/60 bg-primary/15 text-primary' : 'border-border/70 text-muted-foreground',
+              )}
+            >
+              <ScrollText className="h-3 w-3" /> SCROLL
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('log')}
+              aria-label={LABELS.LOG_MODE}
+              className={cn(
+                'clip-corner-sm flex items-center gap-1 border px-2 py-0.5 font-mono text-[9px] tracking-widest transition-colors',
+                mode === 'log' ? 'border-primary/60 bg-primary/15 text-primary' : 'border-border/70 text-muted-foreground',
+              )}
+            >
+              <List className="h-3 w-3" /> LOG
+            </button>
+          </div>
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".lrc,.txt"
+          className="hidden"
+          onChange={(e) => void handleImportFile(e.target.files?.[0])}
+        />
       </div>
 
       {mode === 'log' ? (

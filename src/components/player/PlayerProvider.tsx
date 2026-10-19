@@ -14,7 +14,9 @@ import {
 } from '@/lib/db';
 import { PlayerContext, type PlayerContextState } from '@/lib/player-context';
 import { clearDeviceAudioCache, loadDeviceAudio, isNative } from '@/lib/media-scanner';
+import { cancelSleepTimer, getSleepTimer, remainingMs } from '@/lib/sleep-timer';
 import MediaSessionBridge from '@/components/player/MediaSessionBridge';
+import PlaybackGuardBridge from '@/components/player/PlaybackGuardBridge';
 import { shouldLog, type LogLevel } from '@/lib/terminal-config';
 import { streamCodecFromUrl, streamTitleFromUrl, validateStreamUrl } from '@/lib/stream';
 import { MseMp3Stream } from '@/lib/mse-stream';
@@ -125,6 +127,9 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
   const spectrumOnRef = useRef(spectrumOn);
+  // Latest volume / mute, readable from async callbacks (sleep-timer fade).
+  const volumeRef = useRef(volume);
+  const mutedRef = useRef(muted);
   // Sync outside render: writing a ref during render breaks the concurrent
   // rendering contract (react-hooks/refs) and can be read as a stale value.
   useEffect(() => {
@@ -132,6 +137,8 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
   }, [spectrumOn]);
   // Apply the persisted volume / mute to the media element once it exists.
   useEffect(() => {
+    volumeRef.current = volume;
+    mutedRef.current = muted;
     const audio = audioRef.current;
     if (!audio) return;
     audio.volume = muted ? 0 : volume;
@@ -567,9 +574,54 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     playSong(queue[nextIdx].id);
   }, [queue, currentId, mode, playSong]);
 
+  const sleepFadingRef = useRef(false);
+
+  /** Fade the element out over ~1.4 s, then pause (playback progress is kept). */
+  const fadeOutAndPause = useCallback(async () => {
+    const audio = audioRef.current;
+    if (!audio || sleepFadingRef.current) return;
+    sleepFadingRef.current = true;
+    const restore = mutedRef.current ? 0 : volumeRef.current;
+    const from = audio.volume;
+    const steps = 24;
+    try {
+      for (let i = 1; i <= steps; i += 1) {
+        audio.volume = Math.max(0, from * (1 - i / steps));
+        await new Promise((resolve) => window.setTimeout(resolve, 60));
+      }
+      audio.pause();
+    } finally {
+      audio.volume = restore;
+      sleepFadingRef.current = false;
+    }
+  }, []);
+
+  // Sleep timer: a short tick compares Date.now() against the absolute deadline
+  // (accumulating setTimeout delays drifts badly in a throttled WebView).
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      const timer = getSleepTimer();
+      if (timer.kind !== 'duration') return;
+      if (remainingMs(timer) === 0) {
+        cancelSleepTimer();
+        toast('睡眠定时器到点 · 已暂停');
+        void fadeOutAndPause();
+      }
+    }, 500);
+    return () => window.clearInterval(id);
+  }, [fadeOutAndPause]);
+
   const handleEnded = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    // Sleep timer in "stop after this track" mode: stay on the finished track
+    // (no repeat, no auto-advance) and clear the timer.
+    if (getSleepTimer().kind === 'end-of-track') {
+      cancelSleepTimer();
+      audio.pause();
+      toast('睡眠定时器 · 当前曲结束后已暂停');
+      return;
+    }
     if (mode === 'repeat-one') {
       audio.currentTime = 0;
       void audio.play();
@@ -932,6 +984,7 @@ export default function PlayerProvider({ children }: { children: ReactNode }) {
     <PlayerContext.Provider value={value}>
       {children}
       <MediaSessionBridge />
+      <PlaybackGuardBridge />
       <audio
         ref={audioRef}
         // Visually hidden but not display:none — some Android WebView kernels

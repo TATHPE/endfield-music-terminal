@@ -1,21 +1,35 @@
 // EXPORTS: SettingsView
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { BellOff, BellRing, HardDrive, RotateCcw, ScanLine, Trash2 } from 'lucide-react';
 import { usePlayer } from '@/lib/player-context';
+import { PlaybackGuard } from '@/lib/playback-guard';
 import { refreshStorageUsage, useStorageUsage } from '@/hooks/use-storage-usage';
+import { useSleepTimer } from '@/hooks/use-sleep-timer';
+import {
+  SLEEP_OPTIONS,
+  cancelSleepTimer,
+  formatRemaining,
+  remainingMs,
+  startSleepTimer,
+  stopAfterTrack,
+} from '@/lib/sleep-timer';
 import { cn } from '@/lib/utils';
 import { ACTIONS, LABELS, PAGES, presetColor } from '@/lib/strings';
 import {
   DEFAULT_CUSTOM,
   PRESET_COLORS,
   THEMES,
+  applyBgMode,
   applyTheme,
   getBgMode,
   getCustomTheme,
   getTheme,
+  resolveBgMode,
   setBgMode,
   setCustomTheme,
   setTheme,
+  watchSystemScheme,
   type BgMode,
   type CustomColors,
   type ThemeId,
@@ -171,40 +185,66 @@ function CustomEditor({ onUse }: { onUse?: () => void }) {
   );
 }
 
-/** Background mode picker: solid black / solid white shell, one compact row. */
+/** Background mode picker: solid black / solid white / follow the system. */
 function BgModePicker() {
   const [mode, setLocalMode] = useState<BgMode>(() => getBgMode());
+  const [, setSystemTick] = useState(0);
+
+  // While on 'system', flip live when the OS switches light/dark — no restart.
+  useEffect(
+    () =>
+      watchSystemScheme(() => {
+        if (getBgMode() !== 'system') return;
+        applyBgMode('system');
+        setSystemTick((n) => n + 1);
+      }),
+    [],
+  );
 
   const pick = (m: BgMode) => {
     setBgMode(m);
     setLocalMode(m);
   };
 
+  const resolved = resolveBgMode();
+
   const options: Array<{ id: BgMode; label: string; swatch: string }> = [
     { id: 'dark', label: '黑色 BLACK', swatch: '#0A0A0C' },
     { id: 'light', label: '白色 WHITE', swatch: '#F4F4F0' },
+    {
+      id: 'system',
+      label: '跟随系统 SYSTEM',
+      swatch: 'linear-gradient(90deg, #0A0A0C 50%, #F4F4F0 50%)',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          onClick={() => pick(o.id)}
-          aria-pressed={mode === o.id}
-          className={cn(
-            'flex items-center justify-center gap-2 border px-2 py-1.5 text-left transition-all duration-200',
-            mode === o.id
-              ? 'border-accent bg-accent/10 shadow-[0_0_12px_-4px] shadow-accent/40'
-              : 'border-border bg-card hover:border-accent/40',
-          )}
-          style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
-        >
-          <span aria-hidden className="h-4 w-4 shrink-0 border border-white/15" style={{ backgroundColor: o.swatch }} />
-          <span className="font-mono text-[10px] tracking-wide text-foreground">{o.label}</span>
-        </button>
-      ))}
+    <div className="flex flex-col gap-1">
+      <div className="grid grid-cols-3 gap-2">
+        {options.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => pick(o.id)}
+            aria-pressed={mode === o.id}
+            className={cn(
+              'flex items-center justify-center gap-2 border px-2 py-1.5 text-left transition-all duration-200',
+              mode === o.id
+                ? 'border-accent bg-accent/10 shadow-[0_0_12px_-4px] shadow-accent/40'
+                : 'border-border bg-card hover:border-accent/40',
+            )}
+            style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%)' }}
+          >
+            <span aria-hidden className="h-4 w-4 shrink-0 border border-white/15" style={{ background: o.swatch }} />
+            <span className="font-mono text-[10px] tracking-wide text-foreground">{o.label}</span>
+          </button>
+        ))}
+      </div>
+      {mode === 'system' && (
+        <p className="font-mono text-[8px] tracking-widest text-muted-foreground">
+          当前系统外观 → {resolved === 'light' ? '浅色' : '深色'}（切换系统深浅色会自动跟随）
+        </p>
+      )}
     </div>
   );
 }
@@ -305,6 +345,122 @@ function TerminalBehavior() {
           </button>
         ))}
       </div>
+    </section>
+  );
+}
+
+/** Sleep timer: fixed durations + "stop after this track", with live countdown. */
+function SleepTimerSection() {
+  const timer = useSleepTimer();
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (timer.kind !== 'duration') return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [timer.kind]);
+
+  const left = remainingMs(timer, now);
+
+  return (
+    <section className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
+        <span className="text-accent">▸</span> 睡眠定时器 SLEEP TIMER
+      </div>
+      <div className="grid grid-cols-5 gap-1">
+        {SLEEP_OPTIONS.map((m) => {
+          const active = timer.kind === 'duration' && timer.minutes === m;
+          return (
+            <button
+              key={m}
+              type="button"
+              onClick={() => startSleepTimer(m)}
+              aria-pressed={active}
+              className={cn(
+                'clip-tag px-1 py-1 font-mono text-[9px] tracking-widest transition-colors',
+                active
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border border-border/70 text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {m} 分
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={stopAfterTrack}
+          aria-pressed={timer.kind === 'end-of-track'}
+          className={cn(
+            'clip-corner-sm flex-1 border px-2 py-1 font-mono text-[9px] tracking-widest transition-colors',
+            timer.kind === 'end-of-track'
+              ? 'border-primary/60 bg-primary/10 text-primary'
+              : 'border-border bg-card/70 text-muted-foreground',
+          )}
+        >
+          播完当前曲停止
+        </button>
+        <button
+          type="button"
+          onClick={cancelSleepTimer}
+          disabled={timer.kind === 'off'}
+          className="clip-corner-sm border border-border bg-card/70 px-2 py-1 font-mono text-[9px] tracking-widest text-muted-foreground transition-colors disabled:opacity-40"
+        >
+          关闭
+        </button>
+      </div>
+      <div className="flex items-center justify-between border border-border/70 bg-card/60 px-2 py-1">
+        <span className="font-mono text-[9px] tracking-widest text-muted-foreground">STATUS</span>
+        <span
+          className={cn(
+            'font-mono text-[10px] tabular-nums tracking-widest',
+            timer.kind === 'off' ? 'text-muted-foreground' : 'text-primary',
+          )}
+        >
+          {timer.kind === 'off' && 'OFF'}
+          {timer.kind === 'duration' && `剩余 ${formatRemaining(left ?? 0)}`}
+          {timer.kind === 'end-of-track' && '播完当前曲后暂停'}
+        </span>
+      </div>
+    </section>
+  );
+}
+
+/** Lock-screen / background playback: native wake lock + battery-optimization guide. */
+function BackgroundSection() {
+  const [busy, setBusy] = useState(false);
+
+  const openBattery = async () => {
+    if (!Capacitor.isNativePlatform() || busy) return;
+    setBusy(true);
+    try {
+      await PlaybackGuard.openBatterySettings();
+    } catch {
+      /* user cancelled / no settings activity on this ROM */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.24em] text-muted-foreground">
+        <span className="text-accent">▸</span> 后台与锁屏 BACKGROUND
+      </div>
+      <button
+        type="button"
+        onClick={() => void openBattery()}
+        disabled={busy || !Capacitor.isNativePlatform()}
+        className="clip-corner-sm flex items-center justify-center gap-1.5 border border-primary/50 bg-primary/10 px-2 py-1.5 font-mono text-[9px] tracking-widest text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
+      >
+        电池优化设置（保持后台播放）
+      </button>
+      <p className="font-mono text-[8px] leading-relaxed tracking-wider text-muted-foreground">
+        播放中已启用 WakeLock 与音频焦点：锁屏/熄屏继续播放，来电或拔耳机自动暂停。部分 ROM（ColorOS /
+        HyperOS）还需在系统设置里允许自启与后台运行。
+      </p>
     </section>
   );
 }
@@ -436,6 +592,10 @@ export default function SettingsView() {
       <HazardStrip className="h-[3px] opacity-60" />
 
       <BgModePicker />
+
+      <SleepTimerSection />
+
+      <BackgroundSection />
 
       <section className="flex flex-col gap-2">
         <div className="flex items-center gap-2 font-mono text-[9px] tracking-[0.24em] text-muted-foreground">

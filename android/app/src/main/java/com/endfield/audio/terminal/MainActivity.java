@@ -2,11 +2,14 @@ package com.endfield.audio.terminal;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.SystemClock;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -16,6 +19,58 @@ public class MainActivity extends BridgeActivity {
 
     private static final int DARK_BAR = 0xFF0A0A0C; // terminal black
     private static final int LIGHT_BAR = 0xFFF4F4F0; // warm white shell
+
+    /** Double-swipe-to-exit window (ms). */
+    private static final long BACK_WINDOW_MS = 2000;
+    private long lastBackAt = 0;
+    /** android.window.OnBackInvokedCallback (API 33+), kept as Object for minSdk 24. */
+    private Object backCallback;
+
+    /**
+     * While audio is playing, do NOT pause the WebView: Capacitor's default
+     * onPause() calls webView.onPause(), which suspends the page and can stop
+     * screen-off playback. The PlaybackGuard plugin holds a wake lock and the
+     * capgo MediaSession service keeps the process foreground.
+     */
+    @Override
+    public void onPause() {
+        if (PlaybackGuardPlugin.isPlaying()) return;
+        super.onPause();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (Build.VERSION.SDK_INT >= 33 && backCallback != null) {
+            getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(
+                    (android.window.OnBackInvokedCallback) backCallback);
+            backCallback = null;
+        }
+        super.onDestroy();
+    }
+
+    @Override
+    public void onBackPressed() {
+        // API < 33 path; on 33+ the platform callback registered in onCreate wins.
+        handleBack();
+    }
+
+    /** 右划两次退出：第一次提示，2 秒内第二次才真正退出；有网页历史先返回。 */
+    private void handleBack() {
+        WebView wv = getBridge() != null ? getBridge().getWebView() : null;
+        if (wv != null && wv.canGoBack()) {
+            wv.goBack();
+            lastBackAt = 0;
+            return;
+        }
+        long now = SystemClock.elapsedRealtime();
+        if (lastBackAt != 0 && now - lastBackAt <= BACK_WINDOW_MS) {
+            lastBackAt = 0;
+            finish();
+            return;
+        }
+        lastBackAt = now;
+        Toast.makeText(this, "再滑一次退出", Toast.LENGTH_SHORT).show();
+    }
 
     @Override
     public void onCreate(android.os.Bundle savedInstanceState) {
@@ -30,7 +85,17 @@ public class MainActivity extends BridgeActivity {
         // 在线流的原生取流通道：WebView 的 fetch 必带 Origin，会被电台热链保护
         // 回 403；这条通道自己发请求、把字节推给现有 MSE 播放器。
         registerPlugin(StreamFetcherPlugin.class);
+        // 锁屏/熄屏持续播放的壳侧保障：WakeLock + 音频焦点 + 拔耳机事件。
+        registerPlugin(PlaybackGuardPlugin.class);
         super.onCreate(savedInstanceState);
+        // 右划两次退出：Android 13+ 走 OnBackInvokedDispatcher（Manifest 已开
+        // enableOnBackInvokedCallback，旧 onBackPressed 在 33+ 不再回调）。
+        if (Build.VERSION.SDK_INT >= 33) {
+            android.window.OnBackInvokedCallback cb = this::handleBack;
+            backCallback = cb;
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                    android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, cb);
+        }
         // Force edge-to-edge on EVERY Android version (not just 15+): with the
         // decor not fitting the system bars, the status/navigation bar areas are
         // drawn by the WebView itself, so their colors follow the in-app theme
@@ -81,6 +146,16 @@ public class MainActivity extends BridgeActivity {
         syncSystemBarsFromStorage();
     }
 
+    /**
+     * uiMode is in configChanges, so switching the system light/dark scheme does
+     * not recreate the activity — repaint the bars ourselves for "跟随系统".
+     */
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        syncSystemBarsFromStorage();
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         // Media scan permission: route the dialog outcome straight to the plugin
@@ -121,7 +196,7 @@ public class MainActivity extends BridgeActivity {
                                     "return localStorage.getItem('endfield-player:bgmode')||'dark'; }catch(e){return 'null';}})()",
                             value -> {
                                 if (value != null && !value.equals("null") && !value.isEmpty()) {
-                                    applyBarAppearance(value.contains("light"));
+                                    applyBarAppearance(isLightMode(value));
                                 } else if (attempts[0] < 24) {
                                     wv.postDelayed(this, 800);
                                 }
@@ -131,6 +206,15 @@ public class MainActivity extends BridgeActivity {
         } catch (Exception e) {
             // WebView not ready yet — safe to skip; the JS bridge will handle it.
         }
+    }
+
+    /** Resolve the stored mode ('light' | 'dark' | 'system') to a bar appearance. */
+    private boolean isLightMode(String mode) {
+        if ("system".equals(mode)) {
+            int night = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+            return night != Configuration.UI_MODE_NIGHT_YES;
+        }
+        return "light".equals(mode);
     }
 
     private void applyBarAppearance(boolean light) {
