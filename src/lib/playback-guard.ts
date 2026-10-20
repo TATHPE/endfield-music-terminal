@@ -13,6 +13,8 @@ export interface PlaybackGuardPlugin {
   setPlaying(options: { playing: boolean }): Promise<void>;
   /** Open the system battery-optimization screen (user grants manually). */
   openBatterySettings(): Promise<void>;
+  /** Ask the system to exempt this app from battery optimisation (OriginOS 6). */
+  requestIgnoreBatteryOptimizations(): Promise<void>;
 }
 
 export const PlaybackGuard = registerPlugin<PlaybackGuardPlugin>('EndfieldPlayback');

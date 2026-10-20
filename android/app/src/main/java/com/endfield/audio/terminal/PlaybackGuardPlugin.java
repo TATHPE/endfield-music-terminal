@@ -2,6 +2,7 @@ package com.endfield.audio.terminal;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.PowerManager;
 import android.provider.Settings;
 
@@ -51,6 +52,31 @@ public class PlaybackGuardPlugin extends Plugin {
             call.resolve();
         } catch (Exception e) {
             call.reject("无法打开电池优化设置", e);
+        }
+    }
+
+    /**
+     * Ask the system (OriginOS 6 / Funtouch especially) to exempt this app from
+     * battery optimisation. The direct dialog is the only reliable way to keep
+     * WebView audio alive with the screen off on vivo ROMs.
+     */
+    @PluginMethod
+    public void requestIgnoreBatteryOptimizations(PluginCall call) {
+        try {
+            Intent direct = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+            direct.setData(Uri.parse("package:" + getContext().getPackageName()));
+            direct.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(direct);
+            call.resolve();
+        } catch (Exception e) {
+            try {
+                Intent fallback = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                getContext().startActivity(fallback);
+                call.resolve();
+            } catch (Exception e2) {
+                call.reject("无法打开电池优化设置", e2);
+            }
         }
     }
 

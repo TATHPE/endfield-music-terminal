@@ -36,6 +36,12 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onPause() {
         super.onPause();
+        // Keep JS timers (sleep timer, position sync) alive while playing; the
+        // WakeLock + mediaPlayback foreground service keep the process running.
+        if (PlaybackGuardPlugin.isPlaying() && getBridge() != null) {
+            WebView wv = getBridge().getWebView();
+            if (wv != null) wv.resumeTimers();
+        }
     }
 
     @Override

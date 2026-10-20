@@ -443,7 +443,7 @@ function BackgroundSection() {
     if (!Capacitor.isNativePlatform() || busy) return;
     setBusy(true);
     try {
-      await PlaybackGuard.openBatterySettings();
+      await PlaybackGuard.requestIgnoreBatteryOptimizations();
     } catch {
       /* user cancelled / no settings activity on this ROM */
     } finally {
@@ -462,11 +462,12 @@ function BackgroundSection() {
         disabled={busy || !Capacitor.isNativePlatform()}
         className="clip-corner-sm flex items-center justify-center gap-1.5 border border-primary/50 bg-primary/10 px-2 py-1.5 font-mono text-[9px] tracking-widest text-primary transition-colors hover:bg-primary/20 disabled:opacity-40"
       >
-        电池优化设置（保持后台播放）
+        允许后台运行（系统弹窗）
       </button>
       <p className="font-mono text-[8px] leading-relaxed tracking-wider text-muted-foreground">
-        播放中已启用 WakeLock：锁屏/熄屏继续播放；来电、其他应用播放与拔耳机由系统与 WebView 自动暂停。部分
-        ROM（ColorOS / HyperOS）还需在系统设置里允许自启与后台运行。
+        播放中已启用 WakeLock 并常驻媒体前台服务。OriginOS 6 还需：设置 → 电池 → 后台耗电管理 →
+        允许「终末地音乐终端」；i管家 → 应用管理 → 自启动 / 后台高耗电 → 打开。ColorOS / HyperOS
+        同理允许自启与后台运行。
       </p>
     </section>
   );
