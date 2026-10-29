@@ -70,3 +70,9 @@
 - [开发者文档](docs/开发者文档.md) —— 技术栈 / 目录结构 / 构建 / 测试 / CI 与发布
 - [权限与隐私](docs/权限与隐私.md) —— 权限用途与数据说明
 - [在线流媒体说明](docs/在线流媒体.md) —— 在线地址与网络电台
+
+## Run locally with PicoRunner
+
+[![Launch on PicoRunner](https://picorunner.com/badges/launch.svg)](https://picorunner.com/launch/?repository=https%3A%2F%2Fgithub.com%2FTATHPE%2Fendfield-music-terminal)
+
+This launches the web player on localhost using the existing self-contained Vite build configuration. Imported music and preferences stay in browser storage; Android device-library features require the Android app.
